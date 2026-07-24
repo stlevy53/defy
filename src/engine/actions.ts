@@ -8,7 +8,7 @@ import { produce, type Draft } from 'immer'
 import { maquis as maquisData, missions as missionsData } from '../data'
 import type { Action, Decision, DecisionResponse, GameState, MissionSlot, Side } from './types'
 import { effectRegistry, maquisEffectId, missionEffectId, enemyEffectId } from './effects/registry'
-import { canFireEffect } from './effects/plan'
+import { canFireEffect } from './effects/preconditions'
 import type { MaquisCard, MissionCard } from '../types'
 
 const maquisById = new Map<string, MaquisCard>(maquisData.map((m) => [m.id, m]))

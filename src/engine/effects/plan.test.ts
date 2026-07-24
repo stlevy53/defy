@@ -7,7 +7,8 @@ import { createGame } from '../setup'
 import { applyAction, legalActions, resolveDecision } from '../actions'
 import { assertConservation } from '../zones'
 import { maquisEffectId, unregisterEffect } from './registry'
-import { registerPlanEffects, PLAN_EFFECTS, canFireEffect } from './plan'
+import { registerPlanEffects, PLAN_EFFECTS } from './plan'
+import { canFireEffect } from './preconditions'
 import type { Action, GameState } from '../types'
 
 beforeAll(() => registerPlanEffects())

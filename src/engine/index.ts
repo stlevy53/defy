@@ -13,6 +13,7 @@ export {
   enemyEffectId,
 } from './effects/registry'
 export type { EffectContext, EffectHandler } from './effects/registry'
-export { registerPlanEffects, canFireEffect, PLAN_EFFECTS } from './effects/plan'
+export { registerPlanEffects, PLAN_EFFECTS } from './effects/plan'
 export { registerAttackEffects, ATTACK_EFFECTS } from './effects/attack'
+export { canFireEffect } from './effects/preconditions'
 export type * from './types'

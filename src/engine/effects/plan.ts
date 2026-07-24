@@ -39,8 +39,8 @@ function refillHiddenIfEmpty(state: Draft<GameState>): void {
 }
 
 /** Draw n cards from the top of the Hidden deck into the hand, reshuffling on empty. Draws
- *  fewer than n only if the deck and discard are both exhausted. */
-function drawHidden(state: Draft<GameState>, n: number): void {
+ *  fewer than n only if the deck and discard are both exhausted. Shared with the ATTACK effects. */
+export function drawHidden(state: Draft<GameState>, n: number): void {
   for (let i = 0; i < n; i++) {
     if (state.hidden.deck.length === 0) refillHiddenIfEmpty(state)
     if (state.hidden.deck.length === 0) break
@@ -365,7 +365,7 @@ const revealedPileNonEmpty = (s: GameState): boolean => s.recruit.revealed.lengt
 const hasFaceDownEnemy = (s: GameState): boolean =>
   s.missionRow.some((slot) => !slot.faceDown && slot.enemies.some((e) => !e.faceUp))
 
-const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
+export const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('celia', 'hidden')]: hasSpyInHand,
   [maquisEffectId('antonio', 'hidden')]: hasSpyInHand,
   [maquisEffectId('manuela', 'revealed')]: hasSpyInHand,
@@ -375,10 +375,4 @@ const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('juana', 'revealed')]: revealedPileNonEmpty,
   [maquisEffectId('pilar', 'hidden')]: hasFaceDownEnemy,
   [maquisEffectId('domingo', 'hidden')]: hasFaceDownEnemy,
-}
-
-/** True if the effect's precondition is met (or it has none). */
-export function canFireEffect(effectId: string, state: GameState): boolean {
-  const pre = PLAN_PRECONDITIONS[effectId]
-  return pre ? pre(state) : true
 }
