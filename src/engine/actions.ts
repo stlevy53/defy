@@ -44,6 +44,21 @@ function effectiveDefense(state: GameState, slot: MissionSlot, targetUid: string
   return enemy ? enemy.defense : null
 }
 
+/**
+ * Enemy DEFEND ordering constraints (Guard/Grunt), enforced structurally rather than as queued
+ * effects: Grunts must be defeated before any other Enemy; Guards must be defeated before the
+ * Mission. Returns whether `targetUid` may be attacked right now given who's still standing.
+ */
+function isTargetLegal(slot: MissionSlot, targetUid: string): boolean {
+  const gruntsRemain = slot.enemies.some((e) => e.typeId === 'grunt')
+  const guardsRemain = slot.enemies.some((e) => e.typeId === 'guard')
+  if (targetUid === slot.uid) return !guardsRemain // Guards gate the Mission
+  const enemy = slot.enemies.find((e) => e.uid === targetUid)
+  if (!enemy) return false
+  if (enemy.typeId === 'grunt') return true // Grunts are always attackable
+  return !gruntsRemain // other Enemies wait until every Grunt is gone
+}
+
 // --- legalActions -----------------------------------------------------------
 
 /** Everything the player may do right now. The UI holds no rules — it renders this. */
@@ -90,12 +105,12 @@ export function legalActions(state: GameState): Action[] {
     if (slot) {
       if (!slot.defeated) {
         const def = effectiveDefense(state, slot, slot.uid)
-        if (def !== null && state.attackStrength >= def) {
+        if (def !== null && state.attackStrength >= def && isTargetLegal(slot, slot.uid)) {
           actions.push({ type: 'SpendAttackOn', targetUid: slot.uid })
         }
       }
       for (const enemy of slot.enemies) {
-        if (state.attackStrength >= enemy.defense) {
+        if (state.attackStrength >= enemy.defense && isTargetLegal(slot, enemy.uid)) {
           actions.push({ type: 'SpendAttackOn', targetUid: enemy.uid })
         }
       }
@@ -223,6 +238,9 @@ function applySpendAttackOn(draft: Draft<GameState>, targetUid: string): void {
   }
   if (draft.attackStrength < def) {
     throw new Error(`SpendAttackOn: not enough Attack Strength (have ${draft.attackStrength}, need ${def})`)
+  }
+  if (!isTargetLegal(slot, targetUid)) {
+    throw new Error('SpendAttackOn: blocked — defeat all Grunts before other Enemies, and all Guards before the Mission')
   }
 
   draft.attackStrength -= def

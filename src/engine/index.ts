@@ -15,5 +15,6 @@ export {
 export type { EffectContext, EffectHandler } from './effects/registry'
 export { registerPlanEffects, PLAN_EFFECTS } from './effects/plan'
 export { registerAttackEffects, ATTACK_EFFECTS } from './effects/attack'
+export { registerEnemyEffects, ENEMY_EFFECTS } from './effects/enemies'
 export { canFireEffect } from './effects/preconditions'
 export type * from './types'

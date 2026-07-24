@@ -75,18 +75,22 @@ describe('mandatory play-out gating', () => {
 })
 
 describe('SpendAttackOn', () => {
-  /** A play-out-complete ATTACK state whose chosen mission has an affordable enemy but whose
+  /** A legal, affordable enemy target given the Grunt ordering constraint. */
+  function legalAffordableEnemy(s: GameState) {
+    const slot = chosen(s)
+    const gruntsRemain = slot.enemies.some((e) => e.typeId === 'grunt')
+    return slot.enemies.find(
+      (e) => e.defense <= s.attackStrength && (e.typeId === 'grunt' || !gruntsRemain),
+    )
+  }
+
+  /** A play-out-complete ATTACK state whose chosen mission has a legal, affordable enemy but whose
    *  mission Defense exceeds the current Attack Strength. */
   function enemyScenario(): GameState {
     for (let seed = 1; seed <= 800; seed++) {
       for (let mi = 0; mi < 4; mi++) {
         const s = playOutThenChoose(seed, mi)
-        const slot = chosen(s)
-        if (
-          s.attackStrength > 0 &&
-          slot.enemies.some((e) => e.defense <= s.attackStrength) &&
-          missionDefense(slot.dataId) > s.attackStrength
-        ) {
+        if (s.attackStrength > 0 && legalAffordableEnemy(s) && missionDefense(chosen(s).dataId) > s.attackStrength) {
           return s
         }
       }
@@ -97,8 +101,7 @@ describe('SpendAttackOn', () => {
   it('defeats an affordable enemy: spends its Defense, discards it, queues DEFEAT', () => {
     let s = enemyScenario()
     assertConservation(s)
-    const slot = chosen(s)
-    const enemy = slot.enemies.find((e) => e.defense <= s.attackStrength)!
+    const enemy = legalAffordableEnemy(s)!
     const strengthBefore = s.attackStrength
     const discardBefore = s.enemyDiscard.length
 
@@ -124,7 +127,11 @@ describe('SpendAttackOn', () => {
     outer: for (let seed = 1; seed <= 800; seed++) {
       for (let mi = 0; mi < 4; mi++) {
         const cand = playOutThenChoose(seed, mi)
-        if (cand.attackStrength >= missionDefense(chosen(cand).dataId)) {
+        // Mission must be affordable AND unguarded (Guards gate the Mission).
+        if (
+          cand.attackStrength >= missionDefense(chosen(cand).dataId) &&
+          !chosen(cand).enemies.some((e) => e.typeId === 'guard')
+        ) {
           s = cand
           break outer
         }
