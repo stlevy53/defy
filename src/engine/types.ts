@@ -14,6 +14,9 @@ export interface EnemyInstance {
   uid: string
   typeId: string    // enemy type id (e.g. 'guard')
   defense: number
+  /** The printed Defense of this copy. `defense` may be modified in-round (Benigno/Engineer/
+   *  Mayor's House); it is restored to this value when the enemy reshuffles back into the deck. */
+  baseDefense: number
   faceUp: boolean
 }
 

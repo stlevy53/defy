@@ -72,7 +72,7 @@ function buildWorkedExample(): GameState {
   const allEnemies: EnemyInstance[] = []
   for (const t of enemyTypes) {
     t.defenseValues.forEach((d, i) =>
-      allEnemies.push({ uid: `enemy-${t.id}-${i}`, typeId: t.id, defense: d, faceUp: false }),
+      allEnemies.push({ uid: `enemy-${t.id}-${i}`, typeId: t.id, defense: d, baseDefense: d, faceUp: false }),
     )
   }
   const take = (pred: (e: EnemyInstance) => boolean): EnemyInstance => {

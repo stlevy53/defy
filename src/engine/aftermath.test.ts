@@ -145,6 +145,50 @@ describe('civilian loss', () => {
   })
 })
 
+describe('enemy Defense reset on reshuffle', () => {
+  it('restores the printed Defense when a modified enemy is reshuffled back into the Enemy deck', () => {
+    const g = createGame({ seed: 7 })
+
+    // Funnel every enemy into the discard and empty the deck, so the next refill must reshuffle.
+    const pooled = [...g.enemyDeck]
+    g.enemyDeck = []
+    for (const slot of g.missionRow) {
+      pooled.push(...slot.enemies)
+      slot.enemies = []
+    }
+    g.enemyDiscard = pooled
+
+    // Simulate an in-round Defense modifier (Engineer/Mayor's House +1) that survived into discard.
+    const modified = g.enemyDiscard[0]
+    modified.defense = modified.baseDefense + 5
+    const modifiedUid = modified.uid
+    const printed = modified.baseDefense
+
+    // A completed play-out with a defeated chosen mission (a success): AFTERMATH refills the row
+    // from the Mission deck, dealing enemies from the freshly reshuffled Enemy deck.
+    for (const c of g.hand.filter((c) => c.dataId !== 'spy')) {
+      g.inPlay.push({ uid: c.uid, dataId: c.dataId, side: 'hidden', actionUsed: false })
+    }
+    g.hand = g.hand.filter(isSpy)
+    g.phase = 'ATTACK'
+    const chosen = g.missionRow[0]
+    g.chosenMissionUid = chosen.uid
+    chosen.defeated = true // success -> no enemies remain in the slot
+    expect(g.missionDeck.length).toBeGreaterThan(0) // a mission exists to refill into
+
+    const s = apply(g, { type: 'AdvancePhase' })
+
+    // The enemy is back in circulation (a new garrison or the deck) at its printed Defense — not
+    // the mutated value it carried into the discard.
+    const found =
+      s.enemyDeck.find((e) => e.uid === modifiedUid) ??
+      s.enemyDiscard.find((e) => e.uid === modifiedUid) ??
+      s.missionRow.flatMap((m) => m.enemies).find((e) => e.uid === modifiedUid)
+    expect(found).toBeDefined()
+    expect(found!.defense).toBe(printed)
+  })
+})
+
 describe('all-Spy hand loss (RECOVER)', () => {
   it('loses when the new hand is all Spies', () => {
     const g = createGame({ seed: 1 })

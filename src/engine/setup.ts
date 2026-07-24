@@ -62,7 +62,7 @@ export function createGame(options: CreateGameOptions): GameState {
   const enemyInstances: EnemyInstance[] = []
   for (const t of enemyTypes) {
     t.defenseValues.forEach((d, i) => {
-      enemyInstances.push({ uid: `enemy-${t.id}-${i}`, typeId: t.id, defense: d, faceUp: false })
+      enemyInstances.push({ uid: `enemy-${t.id}-${i}`, typeId: t.id, defense: d, baseDefense: d, faceUp: false })
     })
   }
   const shuffledEnemies = shuffle(enemyInstances, rng)

@@ -338,7 +338,9 @@ function civilianTotal(draft: Draft<GameState>): number {
 /** Reshuffle the Enemy discard into a fresh Enemy deck when the deck is empty. */
 function refillEnemyDeckIfEmpty(draft: Draft<GameState>): void {
   if (draft.enemyDeck.length === 0 && draft.enemyDiscard.length > 0) {
-    const plain = draft.enemyDiscard.map((e) => ({ uid: e.uid, typeId: e.typeId, defense: e.defense, faceUp: false }))
+    // Restore printed Defense: any in-round modifier (Benigno/Engineer/Mayor's House) is dropped
+    // when the enemy reshuffles back into the deck.
+    const plain = draft.enemyDiscard.map((e) => ({ uid: e.uid, typeId: e.typeId, defense: e.baseDefense, baseDefense: e.baseDefense, faceUp: false }))
     const s = shuffle(plain, draft.rng)
     draft.rng = s.state
     draft.enemyDiscard.length = 0
