@@ -3,8 +3,9 @@
 
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
-import { actionLabel, missionOf, nameOfMaquis, maquisAttack, enemyOf, phaseBlurb } from './ui/format'
-import type { Action, GameState, MissionSlot } from './engine'
+import { Card } from './ui/Card'
+import { actionLabel, missionOf, phaseBlurb } from './ui/format'
+import type { Action, GameState } from './engine'
 
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed } = useGame()
@@ -52,7 +53,7 @@ export function App() {
 
       <section className="missions">
         {state.missionRow.map((slot) => (
-          <MissionCard key={slot.uid} slot={slot} state={state} />
+          <Card key={slot.uid} kind="mission" slot={slot} state={state} />
         ))}
       </section>
 
@@ -65,14 +66,7 @@ export function App() {
         <h3>Your hand</h3>
         <div className="cards">
           {state.hand.map((c) => (
-            <div key={c.uid} className={`card hand-card ${c.dataId === 'spy' ? 'spy' : ''}`}>
-              <div className="card-name">{nameOfMaquis(c.dataId)}</div>
-              {c.dataId !== 'spy' && (
-                <div className="card-sub">
-                  H {maquisAttack(c.dataId, 'hidden')} · R {maquisAttack(c.dataId, 'revealed')}
-                </div>
-              )}
-            </div>
+            <Card key={c.uid} kind="maquisHand" dataId={c.dataId} />
           ))}
           {state.hand.length === 0 && <span className="muted">empty</span>}
         </div>
@@ -143,47 +137,13 @@ function ActionGroup({
   )
 }
 
-function MissionCard({ slot, state }: { slot: MissionSlot; state: GameState }) {
-  const data = missionOf(slot.dataId)
-  const chosen = state.chosenMissionUid === slot.uid
-  const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
-  const cls = ['card', 'mission', chosen ? 'chosen' : '', slot.faceDown ? 'failed' : '', slot.defeated ? 'defeated' : '']
-    .filter(Boolean)
-    .join(' ')
-  return (
-    <div className={cls}>
-      <div className="card-head">
-        <span className="card-name">{data?.name ?? slot.dataId}</span>
-        <span className={`kw kw-${data?.keyword}`}>{data?.keyword}</span>
-      </div>
-      <div className="mission-stats">
-        <span title="Defense">🛡 {defense}</span>
-        <span title="Victory Points">★ {data?.victoryPoints}</span>
-        <span title="Garrison">☗ {data?.garrison}</span>
-      </div>
-      <p className="effect">{data?.effect}</p>
-      <div className="enemies">
-        {slot.enemies.map((e) => (
-          <span key={e.uid} className={`enemy ${e.faceUp ? '' : 'facedown'} kw-${enemyOf(e.typeId)?.keyword}`}>
-            {e.faceUp ? `${enemyOf(e.typeId)?.name} ${e.defense}` : '🂠'}
-          </span>
-        ))}
-        {slot.enemies.length === 0 && <span className="muted">clear</span>}
-      </div>
-    </div>
-  )
-}
-
 function Zone({ title, cards, side }: { title: string; cards: GameState['inPlay']; side: 'hidden' | 'revealed' }) {
   return (
     <div className="zone">
       <h4>{title}</h4>
       <div className="cards">
         {cards.map((m) => (
-          <div key={m.uid} className={`card played ${side}`}>
-            <div className="card-name">{nameOfMaquis(m.dataId)}</div>
-            <div className="card-sub">⚔ {maquisAttack(m.dataId, side)}</div>
-          </div>
+          <Card key={m.uid} kind="maquisPlayed" dataId={m.dataId} side={side} />
         ))}
         {cards.length === 0 && <span className="muted">—</span>}
       </div>

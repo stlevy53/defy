@@ -2,6 +2,7 @@
 // /data JSON (text-first). No rules here — pure formatting over GameState.
 
 import { maquis, missions, enemyTypes } from '../data'
+import type { ActionType } from '../types'
 import type { Action, EnemyInstance, GameState } from '../engine'
 
 const maquisName = new Map(maquis.map((m) => [m.id, m.name]))
@@ -18,6 +19,16 @@ export const enemyOf = (typeId: string) => enemyTypeById.get(typeId)
 /** Base attack a Maquis contributes for a given side (for hand/board display). */
 export function maquisAttack(dataId: string, side: 'hidden' | 'revealed'): number {
   return maquisCard.get(dataId)?.[side].attack ?? 0
+}
+
+/** The action type + text for a Maquis side, or null when the side shows an X (no action). */
+export function maquisSideAction(
+  dataId: string,
+  side: 'hidden' | 'revealed',
+): { type: ActionType; text: string } | null {
+  const s = maquisCard.get(dataId)?.[side]
+  if (!s?.action || !s.actionType) return null
+  return { type: s.actionType, text: s.action }
 }
 
 function findEnemy(state: GameState, uid: string): EnemyInstance | undefined {
