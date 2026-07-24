@@ -4,7 +4,8 @@
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
-import { actionLabel, missionOf, phaseBlurb } from './ui/format'
+import { actionLabel, missionOf, phaseGuide, ROUND_PHASES } from './ui/format'
+import type { RoundPhase } from './ui/format'
 import type { Action, GameState } from './engine'
 
 export function App() {
@@ -49,7 +50,7 @@ export function App() {
         </div>
       )}
 
-      <p className="blurb">{phaseBlurb[state.phase]}</p>
+      <PhaseGuide phase={state.phase} />
 
       <section className="missions">
         {state.missionRow.map((slot) => (
@@ -108,6 +109,48 @@ export function App() {
         </ol>
       </details>
     </div>
+  )
+}
+
+/** Breadcrumb of the four round phases with the current one highlighted, plus a what-to-do-now
+ *  message for that phase. Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. */
+function PhaseGuide({ phase }: { phase: GameState['phase'] }) {
+  const activeIndex = ROUND_PHASES.indexOf(phase as RoundPhase) // -1 at GAME_OVER
+  const guide = activeIndex >= 0 ? phaseGuide[phase as RoundPhase] : null
+  return (
+    <section className="phase-guide">
+      <ol className="breadcrumb">
+        {ROUND_PHASES.map((p, i) => {
+          const cls = [
+            'crumb',
+            i === activeIndex ? 'current' : '',
+            activeIndex >= 0 && i < activeIndex ? 'done' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+          return (
+            <li key={p} className={cls}>
+              <span className="crumb-num">{i + 1}</span>
+              <span className="crumb-label">{p}</span>
+            </li>
+          )
+        })}
+      </ol>
+      {guide && (
+        <div className="phase-message">
+          <div className="phase-goal">
+            <span className="phase-name">{phase}</span>
+            {guide.goal}
+            {guide.auto && <span className="phase-auto">automatic</span>}
+          </div>
+          <ol className="phase-steps">
+            {guide.steps.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </section>
   )
 }
 

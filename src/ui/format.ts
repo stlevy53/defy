@@ -93,11 +93,42 @@ export function actionLabel(state: GameState, action: Action): string {
   }
 }
 
-/** Short phase blurb for the header. */
-export const phaseBlurb: Record<GameState['phase'], string> = {
-  PLAN: 'Play Maquis, fire PLAN actions, then choose a Mission.',
-  ATTACK: 'Play out your hand, fire ATTACK actions, then spend Attack Strength.',
-  AFTERMATH: 'Outcome resolved. End the resistance, or press on.',
-  RECOVER: 'Recovering…',
-  GAME_OVER: 'The game is over.',
+/** The four phases of a round, in order — the steps shown in the breadcrumb. */
+export const ROUND_PHASES = ['PLAN', 'ATTACK', 'AFTERMATH', 'RECOVER'] as const
+export type RoundPhase = (typeof ROUND_PHASES)[number]
+
+/** New-player guidance for each phase: a one-line goal plus the concrete steps to take. */
+export const phaseGuide: Record<RoundPhase, { goal: string; steps: string[]; auto?: boolean }> = {
+  PLAN: {
+    goal: 'Set up your attack.',
+    steps: [
+      'Play Maquis from your hand — hidden (left) or revealed (right).',
+      'Optionally use PLAN card actions.',
+      'Choose one Mission to attack; its Enemies are revealed.',
+    ],
+  },
+  ATTACK: {
+    goal: 'Defeat the Mission and its Enemies.',
+    steps: [
+      'Play out the rest of your hand — this is mandatory.',
+      'Fire ATTACK card actions to raise Attack Strength or weaken Enemies.',
+      'Spend Attack Strength on targets (each costs its Defense) to defeat them.',
+    ],
+  },
+  AFTERMATH: {
+    goal: 'See the outcome, then decide.',
+    steps: [
+      'A defeated Mission scores and is replaced; a failure flips it (two failures loses).',
+      'Any Enemies still standing may cost you Civilians (5 lost loses).',
+      'End the resistance to score now, or continue to another round.',
+    ],
+  },
+  RECOVER: {
+    goal: 'Reset for the next round.',
+    auto: true,
+    steps: [
+      'Maquis in play are cleaned up automatically.',
+      'You draw a fresh hand of 5 from the Hidden deck.',
+    ],
+  },
 }
