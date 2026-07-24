@@ -71,10 +71,14 @@ export function legalActions(state: GameState): Action[] {
   if (state.phase === 'PLAN' || state.phase === 'ATTACK') {
     // Play any Maquis from hand, hidden or revealed. Spies are never playable.
     // In ATTACK this is the mandatory play-out: every remaining Maquis must be played.
+    const revealBlocked =
+      state.phase === 'ATTACK' &&
+      state.attackRevealLimit !== null &&
+      state.revealedInAttack >= state.attackRevealLimit
     for (const card of state.hand) {
       if (card.dataId === 'spy') continue
       actions.push({ type: 'PlayMaquis', uid: card.uid, side: 'hidden' })
-      actions.push({ type: 'PlayMaquis', uid: card.uid, side: 'revealed' })
+      if (!revealBlocked) actions.push({ type: 'PlayMaquis', uid: card.uid, side: 'revealed' })
     }
     // Fire an unused action matching the current phase on a Maquis already in play.
     // (PLAN/ATTACK actions fire in either phase; a card played in PLAN can still fire its
@@ -163,9 +167,18 @@ function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void
   if (idx === -1) throw new Error(`PlayMaquis: '${uid}' is not in hand`)
   const card = draft.hand[idx]
   if (card.dataId === 'spy') throw new Error('PlayMaquis: Spies are never playable')
+  if (
+    side === 'revealed' &&
+    draft.phase === 'ATTACK' &&
+    draft.attackRevealLimit !== null &&
+    draft.revealedInAttack >= draft.attackRevealLimit
+  ) {
+    throw new Error('PlayMaquis: this Mission limits revealing Maquis during ATTACK')
+  }
 
   draft.hand.splice(idx, 1)
   draft.inPlay.push({ uid: card.uid, dataId: card.dataId, side, actionUsed: false })
+  if (side === 'revealed' && draft.phase === 'ATTACK') draft.revealedInAttack += 1
 
   // Bank this Maquis's base Attack value (revealed or hidden). Action bonuses are added by
   // ATTACK-action effects when used (sub-slice 3); SpendAttackOn draws it down.
@@ -202,6 +215,8 @@ function applyChooseMission(draft: Draft<GameState>, uid: string): void {
 
   draft.chosenMissionUid = uid
   draft.missionDefenseOverride = null
+  draft.attackRevealLimit = null
+  draft.revealedInAttack = 0
   for (const enemy of slot.enemies) enemy.faceUp = true
 
   // ChooseMission ends PLAN and enters ATTACK. No player action is allowed between choosing the

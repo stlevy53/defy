@@ -316,6 +316,12 @@ const recruitAnyToBottom: EffectHandler = ({ state, responses }): Decision | voi
   }
 }
 
+/** "Ignore the effect on the Mission that you choose this round." (Pilar revealed) Sets a flag the
+ *  mission effect handlers check; reset in RECOVER. */
+const ignoreChosenMissionEffect: EffectHandler = ({ state }) => {
+  ;(state as Draft<GameState>).ignoreMissionEffect = true
+}
+
 // --- registry ---------------------------------------------------------------
 
 /** Every PLAN-usable Maquis effect implemented this slice, keyed by effect id. */
@@ -346,6 +352,8 @@ export const PLAN_EFFECTS: Record<string, EffectHandler> = {
 
   [maquisEffectId('antonio', 'revealed')]: recruitOneToHiddenTop,
   [maquisEffectId('ramona', 'hidden')]: recruitAnyToBottom,
+
+  [maquisEffectId('pilar', 'revealed')]: ignoreChosenMissionEffect,
 }
 
 /** Register every PLAN effect into the global effect registry. The app bootstrap (and tests

@@ -106,6 +106,13 @@ export interface GameState {
   /** Per-round override of the chosen Mission's Defense (e.g. Ricardo halves it). null = use the
    *  static value. Cleared at ChooseMission. */
   missionDefenseOverride: number | null
+  /** ATTACK-phase reveal limit from the chosen Mission's DEFEND effect (Train Depot). null =
+   *  unlimited; 0 = none; 1 = one. Cleared at ChooseMission. */
+  attackRevealLimit: number | null
+  /** Maquis revealed during the ATTACK phase this round (checked against attackRevealLimit). */
+  revealedInAttack: number
+  /** Set by Pilar (revealed): ignore the chosen Mission's effect this round. Reset in RECOVER. */
+  ignoreMissionEffect: boolean
   recoverDrawModifier: number
   failedMissions: number
 
