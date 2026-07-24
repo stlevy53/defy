@@ -216,8 +216,11 @@ describe('ChooseMission', () => {
     }
     assertConservation(next)
 
-    // ATTACK actions are the next slice; nothing offered yet.
-    expect(legalActions(next)).toHaveLength(0)
+    // Now in ATTACK: the remaining hand must be played out (attack resolution is a later
+    // sub-slice). Plays are offered; ChooseMission is not, and is rejected outside PLAN.
+    const nonSpy = next.hand.filter((c) => c.dataId !== 'spy')
+    expect(legalActions(next).filter((a) => a.type === 'PlayMaquis')).toHaveLength(nonSpy.length * 2)
+    expect(legalActions(next).some((a) => a.type === 'ChooseMission')).toBe(false)
     expect(() => applyAction(next, { type: 'ChooseMission', uid: slot.uid })).toThrow(
       /only legal during PLAN/,
     )

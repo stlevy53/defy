@@ -27,32 +27,40 @@ export function legalActions(state: GameState): Action[] {
 
   const actions: Action[] = []
 
-  if (state.phase === 'PLAN') {
+  if (state.phase === 'PLAN' || state.phase === 'ATTACK') {
     // Play any Maquis from hand, hidden or revealed. Spies are never playable.
+    // In ATTACK this is the mandatory play-out: every remaining Maquis must be played.
     for (const card of state.hand) {
       if (card.dataId === 'spy') continue
       actions.push({ type: 'PlayMaquis', uid: card.uid, side: 'hidden' })
       actions.push({ type: 'PlayMaquis', uid: card.uid, side: 'revealed' })
     }
-    // Fire an unused PLAN / PLAN-ATTACK action on a Maquis already in play.
+    // Fire an unused action matching the current phase on a Maquis already in play.
+    // (PLAN/ATTACK actions fire in either phase; a card played in PLAN can still fire its
+    // ATTACK-side action here.)
     for (const mip of state.inPlay) {
       if (mip.actionUsed) continue
       const side = maquisById.get(mip.dataId)?.[mip.side]
       if (
         side &&
-        actionFiresIn(side.actionType, 'PLAN') &&
+        actionFiresIn(side.actionType, state.phase) &&
         canFireEffect(maquisEffectId(mip.dataId, mip.side), state)
       ) {
         actions.push({ type: 'UseAction', uid: mip.uid })
       }
     }
+  }
+
+  if (state.phase === 'PLAN') {
     // Choose an available (face-up) mission — this ends PLAN.
     for (const slot of state.missionRow) {
       if (!slot.faceDown) actions.push({ type: 'ChooseMission', uid: slot.uid })
     }
   }
 
-  // ATTACK / AFTERMATH / RECOVER: next slice.
+  // ATTACK attack-resolution (SpendAttackOn) and the AFTERMATH/RECOVER transitions land in the
+  // next ATTACK sub-slices. Mandatory play-out: while a playable Maquis remains in hand no
+  // phase-advancing action is offered, so the only ATTACK moves are plays and card actions.
   return actions
 }
 
@@ -83,7 +91,9 @@ export function applyAction(state: GameState, action: Action): GameState {
 }
 
 function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void {
-  if (draft.phase !== 'PLAN') throw new Error('PlayMaquis: only legal during PLAN (this slice)')
+  if (draft.phase !== 'PLAN' && draft.phase !== 'ATTACK') {
+    throw new Error('PlayMaquis: only legal during PLAN or ATTACK')
+  }
   const idx = draft.hand.findIndex((c) => c.uid === uid)
   if (idx === -1) throw new Error(`PlayMaquis: '${uid}' is not in hand`)
   const card = draft.hand[idx]
@@ -93,11 +103,13 @@ function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void
   draft.inPlay.push({ uid: card.uid, dataId: card.dataId, side, actionUsed: false })
 
   const name = maquisById.get(card.dataId)?.name ?? card.dataId
-  draft.log.push(`PLAN: played ${name} ${side}`)
+  draft.log.push(`${draft.phase}: played ${name} ${side}`)
 }
 
 function applyUseAction(draft: Draft<GameState>, uid: string): void {
-  if (draft.phase !== 'PLAN') throw new Error('UseAction: only legal during PLAN (this slice)')
+  if (draft.phase !== 'PLAN' && draft.phase !== 'ATTACK') {
+    throw new Error('UseAction: only legal during PLAN or ATTACK')
+  }
   const mip = draft.inPlay.find((c) => c.uid === uid)
   if (!mip) throw new Error(`UseAction: '${uid}' is not in play`)
   if (mip.actionUsed) throw new Error(`UseAction: '${uid}' already used its action`)
@@ -110,7 +122,7 @@ function applyUseAction(draft: Draft<GameState>, uid: string): void {
   draft.effectQueue.push({ effectId: maquisEffectId(mip.dataId, mip.side), sourceUid: uid })
 
   const name = maquisById.get(mip.dataId)?.name ?? mip.dataId
-  draft.log.push(`PLAN: used ${name}'s ${side.actionType} action`)
+  draft.log.push(`${draft.phase}: used ${name}'s ${side.actionType} action`)
 }
 
 function applyChooseMission(draft: Draft<GameState>, uid: string): void {

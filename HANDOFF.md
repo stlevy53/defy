@@ -2,7 +2,7 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-Last updated at repo state: `main` @ `9a87467` (Phase 2 slice 3: PLAN card-action effects, in the working tree — not yet committed). Re-pin this hash after each user-side commit.
+Last updated at repo state: `main` @ `c01af42` (Phase 2 slice 3: PLAN card-action effects shipped). Re-pin this hash after each user-side commit.
 
 ---
 
@@ -31,7 +31,7 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (build = `ts
 
 - ✅ **Phase 1 — card data** → `/data` (see §5). Validated against rulebook.
 - ✅ **Phase 0 — scaffold** → Vite+React+TS, data loader, placeholder UI, test suite.
-- 🔜 **Phase 2 — rules engine** (in progress). Slice 1 (state + RNG + setup) done. Slice 2 (PLAN core: action/decision system, play-Maquis, choose-mission) done. Slice 3 (PLAN card-action effects) done. **Next: ATTACK slice.**
+- 🔜 **Phase 2 — rules engine** (in progress). Slice 1 (state + RNG + setup) done. Slice 2 (PLAN core: action/decision system, play-Maquis, choose-mission) done. Slice 3 (PLAN card-action effects) done. ATTACK slice underway: **sub-slice 1 (ATTACK entry + mandatory play-out) done**. **Next: ATTACK sub-slice 2 — attack resolution.**
 - ⬜ Phase 3 — playable prototype UI.
 - ⬜ Phase 4 — polish + desktop packaging.
 
@@ -71,18 +71,23 @@ Confirmed with the user that decisions 2 and 4 are the ones affecting gameplay f
 - `zones.ts` — `countCards` + `assertConservation` (24/6/32/8/10 + uid uniqueness), used after every action in tests.
 - `effects/registry.ts` — effect registry shape: `EffectHandler` = re-invoked resumable function receiving `{state (Immer draft), sourceUid, args, responses}`; returns a `Decision` to suspend or nothing when done. Id conventions `maquis:{id}:{side}` / `mission:{id}` / `enemy:{typeId}`. Unregistered effects are skipped with a `[stub]` log line (still used for not-yet-implemented mission/enemy effects).
 - `effects/plan.ts` — **all PLAN-usable Maquis card actions** (21 effect ids), replacing the `[stub]` path for those. Families: draw-from-Hidden; look-top-3-discard-reorder (Hidden and Enemy decks); spy-discard-draw / remove-spy-from-game; discard-a-Maquis-draw-2; Revealed-pile pick (→ hand or Hidden top); scout (flip all at a mission; flip-1-2-then-discard); Recruit-deck manipulation. Also exports `registerPlanEffects()`, `canFireEffect(effectId, state)` (precondition checks), and `PLAN_EFFECTS`. **Handler convention (critical):** stage-style — re-invoked from the top each resume, reads prior answers from `responses`, uses `responses.length` as the stage counter, and **mutates state only in the terminal invocation** (pre-terminal stages only return a Decision) so re-runs are idempotent. Registration is **explicit, not on import** — the app bootstrap and any test exercising real effects must call `registerPlanEffects()` (keeps the driver's `[stub]` path testable in isolation).
-- `actions.ts` — `applyAction` (PlayMaquis / UseAction / ChooseMission, Immer-based, throws on illegal), `legalActions` (PLAN only; spies excluded; both sides offered per hand card; unused PLAN / PLAN-ATTACK actions **gated by `canFireEffect` so an action is only offered when it can be performed in full**; face-up missions), `resolveDecision` (validates response against pendingDecision, appends to the suspended task's `args.responses`, re-enters driver), and the **effect-queue driver** (suspended task stays at queue head).
+- `actions.ts` — `applyAction` (PlayMaquis / UseAction / ChooseMission, Immer-based, throws on illegal; PlayMaquis/UseAction legal in **PLAN or ATTACK**), `legalActions` (PLAN and ATTACK: both sides offered per non-spy hand card; unused actions matching the current phase, **gated by `canFireEffect`**; ChooseMission only in PLAN; ATTACK enforces mandatory play-out — no advance while a playable Maquis remains; `SpendAttackOn`/`AdvancePhase` still pending), `resolveDecision` (validates response against pendingDecision, appends to the suspended task's `args.responses`, re-enters driver), and the **effect-queue driver** (suspended task stays at queue head).
 - `zones.ts` — now also counts the `removedFromGame` zone so remove-Spy-from-game effects keep conservation balanced.
 - `types.ts` / `setup.ts` — `GameState` gained `removedFromGame: CardInstance[]` (cards destroyed by effects, e.g. Manuela/Manuel removing a Spy); initialised `[]`.
 - `index.ts` — public API: all of the above + `registerEffect`/`unregisterEffect` + `registerPlanEffects`/`canFireEffect`/`PLAN_EFFECTS`.
-- Tests: `setup.test.ts` (9) + `plan.test.ts` (8, unchanged — still validates the driver's `[stub]` path) + `effects/plan.test.ts` (16: one per effect family + precondition gating, conservation after every action). **37/37 pass**; `tsc --noEmit` and `npm run build` clean.
+- Tests: `setup.test.ts` (9) + `plan.test.ts` (8, unchanged — still validates the driver's `[stub]` path) + `effects/plan.test.ts` (16: one per effect family + precondition gating) + `attack.test.ts` (5: ATTACK entry, play-out, Spy exclusion, mandatory-play-out gating, PLAN-played card firing its ATTACK action) — conservation asserted after every action. **42/42 pass**; `tsc --noEmit` and `npm run build` clean.
 
 ## 8. Immediate next task — ATTACK slice
 
-PLAN card-action effects are done (§7, `effects/plan.ts`). Next is the **ATTACK phase**:
-- **Relax the PLAN-only guard.** `applyPlayMaquis` and `applyUseAction` currently throw outside PLAN; ATTACK must allow playing the remaining hand and firing ATTACK / PLAN-ATTACK actions. Extend `legalActions` to emit ATTACK-phase actions (mandatory play-out incl. cards drawn mid-round; still exclude Spies) and the new `SpendAttackOn` action.
+The ATTACK slice is being built in sub-slices.
+
+**Sub-slice 1 — DONE (ATTACK entry + mandatory play-out).** `applyPlayMaquis`/`applyUseAction` now run in PLAN *or* ATTACK; `legalActions` offers PlayMaquis (both sides) and phase-matched UseAction in ATTACK (a card played in PLAN can fire its ATTACK-side action here), still excluding Spies. No phase-advancing action is offered while a playable Maquis remains, enforcing the mandatory play-out. Tests: `attack.test.ts` (5). ATTACK card effects are still `[stub]`.
+
+**Sub-slice 2 — NEXT (attack resolution):**
+- Add DEFEND resolution at ATTACK start; compute **Attack Strength** (revealed vs hidden base values + ATTACK-action modifiers); implement the **`SpendAttackOn`** action (spend target-by-target, cost = target Defense); DEFEAT effects fire on defeat; undefeated enemies resolve SURVIVE then discard. Build `effectiveDefense(target, state)` respecting the FAQ ordering trap (Engineer +1 **before** Benigno −1 → DEFEND modifiers before ATTACK-action modifiers). Then the AFTERMATH transition + `AdvancePhase`.
+
+**Sub-slice 3 — after that:**
 - **Implement the ATTACK-side Maquis effects** (registry ids `maquis:{id}:{side}`) still on `[stub]`: attack-value modifiers (Soledad/Abel +1 per revealed; Marcelino +1 per other; Abel +1 per civilian), enemy discard/move (Anastasio, Emilio·r, Adela, Paquita·r, Consuelo·r, Adolfo·h, Soledad/Adela counter-guerrilla sweep), and defense modifiers (Benigno −1, Ricardo half-mission). Draw-on-ATTACK sides (Nicolás·h, Ricardo·h, Marcelino draws are PLAN) reuse the `drawHidden` helper in `effects/plan.ts` — consider promoting shared helpers to `effects/shared.ts`.
-- **Attack resolution:** DEFEND effects trigger at ATTACK start; sum Attack Strength (revealed vs hidden values, plus action modifiers); `SpendAttackOn` spends target-by-target (cost = target Defense); DEFEAT effects fire on defeat; undefeated enemies resolve SURVIVE then discard. Build `effectiveDefense(target, state)` respecting the FAQ ordering trap (Engineer +1 **before** Benigno −1 → DEFEND modifiers before ATTACK-action modifiers).
 - **Now unblocked — implement the two deferred PLAN effects:** `maquis:emilio:hidden` (copy a hidden Maquis's action; phase must match — cleaner now that ATTACK actions exist) and `maquis:pilar:revealed` (ignore the chosen Mission's effect — needs the mission-effect system this slice introduces; add an `ignoreMissionEffect` flag consumed during ATTACK).
 - Per-effect unit tests as in `effects/plan.test.ts`; assert conservation after every action.
 
