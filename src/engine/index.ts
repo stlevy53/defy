@@ -1,4 +1,5 @@
-// Phase 2: the headless rules engine will live here.
-// It will import card data from '../data' and expose game state + phase logic
-// (Plan / Attack / Aftermath / Recover), validated against the rulebook's worked example.
-export {}
+// Public engine API. Grows each slice; currently exposes setup + types.
+export { createGame } from './setup'
+export type { CreateGameOptions } from './setup'
+export { shuffle, rngNext } from './rng'
+export type * from './types'
