@@ -36,8 +36,10 @@ function chosenSlot(state: GameState): MissionSlot | undefined {
  *  and ATTACK-action effects are applied in trigger order (DEFEND at ATTACK start, then actions),
  *  so the FAQ ordering (Engineer +1 before Benigno −1) falls out of execution order and this
  *  function just reads the current value. */
-function effectiveDefense(slot: MissionSlot, targetUid: string): number | null {
-  if (targetUid === slot.uid) return missionById.get(slot.dataId)?.defense ?? null
+function effectiveDefense(state: GameState, slot: MissionSlot, targetUid: string): number | null {
+  if (targetUid === slot.uid) {
+    return state.missionDefenseOverride ?? missionById.get(slot.dataId)?.defense ?? null
+  }
   const enemy = slot.enemies.find((e) => e.uid === targetUid)
   return enemy ? enemy.defense : null
 }
@@ -87,7 +89,7 @@ export function legalActions(state: GameState): Action[] {
     const slot = chosenSlot(state)
     if (slot) {
       if (!slot.defeated) {
-        const def = effectiveDefense(slot, slot.uid)
+        const def = effectiveDefense(state, slot, slot.uid)
         if (def !== null && state.attackStrength >= def) {
           actions.push({ type: 'SpendAttackOn', targetUid: slot.uid })
         }
@@ -184,6 +186,7 @@ function applyChooseMission(draft: Draft<GameState>, uid: string): void {
   if (slot.faceDown) throw new Error(`ChooseMission: '${uid}' is failed (face-down)`)
 
   draft.chosenMissionUid = uid
+  draft.missionDefenseOverride = null
   for (const enemy of slot.enemies) enemy.faceUp = true
 
   // ChooseMission ends PLAN and enters ATTACK. No player action is allowed between choosing the
@@ -213,7 +216,7 @@ function applySpendAttackOn(draft: Draft<GameState>, targetUid: string): void {
   const slot = chosenSlot(draft)
   if (!slot) throw new Error('SpendAttackOn: no chosen mission')
 
-  const def = effectiveDefense(slot, targetUid)
+  const def = effectiveDefense(draft, slot, targetUid)
   if (def === null) throw new Error(`SpendAttackOn: '${targetUid}' is not a valid target`)
   if (targetUid === slot.uid && slot.defeated) {
     throw new Error('SpendAttackOn: the mission is already defeated')

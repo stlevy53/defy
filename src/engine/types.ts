@@ -103,6 +103,9 @@ export interface GameState {
   /** Attack points banked this round (base attack of played Maquis + ATTACK-action bonuses),
    *  spent down by SpendAttackOn. Reset each round in RECOVER. */
   attackStrength: number
+  /** Per-round override of the chosen Mission's Defense (e.g. Ricardo halves it). null = use the
+   *  static value. Cleared at ChooseMission. */
+  missionDefenseOverride: number | null
   recoverDrawModifier: number
   failedMissions: number
 

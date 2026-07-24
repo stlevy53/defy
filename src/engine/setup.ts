@@ -102,6 +102,7 @@ export function createGame(options: CreateGameOptions): GameState {
     removedFromGame: [],
     chosenMissionUid: null,
     attackStrength: 0,
+    missionDefenseOverride: null,
     recoverDrawModifier: 0,
     failedMissions: 0,
     pendingDecision: null,
