@@ -1,0 +1,5 @@
+{
+  "_comment": "Resist! Spy cards. 6 total, all identical. Dead-weight cards with no stats or actions. 3 are shuffled into the Hidden deck at setup; the other 3 sit aside and enter play via effects. Drawing a hand that is ALL Spies during Recover loses the game. Transcribed from Spy Cards.jpg.",
+  "count": 6,
+  "card": { "id": "spy", "name": "Spy", "attack": 0, "actionType": null, "action": null }
+}

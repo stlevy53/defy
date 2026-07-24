@@ -1,0 +1,150 @@
+{
+  "_comment": "Resist! Maquis cards. Each card has a Hidden side and a Revealed side. 'attack' is the sunburst attack value. 'action' is null when the card shows an X (no action). actionType is one of PLAN, ATTACK, PLAN/ATTACK. Transcribed from Maquis Cards.jpg.",
+  "count": 24,
+  "cards": [
+    {
+      "id": "celia",
+      "name": "Celia",
+      "hidden":   { "attack": 1, "actionType": "PLAN/ATTACK", "action": "Discard one Spy from your hand to the Hidden discard pile then draw a card from the Hidden deck." },
+      "revealed": { "attack": 0, "actionType": "PLAN/ATTACK", "action": "Choose a card from the Revealed pile and place it in your hand." }
+    },
+    {
+      "id": "pilar",
+      "name": "Pilar",
+      "hidden":   { "attack": 0, "actionType": "PLAN", "action": "Flip one or two face-down Enemies at one Mission face-up then discard one of them." },
+      "revealed": { "attack": 2, "actionType": "PLAN", "action": "Ignore the effect on the Mission that you choose this round." }
+    },
+    {
+      "id": "soledad",
+      "name": "Soledad",
+      "hidden":   { "attack": 1, "actionType": "ATTACK", "action": "+1 attack value for each revealed Maquis in play." },
+      "revealed": { "attack": 1, "actionType": "ATTACK", "action": "Discard all Counter-guerrillas from this Mission." }
+    },
+    {
+      "id": "emilio",
+      "name": "Emilio",
+      "hidden":   { "attack": 0, "actionType": "PLAN/ATTACK", "action": "Copy the hidden action on a hidden Maquis in play. The phase on the chosen action must match the current phase." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "Discard one Enemy from this Mission." }
+    },
+    {
+      "id": "abel",
+      "name": "Abel",
+      "hidden":   { "attack": 1, "actionType": "ATTACK", "action": "+1 attack value for each revealed Maquis in play." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "+1 attack value for each civilian in the Graveyard." }
+    },
+    {
+      "id": "domingo",
+      "name": "Domingo",
+      "hidden":   { "attack": 1, "actionType": "PLAN", "action": "Flip one or two face-down Enemies at one Mission face-up then discard one of them." },
+      "revealed": { "attack": 3, "actionType": "PLAN/ATTACK", "action": "Look at the top three cards of the Hidden deck. Discard any of them and put the rest back in any order." }
+    },
+    {
+      "id": "manuela",
+      "name": "Manuela",
+      "hidden":   { "attack": 1, "actionType": "PLAN", "action": "Draw one card from the Hidden deck." },
+      "revealed": { "attack": 2, "actionType": "PLAN/ATTACK", "action": "Remove one Spy in your hand from the game." }
+    },
+    {
+      "id": "anastasio",
+      "name": "Anastasio",
+      "hidden":   { "attack": 0, "actionType": "ATTACK", "action": "Discard one Enemy from this Mission." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "Discard one Enemy from this Mission." }
+    },
+    {
+      "id": "nicolas",
+      "name": "Nicolás",
+      "hidden":   { "attack": 1, "actionType": "ATTACK", "action": "Draw one card from the Hidden deck." },
+      "revealed": { "attack": 4, "actionType": null, "action": null }
+    },
+    {
+      "id": "roberto",
+      "name": "Roberto",
+      "hidden":   { "attack": 2, "actionType": "PLAN", "action": "Look at the top three cards of the Enemy deck. Discard any of them and put the rest back in any order." },
+      "revealed": { "attack": 4, "actionType": null, "action": null }
+    },
+    {
+      "id": "benigno",
+      "name": "Benigno",
+      "hidden":   { "attack": 2, "actionType": null, "action": null },
+      "revealed": { "attack": 0, "actionType": "ATTACK", "action": "Reduce by 1 the defense value of each Enemy with a defense value of 2 or more." }
+    },
+    {
+      "id": "carlos",
+      "name": "Carlos",
+      "hidden":   { "attack": 2, "actionType": null, "action": null },
+      "revealed": { "attack": 2, "actionType": "PLAN", "action": "Draw two cards from the Hidden deck." }
+    },
+    {
+      "id": "adolfo",
+      "name": "Adolfo",
+      "hidden":   { "attack": 0, "actionType": "ATTACK", "action": "Discard one Enemy from this Mission." },
+      "revealed": { "attack": 3, "actionType": "PLAN", "action": "Flip all Enemies at one Mission face-up." }
+    },
+    {
+      "id": "marcelino",
+      "name": "Marcelino",
+      "hidden":   { "attack": 1, "actionType": "PLAN", "action": "Draw one card from the Hidden deck." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "+1 attack value for each other Maquis in play (hidden or revealed)." }
+    },
+    {
+      "id": "adela",
+      "name": "Adela",
+      "hidden":   { "attack": 1, "actionType": "ATTACK", "action": "Move an Enemy from this Mission to a different Mission." },
+      "revealed": { "attack": 1, "actionType": "ATTACK", "action": "Discard all Counter-guerrillas from this Mission." }
+    },
+    {
+      "id": "sagrario",
+      "name": "Sagrario",
+      "hidden":   { "attack": 2, "actionType": null, "action": null },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "Draw two cards from the Hidden deck." }
+    },
+    {
+      "id": "consuelo",
+      "name": "Consuelo",
+      "hidden":   { "attack": 2, "actionType": null, "action": null },
+      "revealed": { "attack": 0, "actionType": "ATTACK", "action": "Discard one Enemy from this Mission and gain attack value equal to its defense value." }
+    },
+    {
+      "id": "antonio",
+      "name": "Antonio",
+      "hidden":   { "attack": 1, "actionType": "PLAN/ATTACK", "action": "Discard one Spy from your hand to the Hidden discard pile then draw a card from the Hidden deck." },
+      "revealed": { "attack": 2, "actionType": "PLAN/ATTACK", "action": "Look at the top three cards of the Recruit deck. Put one on top of the Hidden deck and the rest back on the Recruit deck in any order." }
+    },
+    {
+      "id": "jacinto",
+      "name": "Jacinto",
+      "hidden":   { "attack": 1, "actionType": "PLAN/ATTACK", "action": "Reveal the top three cards of the Hidden deck. Discard any of them and put the rest back in any order." },
+      "revealed": { "attack": 3, "actionType": "PLAN/ATTACK", "action": "Discard a Maquis card from your hand and then draw two cards from the Hidden deck." }
+    },
+    {
+      "id": "manuel",
+      "name": "Manuel",
+      "hidden":   { "attack": 1, "actionType": "PLAN", "action": "Flip all Enemies at one Mission face-up." },
+      "revealed": { "attack": 2, "actionType": "PLAN/ATTACK", "action": "Remove one Spy in your hand from the game." }
+    },
+    {
+      "id": "ramona",
+      "name": "Ramona",
+      "hidden":   { "attack": 2, "actionType": "PLAN", "action": "Look at the top three cards of the Recruit deck. Put any of them on the bottom and the rest back on top in any order." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "Draw a card from the Recruit deck and put it in your hand." }
+    },
+    {
+      "id": "paquita",
+      "name": "Paquita",
+      "hidden":   { "attack": 1, "actionType": "PLAN", "action": "Flip all Enemies at one Mission face-up." },
+      "revealed": { "attack": 0, "actionType": "ATTACK", "action": "Discard two Enemies from this Mission." }
+    },
+    {
+      "id": "ricardo",
+      "name": "Ricardo",
+      "hidden":   { "attack": 1, "actionType": "ATTACK", "action": "Draw one card from the Hidden deck." },
+      "revealed": { "attack": 2, "actionType": "ATTACK", "action": "Half the defense value of this Mission (rounded up)." }
+    },
+    {
+      "id": "juana",
+      "name": "Juana",
+      "hidden":   { "attack": 1, "actionType": "PLAN/ATTACK", "action": "Look at the top three cards of the Hidden deck. Discard any of them and put the rest back in any order." },
+      "revealed": { "attack": 2, "actionType": "PLAN/ATTACK", "action": "Choose a card from Revealed pile and place it on top of the Hidden deck." }
+    }
+  ]
+}

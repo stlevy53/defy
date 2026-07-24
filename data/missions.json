@@ -1,0 +1,29 @@
+{
+  "_comment": "Resist! Mission cards. 20 total: Era 1 (8), Era 2 (6), Era 3 (6). Icon mapping (confirmed visually, verify vs rulebook component key): 'garrison' = card-stack icon = number of Enemy cards dealt to this Mission; 'defense' = numbered shield icon = Attack Strength required to defeat the Mission; 'victoryPoints' = laurel icon. 'keyword' is DEFEAT or DEFEND (skull marker = DEFEAT, shield marker = DEFEND). Transcribed from Era 1/2/3 Cards.jpg.",
+  "count": 20,
+  "eraNames": { "1": "Re-invasion of Spain", "2": "Splintering of the Maquis", "3": "Hunting the Maquis" },
+  "cards": [
+    { "id": "barracks",        "name": "Destroy the Barracks",                     "era": 1, "garrison": 3, "defense": 4, "victoryPoints": 2, "keyword": "DEFEAT", "effect": "Add a face-down Enemy to all other Missions." },
+    { "id": "border",          "name": "Cross the Border",                         "era": 1, "garrison": 3, "defense": 3, "victoryPoints": 1, "keyword": "DEFEAT", "effect": "Draw one fewer card from the Hidden deck during the Recover phase." },
+    { "id": "mountain_pass",   "name": "Recon the Mountain Pass",                  "era": 1, "garrison": 4, "defense": 5, "victoryPoints": 1, "keyword": "DEFEAT", "effect": "Flip all Enemies at one Mission face-up." },
+    { "id": "valley",          "name": "Attack Francoists in the Valley",          "era": 1, "garrison": 5, "defense": 6, "victoryPoints": 2, "keyword": "DEFEAT", "effect": "Draw one extra card from the Hidden deck during the Recover phase." },
+    { "id": "railroad_bridge", "name": "Destroy the Railroad Bridge",              "era": 1, "garrison": 3, "defense": 8, "victoryPoints": 2, "keyword": "DEFEAT", "effect": "Discard one Enemy (face-up or face-down) from another Mission." },
+    { "id": "officer",         "name": "Intercept the Commanding Officer",         "era": 1, "garrison": 4, "defense": 6, "victoryPoints": 1, "keyword": "DEFEAT", "effect": "Remove one Spy in your hand from the game." },
+    { "id": "villa",           "name": "Attack the Commander's Villa",             "era": 1, "garrison": 4, "defense": 5, "victoryPoints": 3, "keyword": "DEFEAT", "effect": "For each undefeated Enemy at this Mission, draw a card from the Civilian deck and place it face-up in the Graveyard." },
+    { "id": "bunker",          "name": "Destroy the Bunker",                       "era": 1, "garrison": 2, "defense": 5, "victoryPoints": 1, "keyword": "DEFEND", "effect": "When this Mission is chosen, immediately choose a Maquis card (not a Spy) from your hand and discard it." },
+
+    { "id": "supply_convoy",   "name": "Destroy the Supply Convoy",                "era": 2, "garrison": 5, "defense": 7, "victoryPoints": 2, "keyword": "DEFEAT", "effect": "Discard one Enemy (face-up or face-down) from each other Mission." },
+    { "id": "prison",          "name": "Jailbreak at the Prison",                  "era": 2, "garrison": 5, "defense": 8, "victoryPoints": 3, "keyword": "DEFEAT", "effect": "Draw a card from the Recruit deck and place it in the Hidden discard pile." },
+    { "id": "cg_headquarters", "name": "Attack the Counter-Guerrilla Headquarters","era": 2, "garrison": 4, "defense": 7, "victoryPoints": 4, "keyword": "DEFEAT", "effect": "For each undefeated Enemy at this Mission, draw a card from the Civilian deck and place it face-up in the Graveyard." },
+    { "id": "caves",           "name": "Retreat to the Caves",                     "era": 2, "garrison": 4, "defense": 6, "victoryPoints": 4, "keyword": "DEFEAT", "effect": "Add a new Spy card to the Hidden discard pile." },
+    { "id": "farmhouse_e2",    "name": "Take Back the Farmhouse",                  "era": 2, "garrison": 4, "defense": 8, "victoryPoints": 2, "keyword": "DEFEAT", "effect": "Choose a card from the Revealed pile and place it in the Hidden discard pile." },
+    { "id": "train_depot_e2",  "name": "Steal Supplies from the Train Depot",      "era": 2, "garrison": 3, "defense": 4, "victoryPoints": 3, "keyword": "DEFEND", "effect": "Maquis cannot be revealed during the ATTACK phase of the round when this Mission is chosen." },
+
+    { "id": "farmhouse_e3",    "name": "Defend the Farmhouse",                     "era": 3, "garrison": 4, "defense": 7, "victoryPoints": 4, "keyword": "DEFEAT", "effect": "Shuffle all hidden Maquis in play and remove one from the game." },
+    { "id": "train_depot_e3",  "name": "Destroy the Train Depot",                  "era": 3, "garrison": 4, "defense": 8, "victoryPoints": 4, "keyword": "DEFEND", "effect": "Only one Maquis may be revealed during the ATTACK phase of the round when this Mission is chosen." },
+    { "id": "crossroads",      "name": "Defend the Crossroads",                    "era": 3, "garrison": 4, "defense": 6, "victoryPoints": 3, "keyword": "DEFEND", "effect": "When this Mission is chosen, immediately discard all Maquis in play." },
+    { "id": "police_station",  "name": "Attack the Police Station",                "era": 3, "garrison": 4, "defense": 8, "victoryPoints": 5, "keyword": "DEFEAT", "effect": "Look at the top three cards of the Hidden deck. Put any Spies back on top and discard the rest." },
+    { "id": "mayor_house",     "name": "Attack the Mayor's House",                 "era": 3, "garrison": 5, "defense": 5, "victoryPoints": 4, "keyword": "DEFEND", "effect": "All Enemies at this Mission gain 1 Defense." },
+    { "id": "franco_hq",       "name": "Attack Franco's Headquarters",             "era": 3, "garrison": 5, "defense": 7, "victoryPoints": 5, "keyword": "DEFEAT", "effect": "For each undefeated Enemy at this Mission, draw a card from the Civilian deck and place it face-up in the Graveyard." }
+  ]
+}

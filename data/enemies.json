@@ -1,0 +1,70 @@
+{
+  "_comment": "Resist! Enemy cards. 32 total across 8 types. Each physical card has a Defense value (shield, top-left) and a timing keyword (DEFEND/DEFEAT/SURVIVE) with an effect. Within a type the effect text is identical; only the Defense value varies. 'defenseValues' lists the Defense of every physical copy (its length = the count of that type). Transcribed from Enemy Cards.jpg (3 rows: 11 + 11 + 10 = 32, matching the rulebook's stated 32 — the handoff's '33' was a miscount).",
+  "count": 32,
+  "types": [
+    {
+      "id": "counter_guerrilla",
+      "name": "Counter-Guerrilla",
+      "keyword": "SURVIVE",
+      "effect": "Draw a card from the Civilian deck and place it face-up in the Graveyard.",
+      "count": 8,
+      "defenseValues": [1, 1, 1, 1, 2, 2, 3, 3]
+    },
+    {
+      "id": "military",
+      "name": "Military",
+      "keyword": "SURVIVE",
+      "effect": "Shuffle all hidden Maquis in play and remove one from the game.",
+      "count": 4,
+      "defenseValues": [1, 1, 2, 3]
+    },
+    {
+      "id": "guard",
+      "name": "Guard",
+      "keyword": "DEFEND",
+      "effect": "You must defeat all Guards before you defeat the Mission.",
+      "count": 5,
+      "defenseValues": [1, 1, 2, 2, 3]
+    },
+    {
+      "id": "grunt",
+      "name": "Grunt",
+      "keyword": "DEFEND",
+      "effect": "You must defeat all Grunts before you defeat other Enemies.",
+      "count": 5,
+      "defenseValues": [1, 1, 1, 2, 2]
+    },
+    {
+      "id": "spy_master",
+      "name": "Spy Master",
+      "keyword": "SURVIVE",
+      "effect": "Add a new Spy card to the Hidden discard pile.",
+      "count": 4,
+      "defenseValues": [1, 1, 2, 3]
+    },
+    {
+      "id": "jailor",
+      "name": "Jailor",
+      "keyword": "DEFEAT",
+      "effect": "Draw a card from the Recruit deck and place it in the Hidden discard pile.",
+      "count": 2,
+      "defenseValues": [2, 3]
+    },
+    {
+      "id": "engineer",
+      "name": "Engineer",
+      "keyword": "DEFEND",
+      "effect": "Increase the Defense value of all Enemies other than Engineers on this Mission by 1.",
+      "count": 2,
+      "defenseValues": [2, 3]
+    },
+    {
+      "id": "radio_operator",
+      "name": "Radio Operator",
+      "keyword": "SURVIVE",
+      "effect": "Place a face-down Enemy on all other Missions.",
+      "count": 2,
+      "defenseValues": [2, 3]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "_comment": "Resist! core constants used by the rules engine. Sourced from the official rulebook (Resist_Rulebook_English_v4). The win table was re-read directly from the rulebook scoring table to confirm exact thresholds.",
+  "setup": {
+    "maquisDeckSplit": { "hiddenDeck": 12, "recruitDeck": 12, "totalMaquis": 24 },
+    "spiesShuffledIntoHidden": 3,
+    "spiesAsideForEffects": 3,
+    "missionsRemovedAtSetup": { "era1": 4, "era2": 3, "era3": 3 },
+    "initialAvailableMissions": 4,
+    "missionDeckAfterSetup": 6,
+    "missionsInPlayPerGame": 10,
+    "startingHandSize": 5,
+    "handSizePerRound": 5
+  },
+  "lossConditions": [
+    "Fail 2 Missions.",
+    "5 or more civilians in the Graveyard (sum of civilian counts).",
+    "Draw a hand of all Spies during the Recover phase."
+  ],
+  "scoring": {
+    "_comment": "Only scored if the player voluntarily ends the resistance while undefeated. Sum Victory Points on the Defeated Missions pile. Epic Victory is achieved by defeating ALL 10 missions in play (a completion condition, distinct from a point threshold).",
+    "tiers": [
+      { "result": "Epic Victory",  "condition": "Defeat all 10 missions" },
+      { "result": "Major Victory", "minPoints": 22 },
+      { "result": "Victory",       "minPoints": 19, "maxPoints": 21 },
+      { "result": "Minor Victory", "minPoints": 15, "maxPoints": 18 },
+      { "result": "Draw",          "minPoints": 1,  "maxPoints": 14 }
+    ]
+  },
+  "effectTiming": {
+    "DEFEND": "Triggers at the start of the Attack phase while the card is still undefeated/in play at the chosen Mission.",
+    "DEFEAT": "Triggers only if the card is defeated in combat (not if merely discarded/removed by another effect).",
+    "SURVIVE": "Triggers if the card is NOT defeated by the end of the Attack phase.",
+    "simultaneous": "If multiple triggers occur at once, the player chooses resolution order."
+  }
+}

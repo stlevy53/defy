@@ -1,0 +1,14 @@
+{
+  "_comment": "Resist! Civilian cards. 8 total. Each shows a civilian count; when drawn (e.g. via a Mission/Enemy effect) it goes face-up to the Graveyard. Reaching 5+ total civilians in the Graveyard loses the game. The special '0 Civilians' card is shuffled back in and NOT replaced when drawn. Transcribed from Civilian Cards.jpg.",
+  "count": 8,
+  "cards": [
+    { "id": "civ_0",  "civilians": 0, "special": true,  "effect": "When you draw this card, immediately shuffle it back into the Civilian deck. Do not draw another card to replace it." },
+    { "id": "civ_1a", "civilians": 1, "special": false, "effect": null },
+    { "id": "civ_1b", "civilians": 1, "special": false, "effect": null },
+    { "id": "civ_1c", "civilians": 1, "special": false, "effect": null },
+    { "id": "civ_2a", "civilians": 2, "special": false, "effect": null },
+    { "id": "civ_2b", "civilians": 2, "special": false, "effect": null },
+    { "id": "civ_2c", "civilians": 2, "special": false, "effect": null },
+    { "id": "civ_3",  "civilians": 3, "special": false, "effect": null }
+  ]
+}
