@@ -1,17 +1,109 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  color: #1a1a1a;
-  background: #f5f2ea;
+  --bg: #14110e;
+  --panel: #201a15;
+  --panel-2: #2a221b;
+  --ink: #efe6d6;
+  --muted: #9a8f7d;
+  --line: #3a3025;
+  --accent: #c8452f; /* republican red */
+  --accent-2: #d99a24; /* ochre */
+  --win: #6ea84f;
+  --warn: #d0873a;
+  --loss: #b23b2c;
+  font-family: 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--bg);
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: radial-gradient(1200px 600px at 50% -10%, #241d16, var(--bg)); }
+#root { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
 
-#root {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem;
+h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
+.muted { color: var(--muted); }
+.seed { font-size: 0.72rem; }
+
+/* Top bar */
+.topbar {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 0.6rem 0.9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
 }
+.title strong { color: var(--accent); letter-spacing: 0.12em; font-size: 1.15rem; }
+.status { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+.controls { display: flex; gap: 0.4rem; align-items: center; }
+.pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.8rem; }
+.pill.accent { color: #fff; background: var(--accent); border-color: var(--accent); }
+.pill.warn { color: #fff; background: var(--warn); border-color: var(--warn); }
+.pill.phase-ATTACK { color: #fff; background: #7a2b20; border-color: #7a2b20; }
+.pill.phase-PLAN { color: #14110e; background: var(--accent-2); border-color: var(--accent-2); }
+
+.blurb { color: var(--muted); margin: 0.6rem 0.2rem; font-style: italic; }
+
+/* Banner */
+.banner {
+  display: flex; align-items: center; gap: 1rem; margin: 0.75rem 0; padding: 0.8rem 1rem;
+  border-radius: 10px; font-weight: 700; font-size: 1.05rem;
+}
+.banner.win { background: #24371c; border: 1px solid var(--win); color: #cfe6bd; }
+.banner.loss { background: #38201c; border: 1px solid var(--loss); color: #efc3bb; }
+.banner .confirm { margin-left: auto; }
+
+/* Missions */
+.missions { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.7rem;
+}
+.card.mission.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.card.mission.failed { opacity: 0.5; }
+.card.mission.defeated { border-color: var(--win); }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
+.card-name { font-weight: 700; color: var(--ink); }
+.kw { font-size: 0.6rem; letter-spacing: 0.08em; padding: 0.05rem 0.35rem; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+.kw-DEFEND { color: #9fbede; border-color: #385065; }
+.kw-DEFEAT { color: #e0a58f; border-color: #6b3a2c; }
+.kw-SURVIVE { color: #cdb98f; border-color: #6b5b32; }
+.mission-stats { display: flex; gap: 0.7rem; font-size: 0.82rem; margin: 0.3rem 0; color: var(--accent-2); }
+.effect { font-size: 0.76rem; color: var(--muted); margin: 0.3rem 0; min-height: 2.2em; }
+.enemies { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.enemy { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); }
+.enemy.facedown { color: var(--muted); }
+
+/* Play area + hand */
+.play-area { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.6rem 0; }
+.zone, .hand, .control-deck { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; }
+.hand, .control-deck { margin: 0.6rem 0; }
+.cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
+.card.played, .hand-card { min-width: 88px; padding: 0.45rem 0.55rem; }
+.card.played.revealed { border-color: var(--accent); }
+.hand-card.spy { opacity: 0.55; border-style: dashed; }
+.card-sub { font-size: 0.72rem; color: var(--muted); }
+
+/* Actions / decisions */
+.actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.action-group h4 { margin-bottom: 0.2rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+button { font: inherit; cursor: pointer; }
+.chip {
+  background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 7px; padding: 0.35rem 0.6rem; font-size: 0.82rem;
+}
+.chip:hover { border-color: var(--accent-2); }
+.chip.action { background: #2c241c; }
+.chip.chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 0.4rem 0.8rem; font-weight: 600; }
+.confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 0.3rem 0.6rem; }
+.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+.row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
+
+.decision-prompt { font-weight: 600; margin: 0 0 0.4rem; }
+.order-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: var(--accent-2); }
+.error { background: #38201c; border: 1px solid var(--loss); color: #efc3bb; padding: 0.4rem 0.6rem; border-radius: 7px; margin-bottom: 0.5rem; font-size: 0.85rem; }
+
+/* Piles + log */
+.piles { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; margin: 0.6rem 0; font-size: 0.76rem; color: var(--muted); }
+.pile b { color: var(--ink); }
+.log { margin-top: 0.6rem; color: var(--muted); font-size: 0.8rem; }
+.log summary { cursor: pointer; }
+.log ol { margin: 0.4rem 0; padding-left: 1.2rem; }
