@@ -22,6 +22,8 @@ export interface MaquisInPlay {
   uid: string
   dataId: string
   side: Side
+  /** Card actions fire at most once per round; set when UseAction resolves. */
+  actionUsed: boolean
 }
 
 /** An available-mission slot. A failed mission stays in its slot flipped face-down. */

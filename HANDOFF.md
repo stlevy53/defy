@@ -2,7 +2,7 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-Last updated at repo state: `main` @ `7af508c` (Phase 2 slice 1 shipped + docs). Re-pin this hash after each user-side commit.
+Last updated at repo state: `main` @ `8fa28ce` + uncommitted Phase 2 slice 2 (PLAN core). Re-pin this hash after each user-side commit.
 
 ---
 
@@ -31,7 +31,7 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (build = `ts
 
 - ✅ **Phase 1 — card data** → `/data` (see §5). Validated against rulebook.
 - ✅ **Phase 0 — scaffold** → Vite+React+TS, data loader, placeholder UI, test suite.
-- 🔜 **Phase 2 — rules engine** (in progress). Slice 1 (state + RNG + setup) done. **Next: PLAN phase.**
+- 🔜 **Phase 2 — rules engine** (in progress). Slice 1 (state + RNG + setup) done. Slice 2 (PLAN core: action/decision system, play-Maquis, choose-mission) done. **Next: card-action effects (PLAN), then ATTACK.**
 - ⬜ Phase 3 — playable prototype UI.
 - ⬜ Phase 4 — polish + desktop packaging.
 
@@ -65,22 +65,24 @@ Confirmed with the user that decisions 2 and 4 are the ones affecting gameplay f
 
 ## 7. Engine built so far (`src/engine/`)
 
-- `types.ts` — full `GameState` model + `CardInstance`, `EnemyInstance`, `MissionSlot`, `MaquisInPlay`, and the `Action`/`Decision`/`EffectTask` scaffolding (latter three not yet exercised).
+- `types.ts` — full `GameState` model + `CardInstance`, `EnemyInstance`, `MissionSlot`, `MaquisInPlay` (now has `actionUsed`), `Action`/`Decision`/`EffectTask`.
 - `rng.ts` — `rngNext(state)` (mulberry32) and `shuffle(arr, state)` → `{result, state}`. RNG state is a serializable integer.
 - `setup.ts` — `createGame({ seed })`: 24 Maquis split 12/12; 3 Spies shuffled into Hidden deck (3 aside → `spiesAvailable`); missions culled 4/3/3 with 4 Era-1 available and a 6-card Era-2-over-Era-3 deck; 32 Enemies dealt by Garrison; Civilians shuffled; starting hand of 5.
-- `index.ts` — public API (currently `createGame`, `shuffle`, `rngNext`, types).
-- `setup.test.ts` — 9 tests: legal initial zone sizes, garrison dealing, **card conservation** (24/6/32/8/10), determinism. **13/13 tests pass** overall (with the 4 data tests).
+- `zones.ts` — `countCards` + `assertConservation` (24/6/32/8/10 + uid uniqueness), used after every action in tests.
+- `effects/registry.ts` — effect registry shape: `EffectHandler` = re-invoked resumable function receiving `{state (Immer draft), sourceUid, args, responses}`; returns a `Decision` to suspend or nothing when done. Id conventions `maquis:{id}:{side}` / `mission:{id}` / `enemy:{typeId}`. **No real card effects registered yet** — unregistered effects are skipped with a `[stub]` log line.
+- `actions.ts` — `applyAction` (PlayMaquis / UseAction / ChooseMission, Immer-based, throws on illegal), `legalActions` (PLAN only; spies excluded; both sides offered per hand card; unused PLAN / PLAN-ATTACK actions; face-up missions), `resolveDecision` (validates response against pendingDecision, appends to the suspended task's `args.responses`, re-enters driver), and the **effect-queue driver** (suspended task stays at queue head).
+- `index.ts` — public API: all of the above + `registerEffect`/`unregisterEffect`.
+- Tests: `setup.test.ts` (9) + `plan.test.ts` (8: legalActions shape, both play sides, spy/illegal rejection, UseAction once-only + stub path, full suspend/resume round-trip with a test-registered handler, ChooseMission flip + phase transition, scripted deterministic sequence with conservation after every action). **21/21 pass**; `tsc --noEmit` and `npm run build` clean. **Immer added to dependencies.**
 
-## 8. Immediate next task — PLAN phase slice
+## 8. Immediate next task — PLAN card-action effects slice
 
-Implement the first real player interactivity:
-- `applyAction` / `legalActions` / `resolveDecision` entry points + the **effect-queue driver loop**.
-- Play Maquis from hand as **hidden** (left zone, recycles) or **revealed** (right zone, discarded end of round), moving them to `inPlay`.
-- Fire **PLAN** / **PLAN-ATTACK** actions when played; this introduces the **first `pendingDecision`-driven effects** (e.g. "draw a card", "look at the top three of the Hidden deck, discard any, reorder").
-- **Choose the mission** to attack (`ChooseMission`), flipping its face-down enemies face-up.
-- Add Immer here. Write a scripted PLAN-phase test.
+The decision system is proven (a test handler suspends/resumes correctly). Next:
+- Implement the **real PLAN and PLAN/ATTACK Maquis card actions** in `effects/` (registry ids `maquis:{id}:{side}`), replacing the `[stub]` path. Per approved decision 2, implement all of them — this slice covers the PLAN-usable ones; ATTACK-only actions can land with the ATTACK slice where they're testable.
+- Typical shapes: draw a card; look at top N of Hidden deck, discard any, reorder (uses `selectCards` + `orderCards` decisions); add a Spy (no-op at `spiesAvailable` 0); recruit interactions.
+- Per-effect unit tests (`effects/*.test.ts` pattern from ENGINE_DESIGN §7).
+- After that: **ATTACK slice** (DEFEND resolution, mandatory play-out incl. mid-round-drawn cards, attack strength, `SpendAttackOn`, `effectiveDefense` ordering).
 
-**Open question posed to the user (unanswered):** do the full PLAN slice including card-action effects, or a tighter first pass (play-Maquis + mission-choice mechanics only, card-action effects in a follow-up slice)? Decide/confirm at the start of the next chat.
+Note: `applyUseAction`/`applyPlayMaquis` currently hard-restrict to PLAN phase — relax when ATTACK lands.
 
 ### Reference: round structure (from rulebook)
 - **PLAN**: play Maquis (choose hidden/revealed), optional PLAN actions; choose one available Mission; reveal its face-down enemies.

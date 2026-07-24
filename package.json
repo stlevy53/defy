@@ -13,6 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "immer": "^11.1.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
