@@ -14,12 +14,14 @@ export interface CardCounts {
 
 /** Tally every card family across all zones. */
 export function countCards(state: GameState): CardCounts {
+  const removed = state.removedFromGame ?? []
   const personCards = [
     ...state.hand,
     ...state.hidden.deck,
     ...state.hidden.discard,
     ...state.recruit.deck,
     ...state.recruit.revealed,
+    ...removed,
   ]
   const spiesInZones = personCards.filter((c) => c.dataId === 'spy').length
   const maquisInZones = personCards.length - spiesInZones + state.inPlay.length
@@ -52,6 +54,7 @@ export function assertConservation(state: GameState): void {
     ...state.hidden.discard.map((c) => c.uid),
     ...state.recruit.deck.map((c) => c.uid),
     ...state.recruit.revealed.map((c) => c.uid),
+    ...(state.removedFromGame ?? []).map((c) => c.uid),
     ...state.inPlay.map((c) => c.uid),
     ...state.missionRow.map((s) => s.uid),
     ...state.missionDeck.map((c) => c.uid),

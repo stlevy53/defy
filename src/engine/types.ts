@@ -92,6 +92,10 @@ export interface GameState {
 
   spiesAvailable: number
 
+  /** Cards removed from the game entirely (e.g. a Spy removed by Manuela/Manuel).
+   *  Never returns to play; tracked only so the conservation invariant still balances. */
+  removedFromGame: CardInstance[]
+
   chosenMissionUid: string | null
   recoverDrawModifier: number
   failedMissions: number

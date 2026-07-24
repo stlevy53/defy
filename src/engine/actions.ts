@@ -6,6 +6,7 @@ import { produce, type Draft } from 'immer'
 import { maquis as maquisData } from '../data'
 import type { Action, Decision, DecisionResponse, GameState, Side } from './types'
 import { effectRegistry, maquisEffectId } from './effects/registry'
+import { canFireEffect } from './effects/plan'
 import type { MaquisCard } from '../types'
 
 const maquisById = new Map<string, MaquisCard>(maquisData.map((m) => [m.id, m]))
@@ -37,7 +38,11 @@ export function legalActions(state: GameState): Action[] {
     for (const mip of state.inPlay) {
       if (mip.actionUsed) continue
       const side = maquisById.get(mip.dataId)?.[mip.side]
-      if (side && actionFiresIn(side.actionType, 'PLAN')) {
+      if (
+        side &&
+        actionFiresIn(side.actionType, 'PLAN') &&
+        canFireEffect(maquisEffectId(mip.dataId, mip.side), state)
+      ) {
         actions.push({ type: 'UseAction', uid: mip.uid })
       }
     }

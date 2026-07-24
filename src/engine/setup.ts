@@ -99,6 +99,7 @@ export function createGame(options: CreateGameOptions): GameState {
     civilianDeck,
     graveyard: [],
     spiesAvailable,
+    removedFromGame: [],
     chosenMissionUid: null,
     recoverDrawModifier: 0,
     failedMissions: 0,

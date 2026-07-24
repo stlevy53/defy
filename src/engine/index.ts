@@ -13,4 +13,5 @@ export {
   enemyEffectId,
 } from './effects/registry'
 export type { EffectContext, EffectHandler } from './effects/registry'
+export { registerPlanEffects, canFireEffect, PLAN_EFFECTS } from './effects/plan'
 export type * from './types'
