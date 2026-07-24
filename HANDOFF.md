@@ -2,7 +2,7 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-Last updated at repo state: `main` @ `5d82403` (Phase 2 slice 1 shipped).
+Last updated at repo state: `main` @ `7af508c` (Phase 2 slice 1 shipped + docs). Re-pin this hash after each user-side commit.
 
 ---
 
@@ -56,7 +56,7 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 
 **§9 decisions — ALL APPROVED by the user:**
 1. Use **Immer** for immutable updates in handlers. *(Not yet added to package.json — add when the effect system lands.)*
-2. **Implement all** 24 Maquis + 20 mission + 8 enemy effects up front (no stubs).
+2. **Implement all** 24 Maquis + 20 mission + 8 enemy-type effects up front (no stubs).
 3. **State-history stack** for undo (v1).
 4. **Cover the rulebook FAQ edge cases** in v1 (reshuffle-on-empty; "discard" ≠ "defeat"; mid-round-drawn cards must be played that round).
 5. **Expose the RNG seed** in `createGame`.
@@ -87,7 +87,15 @@ Implement the first real player interactivity:
 - **ATTACK**: resolve DEFEND effects; play all remaining Maquis (mandatory), firing ATTACK actions; sum Attack Strength and spend target-by-target (defeat cost = target Defense); DEFEAT effects fire on defeat; undefeated enemies resolve SURVIVE then discard.
 - **AFTERMATH**: civilian loss if Graveyard ≥ 5; mission outcome (refill on success; flip face-down + failed-count on failure; 2nd failure = loss); choose End Resistance or Continue.
 - **RECOVER**: cleanup (revealed→revealed pile; hidden+spies→hidden discard); draw new hand of 5 (apply draw modifiers; reshuffle discard if needed); all-Spy hand = loss.
-- **Loss**: fail 2 missions, 5+ civilians dead, or all-Spy hand. **Win** (only if you voluntarily end undefeated): sum VP → tier table.
+- **Loss**: fail 2 missions, 5+ civilians dead, or all-Spy hand. **Win/score** (whenever you end the resistance undefeated — by choice, or forced when no Available Missions remain): sum VP → tier table.
+
+### Rules-fidelity traps (verified against rulebook; full list in `RESIST_PC_PORT_PLAN.md` §5)
+- FAQ ruling: **Engineer's +1 applies before Benigno's −1** — DEFEND modifiers before ATTACK-action modifiers in `effectiveDefense`.
+- DEFEND effects split into **one-shot triggers** (Bunker) vs **round-long constraints** (Train Depot, Grunt/Guard order rules) — constraints feed `legalActions`.
+- Win table starts at 1 VP; **0 VP is unmapped** — decide (proposed: Draw) and record in `rules.json`.
+- "Add a new Spy" effects **no-op when `spiesAvailable` is 0**; `recoverDrawModifier` (Valley/Border) applies to that round's Recover only, then resets.
+- Spies are never playable; `legalActions` must exclude them from the mandatory play-out.
+- **Draft-variant setup is designed but not implemented** (`createGame` has no `draft` option yet) — scheduled as a Phase 2 slice after the decision system exists, since drafting is interactive.
 
 ## 9. Working style notes
 

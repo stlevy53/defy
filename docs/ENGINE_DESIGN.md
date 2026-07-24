@@ -72,6 +72,9 @@ Card conservation is an invariant: every instance created at setup lives in exac
 
 ```ts
 createGame(options: { seed: number; draft?: boolean }): GameState
+// NOTE: `draft` is not yet implemented (setup.ts is standard setup only). Drafting is
+// interactive (choose 1 of 2, twelve times), so it depends on the pendingDecision system —
+// scheduled as its own Phase 2 slice after the decision loop exists.
 legalActions(state: GameState): Action[]              // what the UI may offer now
 applyAction(state: GameState, action: Action): GameState   // may set pendingDecision
 resolveDecision(state: GameState, response: DecisionResponse): GameState
@@ -97,6 +100,8 @@ A handler receives an `EffectContext` (the draft state + the source instance + r
 
 This keeps everything pure and serializable (the queue is plain data; a task references a handler by id + saved args, not a closure). It also gives correct ordering for simultaneous triggers by letting the player order the queued tasks.
 
+**Triggers vs. constraints.** Not every effect is a queueable one-shot. Some DEFEND effects are round-long *constraints* (Train Depot: "Maquis cannot be revealed during ATTACK"; Grunt/Guard: defeat-order restrictions). The registry supports both shapes: `trigger` handlers run through the queue; `constraint` entries are declarative facts that `legalActions` and `SpendAttackOn` validation consult while the source card is active. "When this Mission is chosen, immediately…" effects (Bunker, Crossroads) fire at `ChooseMission`; the engine allows no action between `ChooseMission` and DEFEND resolution, so this is equivalent to start-of-ATTACK — but the sequencing must enforce that.
+
 `Decision` shape (unified so the UI renders one component):
 
 ```ts
@@ -121,7 +126,9 @@ State machine `PLAN → ATTACK → AFTERMATH → RECOVER → (loop)`, each with 
 ## 6. Calculations, RNG, undo
 
 - **Attack Strength** is computed when entering the Defeat-Targets step: base sum of played Maquis side-attack + aggregate modifiers evaluated against the *then-current* board (Soledad/Abel "+1 per…", Marcelino "+1 per other Maquis"). Computed fresh so dynamic counts are correct.
-- **Effective defense** of a target = base ± active modifiers, layered by a single `effectiveDefense(target, state)` (Engineer +1 to others here, Mayor's House +1, Benigno −1 for ≥2, Ricardo halves mission defense round-up). One function, so timing/order is centralized.
+- **Effective defense** of a target = base ± active modifiers, layered by a single `effectiveDefense(target, state)` (Engineer +1 to others here, Mayor's House +1, Benigno −1 for ≥2, Ricardo halves mission defense round-up). One function, so timing/order is centralized. **Application order is a rulebook FAQ ruling and is player-visible: DEFEND-sourced modifiers (Engineer, Mayor's House) apply before ATTACK-action modifiers (Benigno, Ricardo).** (A 1-defense enemy under Engineer+Benigno ends at 1, not 2.)
+- **Scoring edge:** the rulebook win table starts at 1 VP ("1–14 Draw"); 0 VP is unmapped. Engine decision (proposed: treat 0 as Draw) — record the ruling in `rules.json` when implemented. Scoring applies whenever the game ends undefeated, including the forced end when no Available Missions remain.
+- **Supply caps & resets:** "Add a new Spy" effects no-op when `spiesAvailable` is 0 (only 6 physical spies exist). `recoverDrawModifier` (Valley +1 / Border −1, DEFEAT effects) applies only to that round's Recover draw, then resets to 0.
 - **RNG**: `mulberry32` seeded integer in state; `shuffle` consumes it. Deterministic and serializable.
 - **Undo/serialization**: `GameState` is JSON. History = stack of prior states (simplest) or an action log to replay. Undo pops to the last player-decision boundary.
 

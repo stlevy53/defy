@@ -30,9 +30,9 @@ npm run build    # typecheck + production build
 
 1. ✅ **Phase 1** — card data to JSON
 2. ✅ **Phase 0** — project scaffold (Vite + React + TypeScript)
-3. **Phase 2** — headless rules engine (validated against the rulebook's worked example)
-3. **Phase 3** — playable prototype UI
-4. **Phase 4** — polish & desktop packaging (Tauri)
+3. 🔨 **Phase 2** — headless rules engine (validated against the rulebook's worked example) — slice 1 (state + RNG + setup) done
+4. **Phase 3** — playable prototype UI
+5. **Phase 4** — polish & desktop packaging (Tauri)
 
 ## Credits
 
