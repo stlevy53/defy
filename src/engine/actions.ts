@@ -5,14 +5,18 @@
 // queues them at the right trigger points.
 
 import { produce, type Draft } from 'immer'
-import { maquis as maquisData, missions as missionsData } from '../data'
-import type { Action, Decision, DecisionResponse, GameState, MissionSlot, Side } from './types'
+import { maquis as maquisData, missions as missionsData, civilians as civiliansData } from '../data'
+import { shuffle } from './rng'
+import type { Action, Decision, DecisionResponse, GameState, MissionSlot } from './types'
+import type { Side } from './types'
 import { effectRegistry, maquisEffectId, missionEffectId, enemyEffectId } from './effects/registry'
 import { canFireEffect } from './effects/preconditions'
+import { drawHidden } from './effects/plan'
 import type { MaquisCard, MissionCard } from '../types'
 
 const maquisById = new Map<string, MaquisCard>(maquisData.map((m) => [m.id, m]))
 const missionById = new Map<string, MissionCard>(missionsData.map((m) => [m.id, m]))
+const civiliansById = new Map<string, number>(civiliansData.map((c) => [c.id, c.civilians]))
 
 /** True if this side's card action may fire during the given phase. */
 function actionFiresIn(actionType: string | null, phase: GameState['phase']): boolean {
@@ -123,7 +127,14 @@ export function legalActions(state: GameState): Action[] {
     actions.push({ type: 'AdvancePhase' })
   }
 
-  // AFTERMATH / RECOVER: later sub-slices.
+  if (state.phase === 'AFTERMATH') {
+    // AFTERMATH's automatic steps (civilian loss, mission outcome) have already resolved on entry.
+    // The remaining choice is whether to end the resistance or press on.
+    actions.push({ type: 'EndResistance' })
+    if (state.missionRow.some((s) => !s.faceDown)) actions.push({ type: 'Continue' })
+  }
+
+  // RECOVER is resolved automatically inside Continue; GAME_OVER offers nothing.
   return actions
 }
 
@@ -152,10 +163,19 @@ export function applyAction(state: GameState, action: Action): GameState {
       case 'AdvancePhase':
         applyAdvancePhase(draft)
         break
-      default:
-        throw new Error(`action not implemented in this slice: ${action.type}`)
+      case 'EndResistance':
+        applyEndResistance(draft)
+        break
+      case 'Continue':
+        applyContinue(draft)
+        break
+      default: {
+        const _exhaustive: never = action
+        throw new Error(`unknown action: ${JSON.stringify(_exhaustive)}`)
+      }
     }
     runEffectQueue(draft)
+    settleAutomaticPhases(draft)
   })
 }
 
@@ -308,6 +328,140 @@ function applyAdvancePhase(draft: Draft<GameState>): void {
   draft.log.push('ATTACK: resolved undefeated enemies; -> AFTERMATH')
 }
 
+// --- AFTERMATH & RECOVER ----------------------------------------------------
+
+/** Total civilians in the Graveyard (sum of each card's civilian count). */
+function civilianTotal(draft: Draft<GameState>): number {
+  return draft.graveyard.reduce((n, c) => n + (civiliansById.get(c.dataId) ?? 0), 0)
+}
+
+/** Reshuffle the Enemy discard into a fresh Enemy deck when the deck is empty. */
+function refillEnemyDeckIfEmpty(draft: Draft<GameState>): void {
+  if (draft.enemyDeck.length === 0 && draft.enemyDiscard.length > 0) {
+    const plain = draft.enemyDiscard.map((e) => ({ uid: e.uid, typeId: e.typeId, defense: e.defense, faceUp: false }))
+    const s = shuffle(plain, draft.rng)
+    draft.rng = s.state
+    draft.enemyDiscard.length = 0
+    draft.enemyDeck.push(...s.result)
+  }
+}
+
+/**
+ * Runs automatic phase work once the effect queue has drained. Currently: the AFTERMATH steps
+ * (civilian-loss check + mission outcome), which never suspend, so they resolve immediately when
+ * the phase becomes AFTERMATH. The only remaining AFTERMATH choice (End vs Continue) is a player
+ * action, so this leaves the phase in AFTERMATH afterwards — and the next action moves out of it,
+ * so this runs exactly once per round.
+ */
+function settleAutomaticPhases(draft: Draft<GameState>): void {
+  if (draft.result !== null || draft.pendingDecision !== null) return
+  if (draft.phase === 'AFTERMATH') resolveAftermath(draft)
+}
+
+function resolveAftermath(draft: Draft<GameState>): void {
+  // A) Civilian loss.
+  if (civilianTotal(draft) >= 5) {
+    draft.result = { outcome: 'loss', reason: 'civilians' }
+    draft.phase = 'GAME_OVER'
+    draft.log.push('AFTERMATH: 5+ civilians lost — the resistance is crushed')
+    return
+  }
+
+  // B) Mission outcome for the chosen slot.
+  const idx = draft.missionRow.findIndex((s) => s.uid === draft.chosenMissionUid)
+  if (idx !== -1) {
+    const slot = draft.missionRow[idx]
+    if (slot.defeated) {
+      // SUCCESS: bank the mission's VP, refill the row from the Mission deck (or shrink it).
+      draft.defeatedMissions.push({ uid: slot.uid, dataId: slot.dataId })
+      if (draft.missionDeck.length > 0) {
+        const next = draft.missionDeck.shift()!
+        const garrison = missionById.get(next.dataId)?.garrison ?? 0
+        const enemies: GameState['enemyDeck'] = []
+        for (let i = 0; i < garrison; i++) {
+          if (draft.enemyDeck.length === 0) refillEnemyDeckIfEmpty(draft)
+          if (draft.enemyDeck.length === 0) break
+          const e = draft.enemyDeck.shift()!
+          e.faceUp = false
+          enemies.push(e)
+        }
+        draft.missionRow[idx] = { uid: next.uid, dataId: next.dataId, faceDown: false, defeated: false, enemies }
+      } else {
+        draft.missionRow.splice(idx, 1) // no refill available — the row shrinks
+      }
+      draft.log.push(`AFTERMATH: mission ${slot.dataId} succeeded`)
+    } else {
+      // FAILURE: the mission flips face-down in its slot; two failures loses the game.
+      slot.faceDown = true
+      draft.failedMissions += 1
+      draft.log.push(`AFTERMATH: mission ${slot.dataId} failed (${draft.failedMissions})`)
+      if (draft.failedMissions >= 2) {
+        draft.result = { outcome: 'loss', reason: 'missions' }
+        draft.phase = 'GAME_OVER'
+      }
+    }
+  }
+}
+
+/** Win-table tiers (mirrors data/rules.json). 0 VP is unmapped in the rulebook → treated as Draw. */
+function scoreTier(points: number, defeatedCount: number): string {
+  if (defeatedCount >= 10) return 'Epic Victory'
+  if (points >= 22) return 'Major Victory'
+  if (points >= 19) return 'Victory'
+  if (points >= 15) return 'Minor Victory'
+  return 'Draw'
+}
+
+function applyEndResistance(draft: Draft<GameState>): void {
+  if (draft.phase !== 'AFTERMATH') throw new Error('EndResistance: only legal in AFTERMATH')
+  const points = draft.defeatedMissions.reduce((n, m) => n + (missionById.get(m.dataId)?.victoryPoints ?? 0), 0)
+  const tier = scoreTier(points, draft.defeatedMissions.length)
+  draft.result = { outcome: 'win', tier, points }
+  draft.phase = 'GAME_OVER'
+  draft.log.push(`END: ${tier} (${points} VP)`)
+}
+
+function applyContinue(draft: Draft<GameState>): void {
+  if (draft.phase !== 'AFTERMATH') throw new Error('Continue: only legal in AFTERMATH')
+  if (!draft.missionRow.some((s) => !s.faceDown)) {
+    throw new Error('Continue: no Available Missions remain — you must end the resistance')
+  }
+
+  draft.phase = 'RECOVER'
+  // Cleanup: revealed Maquis -> Revealed pile; hidden Maquis + any hand Spies -> Hidden discard.
+  for (const m of draft.inPlay) {
+    if (m.side === 'revealed') draft.recruit.revealed.push({ uid: m.uid, dataId: m.dataId })
+    else draft.hidden.discard.push({ uid: m.uid, dataId: m.dataId })
+  }
+  draft.inPlay = []
+  for (const c of draft.hand) draft.hidden.discard.push({ uid: c.uid, dataId: c.dataId }) // Spies only, per play-out
+  draft.hand = []
+
+  // Draw the new hand, applying (then clearing) the Recover draw modifier.
+  drawHidden(draft, Math.max(0, 5 + draft.recoverDrawModifier))
+
+  // Reset per-round scratch.
+  draft.attackStrength = 0
+  draft.missionDefenseOverride = null
+  draft.attackRevealLimit = null
+  draft.revealedInAttack = 0
+  draft.ignoreMissionEffect = false
+  draft.recoverDrawModifier = 0
+  draft.chosenMissionUid = null
+
+  // All-Spy hand is a loss.
+  if (draft.hand.length > 0 && draft.hand.every((c) => c.dataId === 'spy')) {
+    draft.result = { outcome: 'loss', reason: 'spies' }
+    draft.phase = 'GAME_OVER'
+    draft.log.push('RECOVER: drew an all-Spy hand — the resistance collapses')
+    return
+  }
+
+  draft.phase = 'PLAN'
+  draft.round += 1
+  draft.log.push(`RECOVER: cleaned up and drew a new hand; -> PLAN (round ${draft.round})`)
+}
+
 // --- Effect-queue driver ----------------------------------------------------
 
 /**
@@ -402,5 +556,6 @@ export function resolveDecision(state: GameState, response: DecisionResponse): G
     task.args.responses = responses
 
     runEffectQueue(draft)
+    settleAutomaticPhases(draft)
   })
 }

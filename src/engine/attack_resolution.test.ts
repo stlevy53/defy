@@ -169,7 +169,7 @@ describe('AdvancePhase (ATTACK -> AFTERMATH)', () => {
     expect(chosen(s).enemies).toHaveLength(0)
     for (const uid of undefeated) expect(s.enemyDiscard.map((e) => e.uid)).toContain(uid)
     expect(s.enemyDiscard.length).toBe(discardBefore + undefeated.length)
-    // no further actions until the AFTERMATH sub-slice
-    expect(legalActions(s)).toHaveLength(0)
+    // AFTERMATH offers the End-vs-Continue choice (its automatic steps have already resolved).
+    expect(legalActions(s).some((a) => a.type === 'EndResistance')).toBe(true)
   })
 })
