@@ -73,7 +73,7 @@ export function createGame(options: CreateGameOptions): GameState {
     const mission = missions.find((m) => m.id === mi.dataId)!
     const dealt = enemyPool.slice(0, mission.garrison)
     enemyPool = enemyPool.slice(mission.garrison)
-    return { uid: mi.uid, dataId: mi.dataId, faceDown: false, enemies: dealt }
+    return { uid: mi.uid, dataId: mi.dataId, faceDown: false, defeated: false, enemies: dealt }
   })
   const enemyDeck = enemyPool
 
@@ -101,6 +101,7 @@ export function createGame(options: CreateGameOptions): GameState {
     spiesAvailable,
     removedFromGame: [],
     chosenMissionUid: null,
+    attackStrength: 0,
     recoverDrawModifier: 0,
     failedMissions: 0,
     pendingDecision: null,

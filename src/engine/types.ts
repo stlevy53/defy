@@ -31,6 +31,9 @@ export interface MissionSlot {
   uid: string
   dataId: string
   faceDown: boolean
+  /** Set when the mission is defeated as a target during ATTACK. The physical move to the
+   *  Defeated Missions pile (and slot refill) happens in AFTERMATH. */
+  defeated: boolean
   enemies: EnemyInstance[]
 }
 
@@ -97,6 +100,9 @@ export interface GameState {
   removedFromGame: CardInstance[]
 
   chosenMissionUid: string | null
+  /** Attack points banked this round (base attack of played Maquis + ATTACK-action bonuses),
+   *  spent down by SpendAttackOn. Reset each round in RECOVER. */
+  attackStrength: number
   recoverDrawModifier: number
   failedMissions: number
 

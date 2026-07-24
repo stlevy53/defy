@@ -1,21 +1,45 @@
 // applyAction / legalActions / resolveDecision + the effect-queue driver.
-// This slice covers the PLAN phase: playing Maquis, using their (stubbed) card
-// actions, and choosing a mission. ATTACK onward lands in the next slice.
+// Covers PLAN (play Maquis, card actions, choose mission) and ATTACK (mandatory play-out,
+// attack resolution: DEFEND queue, Attack Strength, SpendAttackOn, DEFEAT/SURVIVE, advance).
+// Mission/enemy effect handlers are still `[stub]` (sub-slice 3); the resolution *framework*
+// queues them at the right trigger points.
 
 import { produce, type Draft } from 'immer'
-import { maquis as maquisData } from '../data'
-import type { Action, Decision, DecisionResponse, GameState, Side } from './types'
-import { effectRegistry, maquisEffectId } from './effects/registry'
+import { maquis as maquisData, missions as missionsData } from '../data'
+import type { Action, Decision, DecisionResponse, GameState, MissionSlot, Side } from './types'
+import { effectRegistry, maquisEffectId, missionEffectId, enemyEffectId } from './effects/registry'
 import { canFireEffect } from './effects/plan'
-import type { MaquisCard } from '../types'
+import type { MaquisCard, MissionCard } from '../types'
 
 const maquisById = new Map<string, MaquisCard>(maquisData.map((m) => [m.id, m]))
+const missionById = new Map<string, MissionCard>(missionsData.map((m) => [m.id, m]))
 
 /** True if this side's card action may fire during the given phase. */
 function actionFiresIn(actionType: string | null, phase: GameState['phase']): boolean {
   if (actionType === null) return false
   if (actionType === 'PLAN/ATTACK') return phase === 'PLAN' || phase === 'ATTACK'
   return actionType === phase
+}
+
+/** The mandatory play-out is complete once no playable (non-Spy) Maquis remain in hand. */
+function playoutComplete(state: GameState): boolean {
+  return !state.hand.some((c) => c.dataId !== 'spy')
+}
+
+/** The chosen Mission's slot, or undefined if none is chosen / it has left the row. */
+function chosenSlot(state: GameState): MissionSlot | undefined {
+  if (state.chosenMissionUid === null) return undefined
+  return state.missionRow.find((s) => s.uid === state.chosenMissionUid)
+}
+
+/** Current Defense of a target (Mission or Enemy). Enemy/mission defense mutations from DEFEND
+ *  and ATTACK-action effects are applied in trigger order (DEFEND at ATTACK start, then actions),
+ *  so the FAQ ordering (Engineer +1 before Benigno −1) falls out of execution order and this
+ *  function just reads the current value. */
+function effectiveDefense(slot: MissionSlot, targetUid: string): number | null {
+  if (targetUid === slot.uid) return missionById.get(slot.dataId)?.defense ?? null
+  const enemy = slot.enemies.find((e) => e.uid === targetUid)
+  return enemy ? enemy.defense : null
 }
 
 // --- legalActions -----------------------------------------------------------
@@ -58,9 +82,27 @@ export function legalActions(state: GameState): Action[] {
     }
   }
 
-  // ATTACK attack-resolution (SpendAttackOn) and the AFTERMATH/RECOVER transitions land in the
-  // next ATTACK sub-slices. Mandatory play-out: while a playable Maquis remains in hand no
-  // phase-advancing action is offered, so the only ATTACK moves are plays and card actions.
+  if (state.phase === 'ATTACK' && playoutComplete(state)) {
+    // Attack resolution (step 2C): spend Attack Strength on affordable targets, or advance.
+    const slot = chosenSlot(state)
+    if (slot) {
+      if (!slot.defeated) {
+        const def = effectiveDefense(slot, slot.uid)
+        if (def !== null && state.attackStrength >= def) {
+          actions.push({ type: 'SpendAttackOn', targetUid: slot.uid })
+        }
+      }
+      for (const enemy of slot.enemies) {
+        if (state.attackStrength >= enemy.defense) {
+          actions.push({ type: 'SpendAttackOn', targetUid: enemy.uid })
+        }
+      }
+    }
+    // You may always stop attacking and move on (excess Attack Strength is lost).
+    actions.push({ type: 'AdvancePhase' })
+  }
+
+  // AFTERMATH / RECOVER: later sub-slices.
   return actions
 }
 
@@ -83,6 +125,12 @@ export function applyAction(state: GameState, action: Action): GameState {
       case 'ChooseMission':
         applyChooseMission(draft, action.uid)
         break
+      case 'SpendAttackOn':
+        applySpendAttackOn(draft, action.targetUid)
+        break
+      case 'AdvancePhase':
+        applyAdvancePhase(draft)
+        break
       default:
         throw new Error(`action not implemented in this slice: ${action.type}`)
     }
@@ -101,6 +149,10 @@ function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void
 
   draft.hand.splice(idx, 1)
   draft.inPlay.push({ uid: card.uid, dataId: card.dataId, side, actionUsed: false })
+
+  // Bank this Maquis's base Attack value (revealed or hidden). Action bonuses are added by
+  // ATTACK-action effects when used (sub-slice 3); SpendAttackOn draws it down.
+  draft.attackStrength += maquisById.get(card.dataId)?.[side].attack ?? 0
 
   const name = maquisById.get(card.dataId)?.name ?? card.dataId
   draft.log.push(`${draft.phase}: played ${name} ${side}`)
@@ -134,11 +186,90 @@ function applyChooseMission(draft: Draft<GameState>, uid: string): void {
   draft.chosenMissionUid = uid
   for (const enemy of slot.enemies) enemy.faceUp = true
 
-  // ChooseMission ends PLAN. No action is allowed between choosing the mission and
-  // DEFEND resolution (see ENGINE_DESIGN §4) — "when chosen" mission effects (Bunker,
-  // Crossroads) will queue here in the effects slice.
+  // ChooseMission ends PLAN and enters ATTACK. No player action is allowed between choosing the
+  // mission and DEFEND resolution (ENGINE_DESIGN §4), so queue the DEFEND triggers now: the
+  // Mission's own effect and each garrison Enemy's. Handlers are still `[stub]` (sub-slice 3).
   draft.phase = 'ATTACK'
+  draft.effectQueue.push({
+    effectId: missionEffectId(slot.dataId),
+    sourceUid: slot.uid,
+    args: { trigger: 'DEFEND' },
+  })
+  for (const enemy of slot.enemies) {
+    draft.effectQueue.push({
+      effectId: enemyEffectId(enemy.typeId),
+      sourceUid: enemy.uid,
+      args: { trigger: 'DEFEND' },
+    })
+  }
   draft.log.push(`PLAN: chose mission ${slot.dataId}; revealed ${slot.enemies.length} enemies; -> ATTACK`)
+}
+
+function applySpendAttackOn(draft: Draft<GameState>, targetUid: string): void {
+  if (draft.phase !== 'ATTACK') throw new Error('SpendAttackOn: only legal during ATTACK')
+  if (!playoutComplete(draft)) {
+    throw new Error('SpendAttackOn: play out every Maquis before attacking')
+  }
+  const slot = chosenSlot(draft)
+  if (!slot) throw new Error('SpendAttackOn: no chosen mission')
+
+  const def = effectiveDefense(slot, targetUid)
+  if (def === null) throw new Error(`SpendAttackOn: '${targetUid}' is not a valid target`)
+  if (targetUid === slot.uid && slot.defeated) {
+    throw new Error('SpendAttackOn: the mission is already defeated')
+  }
+  if (draft.attackStrength < def) {
+    throw new Error(`SpendAttackOn: not enough Attack Strength (have ${draft.attackStrength}, need ${def})`)
+  }
+
+  draft.attackStrength -= def
+
+  if (targetUid === slot.uid) {
+    // Defeat the Mission target. The card stays in its slot (flagged) until AFTERMATH moves it
+    // to the Defeated Missions pile and refills the row.
+    slot.defeated = true
+    draft.effectQueue.push({
+      effectId: missionEffectId(slot.dataId),
+      sourceUid: slot.uid,
+      args: { trigger: 'DEFEAT' },
+    })
+    draft.log.push(`ATTACK: defeated mission ${slot.dataId} (-${def} strength)`)
+  } else {
+    // Defeat an Enemy target: resolve its DEFEAT effect, then discard it.
+    const eIdx = slot.enemies.findIndex((e) => e.uid === targetUid)
+    const enemy = slot.enemies[eIdx]
+    draft.effectQueue.push({
+      effectId: enemyEffectId(enemy.typeId),
+      sourceUid: enemy.uid,
+      args: { trigger: 'DEFEAT' },
+    })
+    draft.enemyDiscard.push(slot.enemies.splice(eIdx, 1)[0])
+    draft.log.push(`ATTACK: defeated enemy ${enemy.typeId} (-${def} strength)`)
+  }
+}
+
+function applyAdvancePhase(draft: Draft<GameState>): void {
+  if (draft.phase !== 'ATTACK') {
+    throw new Error('AdvancePhase: only the ATTACK -> AFTERMATH transition is implemented')
+  }
+  if (!playoutComplete(draft)) {
+    throw new Error('AdvancePhase: play out every Maquis before advancing')
+  }
+  const slot = chosenSlot(draft)
+  if (slot) {
+    // Undefeated Enemies resolve SURVIVE, then move to the Enemy discard pile.
+    for (const enemy of slot.enemies) {
+      draft.effectQueue.push({
+        effectId: enemyEffectId(enemy.typeId),
+        sourceUid: enemy.uid,
+        args: { trigger: 'SURVIVE' },
+      })
+    }
+    draft.enemyDiscard.push(...slot.enemies)
+    slot.enemies = []
+  }
+  draft.phase = 'AFTERMATH'
+  draft.log.push('ATTACK: resolved undefeated enemies; -> AFTERMATH')
 }
 
 // --- Effect-queue driver ----------------------------------------------------
