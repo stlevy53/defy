@@ -2,12 +2,12 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-**Repo state.** Last *committed*: `main` @ `2f48f0a` (Phase 2 ATTACK sub-slice 3 chunk 1). **Uncommitted in the working tree** (verify with `git status`): ATTACK sub-slice 3 **chunks 2 + 3a + 3b** (ATTACK enemy actions, enemy + mission effects, Guard/Grunt + Train-Depot constraints, Pilar·revealed) **and the AFTERMATH + RECOVER phases** (full round loop, win/loss scoring), plus this handoff. All verified green (**95/95 tests**, `tsc` + `build` clean). Commit it, then re-pin this hash:
+**Repo state.** Last *committed*: `main` @ `2f48f0a` (Phase 2 ATTACK sub-slice 3 chunk 1). **Uncommitted in the working tree** (verify with `git status`): everything since — ATTACK effects + Guard/Grunt/Train-Depot constraints, all 20 mission effects, Pilar + **Emilio** (the last effect), **AFTERMATH + RECOVER** (full round loop + scoring), and the **M2 acceptance gate** (rulebook worked-turn replay), plus this handoff. All verified green (**99/99 tests**, `tsc` + `build` clean). **The rules engine (Phase 2) is functionally complete.** Commit, then re-pin this hash:
 
 ```
 del .git\index.lock            REM only if a stale lock exists
 git add -A
-git commit -m "Phase 2: ATTACK effects + ordering constraints, mission effects, AFTERMATH + RECOVER (full round loop)"
+git commit -m "Phase 2 complete: all card effects, AFTERMATH + RECOVER round loop, M2 acceptance gate"
 git push
 ```
 
@@ -42,9 +42,10 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (= `tsc --no
   - ✅ Slice 1 — state model, seeded RNG, `createGame` setup.
   - ✅ Slice 2 — PLAN core: action/decision system, play-Maquis, choose-mission.
   - ✅ Slice 3 — PLAN card-action effects (all 21 PLAN-usable Maquis actions).
-  - ✅ ATTACK slice: entry + mandatory play-out · attack resolution · Maquis ATTACK effects · enemy effects + Guard/Grunt constraints · all 20 mission effects. `[stub]` retired for every effect **except `maquis:emilio:hidden`** (the copy effect — see §8).
-  - ✅ **AFTERMATH + RECOVER** — civilian-loss + mission outcome (success refill / failure) + `EndResistance` scoring + `Continue` → RECOVER cleanup/draw/reset. **A full round loops**, all three loss conditions + the win tiers work, and Era-2/3 missions now enter the row via refill.
-  - ⬜ **Phase 2 remainder (see §8):** `emilio:hidden` (last stub), the **M2 acceptance gate** (scripted first-turn replay), a known defense-reset-on-reshuffle bug, and the optional draft-variant setup. The engine is otherwise a complete, playable ruleset.
+  - ✅ ATTACK slice: entry + mandatory play-out · attack resolution · all Maquis/enemy/mission effects (**every effect real — no stubs**, including Emilio's copy) · Guard/Grunt + Train-Depot constraints.
+  - ✅ **AFTERMATH + RECOVER** — civilian-loss + mission outcome (success refill / failure) + `EndResistance` scoring + `Continue` → RECOVER cleanup/draw/reset. **A full round loops**, all three loss conditions + win tiers work, Era-2/3 missions enter via refill.
+  - ✅ **M2 acceptance gate** — `worked_example.test.ts` replays the rulebook's illustrated first turn (pp. 11–13) end-to-end.
+  - ⬜ **Phase 2 remainder (small, see §8):** a known defense-reset-on-reshuffle bug and the optional draft-variant setup. Otherwise the ruleset is complete and correct.
 - ⬜ Phase 3 — playable prototype UI.
 - ⬜ Phase 4 — polish + desktop packaging.
 
@@ -75,8 +76,8 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 - `actions.ts` — `applyAction` (all 7 actions: PlayMaquis / UseAction / ChooseMission / SpendAttackOn / AdvancePhase / **EndResistance / Continue**; Immer-based; throws on illegal). `legalActions` (PLAN + ATTACK as before; **AFTERMATH offers End + Continue**, End forced when no face-up missions remain). `resolveDecision`; the **effect-queue driver**; `settleAutomaticPhases` (runs the AFTERMATH auto-steps once the queue drains). AFTERMATH/RECOVER: `resolveAftermath` (civilian-loss check + mission SUCCESS→`defeatedMissions`+refill / FAILURE→faceDown+`failedMissions`, 2nd = loss), `applyEndResistance` (VP sum → `scoreTier` → win), `applyContinue` (RECOVER cleanup → draw 5 with `recoverDrawModifier` → reset scratch → PLAN/round+1, all-Spy hand = loss). Helpers `playoutComplete` / `chosenSlot` / `effectiveDefense` / `isTargetLegal` / `civilianTotal` / `refillEnemyDeckIfEmpty`.
 
 **Effects** (`src/engine/effects/`) — registration is **explicit, not on import**, so the driver's `[stub]` path stays testable; the app bootstrap calls `registerPlanEffects()` + `registerAttackEffects()` + `registerEnemyEffects()` + `registerMissionEffects()`.
-- `registry.ts` — `EffectHandler` shape + `registerEffect`/`unregisterEffect` + id helpers `maquisEffectId`/`missionEffectId`/`enemyEffectId`. Unregistered effects log `[stub]` and are skipped — now only `maquis:emilio:hidden` is unimplemented.
-- `plan.ts` — all 22 PLAN-usable Maquis actions (draw, look-top-3-discard-reorder on Hidden & Enemy decks, spy discard/remove, discard-Maquis-draw-2, Revealed-pile pick, scout, Recruit manipulation, **Pilar·revealed** → sets `ignoreMissionEffect`). Exports `PLAN_EFFECTS`, `registerPlanEffects()`, `PLAN_PRECONDITIONS`, and the shared `drawHidden`.
+- `registry.ts` — `EffectHandler` shape + `registerEffect`/`unregisterEffect` + id helpers `maquisEffectId`/`missionEffectId`/`enemyEffectId`. The `[stub]` path (unregistered → logged + skipped) still exists but **no effect uses it** — every card effect is implemented.
+- `plan.ts` — all 23 PLAN-usable Maquis actions (draw, look-top-3-discard-reorder on Hidden & Enemy decks, spy discard/remove, discard-Maquis-draw-2, Revealed-pile pick, scout, Recruit manipulation, **Pilar·revealed** → sets `ignoreMissionEffect`, **Emilio·hidden** → copies another hidden Maquis's action by delegating to its registered handler with `responses.slice(1)`). Exports `PLAN_EFFECTS`, `registerPlanEffects()`, `PLAN_PRECONDITIONS`, and the shared `drawHidden`/`firesInPhase`.
 - `attack.ts` — ATTACK-side Maquis effects (chunks 1–2): attack/defense modifiers (Soledad·h, Abel·h/·r, Marcelino·r, Benigno·r, Ricardo·r), enemy discard/move/sweep (Anastasio, Emilio·r, Adolfo·h, Paquita·r, Consuelo·r, Adela·h/·r, Soledad·r), ATTACK draws (Nicolás·h, Ricardo·h). Exports `ATTACK_EFFECTS`, `registerAttackEffects()`, `ATTACK_PRECONDITIONS`.
 - `enemies.ts` — all 8 enemy types keyed by `enemy:{typeId}`, self-filtered on `ctx.args.trigger`: SURVIVE (Counter-Guerrilla, Military, Spy Master, Radio Operator), DEFEAT (Jailor), DEFEND (Engineer). Guard/Grunt are no-ops here — enforced structurally by `isTargetLegal` in `actions.ts`. Exports `ENEMY_EFFECTS`, `registerEnemyEffects()`.
 - `missions.ts` — all 20 mission effects keyed by `mission:{id}`, each wrapped with its keyword (DEFEND fires at ChooseMission, DEFEAT on defeat — no mission has SURVIVE) and skipped when `ignoreMissionEffect` is set. Includes ongoing DEFEND constraints via state (Train Depot → `attackRevealLimit`; Bunker/Crossroads discard at choose; Mayor's House / Engineer-style +Defense). Exports `MISSION_EFFECTS`, `registerMissionEffects()`. **Reachability note:** only Era-1 missions are in the starting row; Era-2/3 effects can't fire via `ChooseMission` until AFTERMATH mission-refill exists, so 12 of them are currently covered by direct handler-unit tests.
@@ -89,21 +90,20 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 3. **Defense ordering is implicit.** `effectiveDefense` just reads current values. DEFEND effects (e.g. Engineer +1) resolve at ATTACK start and ATTACK-action effects (e.g. Benigno −1) later, so the FAQ ordering (Engineer before Benigno) falls out of execution order — don't add explicit ordering logic.
 4. **SURVIVE-before-discard caveat.** `applyAdvancePhase` queues each undefeated enemy's SURVIVE task **and** moves it to `enemyDiscard` in the same tick, so a SURVIVE handler sees the enemy already in `enemyDiscard` (found via `sourceUid`). None of the current SURVIVE effects need the enemy in place; if a future one does, reorder so the queue drains before the discard.
 
-**Tests (95/95 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (16) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `aftermath.test.ts` (6: civilian loss, mission success + refill + Era-2 reachability, failure + 2nd-failure loss, scoring tiers, round loop, all-Spy loss) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
+**Tests (99/99 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (16) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `effects/emilio.test.ts` (3) · `aftermath.test.ts` (6) · `worked_example.test.ts` (1 — the M2 gate) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
 
-## 8. Immediate next task — finish Phase 2, then start the UI
+## 8. Immediate next task — Phase 3: the playable prototype UI
 
-The engine now plays a complete, looping game. What's left before Phase 3:
+The rules engine is complete and correct (M2 gate passes). **Phase 3 is a React UI over the headless engine** — no rules live in the UI:
+- **Bootstrap once:** call `registerPlanEffects()` + `registerAttackEffects()` + `registerEnemyEffects()` + `registerMissionEffects()` at app start (they don't auto-register), then `createGame({ seed })`.
+- **Drive the game:** render the board from `GameState`; show the buttons/targets from `legalActions(state)`; dispatch with `applyAction(state, action)`; when `state.pendingDecision` is set, render the prompt (kinds: `selectCards` / `selectTarget` / `orderCards` / `chooseOption`) and answer via `resolveDecision(state, { selection })`. When `state.result` is set, show the win tier / loss reason.
+- **Cards render from `/data` JSON** (text-first; photo crops are a later swap). Keep it a single-file React artifact unless the user asks otherwise. Suggest starting with a read-only board + action list, then wiring decisions, then styling.
 
-1. **`maquis:emilio:hidden` — the last stubbed effect.** "Copy the hidden action on a hidden Maquis in play; the phase must match the current phase." It's a meta-effect — resolve the *copied* handler's logic under Emilio's `sourceUid`. Approach: at stage 0, offer a `selectTarget` over other in-play **hidden** Maquis whose hidden action `actionFiresIn` the current phase; once chosen, delegate to that maquis's registered handler, threading `responses` so any nested decisions still work (the copied handler is itself stage-style). Add an `emilio:hidden` precondition (such a target exists). This is fiddly (a handler invoking another handler) — give it its own small slice + tests.
+**Two small engine leftovers (do first if you want a 100%-faithful base, or defer):**
+1. **Known bug — enemy Defense isn't reset on reshuffle.** Benigno/Engineer/Mayor mutate `enemy.defense` in place; if an enemy later cycles through `enemyDiscard` and `refillEnemyDeckIfEmpty` reshuffles it back, it keeps the modified value. Fix: store a printed `baseDefense` on `EnemyInstance` (in `setup.ts`) and reset `defense = baseDefense` when an enemy is discarded or reshuffled. Low frequency (needs the Enemy deck to empty), but a real fidelity gap.
+2. **Optional — draft-variant setup** (`createGame` has no `draft` option). Interactive; a self-contained slice.
 
-2. **M2 acceptance gate.** Encode the rulebook's worked first turn (PDF pp. ~11–13) as a scripted Action/Decision sequence and assert the engine reproduces it end-to-end (see `docs/ENGINE_DESIGN.md` §"Acceptance gate"). This is the definitive correctness check.
-
-3. **Known bug — enemy Defense isn't reset on reshuffle.** Benigno/Engineer/Mayor mutate `enemy.defense` in place; when an enemy later cycles through `enemyDiscard` and `refillEnemyDeckIfEmpty` reshuffles it back, it keeps the modified value. Fix by storing a printed `baseDefense` on `EnemyInstance` (set in `setup.ts`) and resetting `defense = baseDefense` when an enemy leaves the mission (defeat/survive discard) or on reshuffle. Low frequency (needs the enemy deck to empty) but a real fidelity gap.
-
-4. **Optional — draft-variant setup** (`createGame` has no `draft` option). Interactive; a self-contained slice.
-
-**Then Phase 3 — playable prototype UI (React).** The engine is UI-ready: the UI reads `GameState`, renders `legalActions(state)`, dispatches actions via `applyAction`, and answers `pendingDecision` via `resolveDecision`. Remember to call `registerPlanEffects()` + `registerAttackEffects()` + `registerEnemyEffects()` + `registerMissionEffects()` once at bootstrap. Cards render from `/data` JSON (text-first).
+**Design note — count-based ATTACK bonuses snapshot at use-time.** Soledad/Abel/Marcelino add "+1 per revealed/other Maquis" *when their action fires*, not at a final tally. The rulebook totals Attack Strength at the spend step, so to match it the player must fire these actions after the relevant Maquis are in play (the M2 gate fires Abel's last for this reason). The UI needn't force this, but it's worth surfacing; a stricter model would defer count bonuses to the spend step.
 
 ### Reference: round structure (rulebook)
 - **PLAN**: play Maquis (hidden/revealed) + optional PLAN actions; choose one Mission; reveal its enemies.

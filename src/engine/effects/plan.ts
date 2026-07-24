@@ -14,12 +14,23 @@
 
 import type { Draft } from 'immer'
 import { shuffle } from '../rng'
+import { maquis as maquisData } from '../../data'
 import type { Decision, GameState } from '../types'
 import {
+  effectRegistry,
   maquisEffectId,
   registerEffect,
   type EffectHandler,
 } from './registry'
+
+const hiddenActionTypeById = new Map(maquisData.map((m) => [m.id, m.hidden.actionType]))
+
+/** Whether a hidden action of this type may be copied/fired during `phase`. */
+function firesInPhase(actionType: string | null, phase: GameState['phase']): boolean {
+  if (actionType === null) return false
+  if (actionType === 'PLAN/ATTACK') return phase === 'PLAN' || phase === 'ATTACK'
+  return actionType === phase
+}
 
 type UidItem = { uid: string }
 
@@ -322,6 +333,33 @@ const ignoreChosenMissionEffect: EffectHandler = ({ state }) => {
   ;(state as Draft<GameState>).ignoreMissionEffect = true
 }
 
+/**
+ * "Copy the hidden action on a hidden Maquis in play; the phase must match the current phase."
+ * (Emilio hidden.) Meta-effect: pick a target, then delegate to the target's registered *hidden*
+ * handler. `responses[0]` is the target selection; the copied handler is stage-style too, so it
+ * receives `responses.slice(1)` — nested decisions thread through cleanly across resumes.
+ */
+const emilioCopyHidden: EffectHandler = (ctx): Decision | void => {
+  const s = ctx.state as Draft<GameState>
+  if (ctx.responses.length === 0) {
+    const candidates = s.inPlay
+      .filter(
+        (m) =>
+          m.side === 'hidden' &&
+          m.dataId !== 'emilio' &&
+          firesInPhase(hiddenActionTypeById.get(m.dataId) ?? null, s.phase),
+      )
+      .map((m) => m.uid)
+    if (candidates.length === 0) return
+    return { kind: 'selectTarget', candidates, prompt: 'Copy the hidden action of which Maquis?' }
+  }
+  const target = s.inPlay.find((m) => m.uid === ctx.responses[0][0])
+  if (!target) return
+  const copied = effectRegistry[maquisEffectId(target.dataId, 'hidden')]
+  if (!copied) return // unregistered copy target → no-op
+  return copied({ state: s, sourceUid: ctx.sourceUid, args: ctx.args, responses: ctx.responses.slice(1) })
+}
+
 // --- registry ---------------------------------------------------------------
 
 /** Every PLAN-usable Maquis effect implemented this slice, keyed by effect id. */
@@ -354,6 +392,7 @@ export const PLAN_EFFECTS: Record<string, EffectHandler> = {
   [maquisEffectId('ramona', 'hidden')]: recruitAnyToBottom,
 
   [maquisEffectId('pilar', 'revealed')]: ignoreChosenMissionEffect,
+  [maquisEffectId('emilio', 'hidden')]: emilioCopyHidden,
 }
 
 /** Register every PLAN effect into the global effect registry. The app bootstrap (and tests
@@ -383,4 +422,11 @@ export const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('juana', 'revealed')]: revealedPileNonEmpty,
   [maquisEffectId('pilar', 'hidden')]: hasFaceDownEnemy,
   [maquisEffectId('domingo', 'hidden')]: hasFaceDownEnemy,
+  [maquisEffectId('emilio', 'hidden')]: (s) =>
+    s.inPlay.some(
+      (m) =>
+        m.side === 'hidden' &&
+        m.dataId !== 'emilio' &&
+        firesInPhase(hiddenActionTypeById.get(m.dataId) ?? null, s.phase),
+    ),
 }

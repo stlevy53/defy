@@ -27,6 +27,9 @@ function seedWithPlanActionInHand(): { seed: number; uid: string; dataId: string
     const state = createGame({ seed })
     for (const card of state.hand) {
       if (card.dataId === 'spy') continue
+      // Emilio's action has a precondition (needs another valid Maquis in play to copy), so it
+      // isn't a clean "offered once when played alone" example — skip it here.
+      if (card.dataId === 'emilio') continue
       const data = maquisData.find((m) => m.id === card.dataId)!
       const t = data.hidden.actionType
       if (t === 'PLAN' || t === 'PLAN/ATTACK') {
