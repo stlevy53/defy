@@ -8,66 +8,193 @@ import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
 import { Tip } from './Tip'
 
+type Side = 'hidden' | 'revealed'
+
 export type CardFace =
-  | { kind: 'maquisHand'; dataId: string }
-  | { kind: 'maquisPlayed'; dataId: string; side: 'hidden' | 'revealed' }
-  | { kind: 'mission'; slot: MissionSlot; state: GameState }
+  | {
+      kind: 'maquisHand'
+      dataId: string
+      uid: string
+      canPlayHidden: boolean
+      canPlayRevealed: boolean
+      onPlay: (uid: string, side: Side) => void
+    }
+  | { kind: 'maquisPlayed'; dataId: string; side: Side; canUse?: boolean; onUse?: () => void }
+  | { kind: 'mission'; slot: MissionSlot; state: GameState; canChoose?: boolean; onChoose?: (uid: string) => void }
 
 /** Render any card face. Discriminated on `kind` so callers pass only what that face needs. */
 export function Card(face: CardFace) {
   switch (face.kind) {
     case 'maquisHand':
-      return <MaquisHandFace dataId={face.dataId} />
+      return (
+        <MaquisHandFace
+          dataId={face.dataId}
+          uid={face.uid}
+          canPlayHidden={face.canPlayHidden}
+          canPlayRevealed={face.canPlayRevealed}
+          onPlay={face.onPlay}
+        />
+      )
     case 'maquisPlayed':
-      return <MaquisPlayedFace dataId={face.dataId} side={face.side} />
+      return <MaquisPlayedFace dataId={face.dataId} side={face.side} canUse={face.canUse} onUse={face.onUse} />
     case 'mission':
-      return <MissionFace slot={face.slot} state={face.state} />
+      return <MissionFace slot={face.slot} state={face.state} canChoose={face.canChoose} onChoose={face.onChoose} />
   }
 }
 
-/** A Maquis (or Spy) in hand: both sides shown, since the player hasn't committed to one yet. */
-function MaquisHandFace({ dataId }: { dataId: string }) {
-  const isSpy = dataId === 'spy'
+/** A Maquis in hand shown as its two sides — click the Hidden (left) or Revealed (right) panel to
+ *  play that side. Spies aren't playable, so they render as a plain, non-interactive card. */
+function MaquisHandFace({
+  dataId,
+  uid,
+  canPlayHidden,
+  canPlayRevealed,
+  onPlay,
+}: {
+  dataId: string
+  uid: string
+  canPlayHidden: boolean
+  canPlayRevealed: boolean
+  onPlay: (uid: string, side: Side) => void
+}) {
+  if (dataId === 'spy') {
+    return (
+      <div className="card hand-card spy">
+        <div className="card-name">Spy</div>
+        <div className="spy-note">Can't be played — sits in hand until Recover.</div>
+      </div>
+    )
+  }
   return (
-    <div className={`card hand-card ${isSpy ? 'spy' : ''}`}>
+    <div className="card hand-card">
       <div className="card-name">{nameOfMaquis(dataId)}</div>
-      {!isSpy && (
-        <>
-          <Tip text="Attack value — the strength this Maquis adds, played Hidden (H) vs. Revealed (R).">
-            <div className="card-sub">
-              H {maquisAttack(dataId, 'hidden')} · R {maquisAttack(dataId, 'revealed')}
-            </div>
-          </Tip>
-          <ActionLine dataId={dataId} side="hidden" label="H" />
-          <ActionLine dataId={dataId} side="revealed" label="R" />
-        </>
-      )}
+      <div className="sides">
+        <SidePanel dataId={dataId} side="hidden" enabled={canPlayHidden} onPlay={() => onPlay(uid, 'hidden')} />
+        <SidePanel dataId={dataId} side="revealed" enabled={canPlayRevealed} onPlay={() => onPlay(uid, 'revealed')} />
+      </div>
     </div>
   )
 }
 
-/** A Maquis committed to the table on a known side. */
-function MaquisPlayedFace({ dataId, side }: { dataId: string; side: 'hidden' | 'revealed' }) {
+/** One clickable side of a hand Maquis (its attack value + action), playable when `enabled`. */
+function SidePanel({
+  dataId,
+  side,
+  enabled,
+  onPlay,
+}: {
+  dataId: string
+  side: Side
+  enabled: boolean
+  onPlay: () => void
+}) {
+  const action = maquisSideAction(dataId, side)
+  return (
+    <button
+      type="button"
+      className={`side-panel ${side}`}
+      disabled={!enabled}
+      onClick={onPlay}
+      title={enabled ? `Play ${nameOfMaquis(dataId)} — ${side}` : undefined}
+    >
+      <div className="side-tag">{side === 'hidden' ? 'Hidden' : 'Revealed'}</div>
+      <div className="side-attack">⚔ {maquisAttack(dataId, side)}</div>
+      {action ? (
+        <div className="side-action">
+          <span className="side-action-type">{action.type}</span> {action.text}
+        </div>
+      ) : (
+        <div className="side-action none">no action</div>
+      )}
+    </button>
+  )
+}
+
+/** A Maquis committed to the table on a known side. Its action is clickable when it can be fired
+ *  in the current phase (`canUse`); otherwise it renders as plain reference text. */
+function MaquisPlayedFace({
+  dataId,
+  side,
+  canUse,
+  onUse,
+}: {
+  dataId: string
+  side: Side
+  canUse?: boolean
+  onUse?: () => void
+}) {
+  const action = maquisSideAction(dataId, side)
   return (
     <div className={`card played ${side}`}>
       <div className="card-name">{nameOfMaquis(dataId)}</div>
       <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
         <span className="card-sub">⚔ {maquisAttack(dataId, side)}</span>
       </Tip>
-      <ActionLine dataId={dataId} side={side} />
+      {action &&
+        (canUse && onUse ? (
+          <button
+            type="button"
+            className="card-action usable"
+            onClick={onUse}
+            title={`Use ${nameOfMaquis(dataId)}'s action`}
+          >
+            <span className="action-type">{action.type} ▸ use</span>
+            <span className="action-text">{action.text}</span>
+          </button>
+        ) : (
+          <div className="card-action">
+            <span className="action-type">{action.type}</span>
+            <span className="action-text">{action.text}</span>
+          </div>
+        ))}
     </div>
   )
 }
 
-function MissionFace({ slot, state }: { slot: MissionSlot; state: GameState }) {
+function MissionFace({
+  slot,
+  state,
+  canChoose,
+  onChoose,
+}: {
+  slot: MissionSlot
+  state: GameState
+  canChoose?: boolean
+  onChoose?: (uid: string) => void
+}) {
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
-  const cls = ['card', 'mission', chosen ? 'chosen' : '', slot.faceDown ? 'failed' : '', slot.defeated ? 'defeated' : '']
+  const cls = [
+    'card',
+    'mission',
+    chosen ? 'chosen' : '',
+    slot.faceDown ? 'failed' : '',
+    slot.defeated ? 'defeated' : '',
+    canChoose ? 'choosable' : '',
+  ]
     .filter(Boolean)
     .join(' ')
+  const choose = canChoose && onChoose ? () => onChoose(slot.uid) : undefined
   return (
-    <div className={cls}>
+    <div
+      className={cls}
+      onClick={choose}
+      role={choose ? 'button' : undefined}
+      tabIndex={choose ? 0 : undefined}
+      title={choose ? `Attack this Mission: ${data?.name ?? slot.dataId}` : undefined}
+      onKeyDown={
+        choose
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                choose()
+              }
+            }
+          : undefined
+      }
+    >
+      {choose && <div className="choose-hint">Click to attack</div>}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
         <Tip text={keywordTip(data?.keyword)}>
@@ -113,21 +240,6 @@ function EnemyChip({ enemy }: { enemy: EnemyInstance }) {
         </Tip>
       </div>
       {type?.effect && <div className="enemy-effect">{type.effect}</div>}
-    </div>
-  )
-}
-
-/** One Maquis side's action, inline. Renders nothing when the side has no action (an X). */
-function ActionLine({ dataId, side, label }: { dataId: string; side: 'hidden' | 'revealed'; label?: string }) {
-  const a = maquisSideAction(dataId, side)
-  if (!a) return null
-  return (
-    <div className="card-action">
-      <span className="action-type">
-        {label ? `${label} · ` : ''}
-        {a.type}
-      </span>
-      <span className="action-text">{a.text}</span>
     </div>
   )
 }

@@ -13,6 +13,12 @@ export function App() {
 
   const group = (t: Action['type']) => actions.filter((a) => a.type === t)
 
+  const canPlay = (acts: Action[], uid: string, side: 'hidden' | 'revealed') =>
+    acts.some((a) => a.type === 'PlayMaquis' && a.uid === uid && a.side === side)
+
+  const canChoose = (acts: Action[], uid: string) =>
+    acts.some((a) => a.type === 'ChooseMission' && a.uid === uid)
+
   return (
     <div className="app">
       <header className="topbar">
@@ -64,20 +70,47 @@ export function App() {
 
       <section className="missions">
         {state.missionRow.map((slot) => (
-          <Card key={slot.uid} kind="mission" slot={slot} state={state} />
+          <Card
+            key={slot.uid}
+            kind="mission"
+            slot={slot}
+            state={state}
+            canChoose={canChoose(actions, slot.uid)}
+            onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
+          />
         ))}
       </section>
 
       <section className="play-area">
-        <Zone title="Hidden Maquis" cards={state.inPlay.filter((m) => m.side === 'hidden')} side="hidden" />
-        <Zone title="Revealed Maquis" cards={state.inPlay.filter((m) => m.side === 'revealed')} side="revealed" />
+        <Zone
+          title="Hidden Maquis"
+          cards={state.inPlay.filter((m) => m.side === 'hidden')}
+          side="hidden"
+          actions={actions}
+          onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+        />
+        <Zone
+          title="Revealed Maquis"
+          cards={state.inPlay.filter((m) => m.side === 'revealed')}
+          side="revealed"
+          actions={actions}
+          onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+        />
       </section>
 
       <section className="hand">
         <h3>Your hand</h3>
         <div className="cards">
           {state.hand.map((c) => (
-            <Card key={c.uid} kind="maquisHand" dataId={c.dataId} />
+            <Card
+              key={c.uid}
+              kind="maquisHand"
+              dataId={c.dataId}
+              uid={c.uid}
+              canPlayHidden={canPlay(actions, c.uid, 'hidden')}
+              canPlayRevealed={canPlay(actions, c.uid, 'revealed')}
+              onPlay={(uid, side) => dispatch({ type: 'PlayMaquis', uid, side })}
+            />
           ))}
           {state.hand.length === 0 && <span className="muted">empty</span>}
         </div>
@@ -92,9 +125,6 @@ export function App() {
           <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
         ) : state.result ? null : (
           <div className="actions">
-            <ActionGroup title="Play" actions={group('PlayMaquis')} state={state} onClick={dispatch} />
-            <ActionGroup title="Actions" actions={group('UseAction')} state={state} onClick={dispatch} />
-            <ActionGroup title="Choose a Mission" actions={group('ChooseMission')} state={state} onClick={dispatch} />
             <ActionGroup title="Strike" actions={group('SpendAttackOn')} state={state} onClick={dispatch} />
             <ActionGroup
               title="Turn"
@@ -234,13 +264,32 @@ function ActionGroup({
   )
 }
 
-function Zone({ title, cards, side }: { title: string; cards: GameState['inPlay']; side: 'hidden' | 'revealed' }) {
+function Zone({
+  title,
+  cards,
+  side,
+  actions,
+  onUse,
+}: {
+  title: string
+  cards: GameState['inPlay']
+  side: 'hidden' | 'revealed'
+  actions: Action[]
+  onUse: (uid: string) => void
+}) {
   return (
     <div className="zone">
       <h4>{title}</h4>
       <div className="cards">
         {cards.map((m) => (
-          <Card key={m.uid} kind="maquisPlayed" dataId={m.dataId} side={side} />
+          <Card
+            key={m.uid}
+            kind="maquisPlayed"
+            dataId={m.dataId}
+            side={side}
+            canUse={actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)}
+            onUse={() => onUse(m.uid)}
+          />
         ))}
         {cards.length === 0 && <span className="muted">—</span>}
       </div>

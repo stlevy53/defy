@@ -91,7 +91,22 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .card {
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.7rem;
 }
+.card.mission { position: relative; }
 .card.mission.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.card.mission.choosable { cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
+.card.mission.choosable:hover,
+.card.mission.choosable:focus-visible {
+  border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
+}
+.choose-hint {
+  position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%);
+  background: var(--accent-2); color: #14110e; border-radius: 999px;
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0.12rem 0.55rem; white-space: nowrap;
+  opacity: 0; transition: opacity 0.1s; pointer-events: none;
+}
+.card.mission.choosable:hover .choose-hint,
+.card.mission.choosable:focus-visible .choose-hint { opacity: 1; }
 .card.mission.failed { opacity: 0.5; }
 .card.mission.defeated { border-color: var(--win); }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
@@ -127,19 +142,52 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .zone, .hand, .control-deck { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; }
 .hand, .control-deck { margin: 0.6rem 0; }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
-.card.played, .hand-card { width: 200px; padding: 0.45rem 0.55rem; }
+.card.played { width: 200px; padding: 0.45rem 0.55rem; }
+.hand-card { width: 250px; padding: 0.45rem 0.5rem 0.5rem; }
 .card.played.revealed { border-color: var(--accent); }
-.hand-card.spy { width: auto; min-width: 88px; opacity: 0.55; border-style: dashed; }
+.hand-card.spy { width: auto; min-width: 120px; max-width: 180px; opacity: 0.6; border-style: dashed; }
+.spy-note { font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.3; }
 .card-sub { font-size: 0.72rem; color: var(--muted); }
 
-/* Inline Maquis action text */
-.card-action { display: flex; gap: 0.3rem; margin-top: 0.3rem; font-size: 0.68rem; line-height: 1.3; }
+/* Hand card: two clickable sides (Hidden left / Revealed right) */
+.hand-card .sides { display: flex; margin-top: 0.35rem; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.side-panel {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem;
+  text-align: left; padding: 0.4rem 0.45rem; background: var(--panel-2); color: var(--ink);
+  border: none; border-right: 1px solid var(--line); transition: background 0.1s, box-shadow 0.1s;
+}
+.side-panel.revealed { border-right: none; }
+.side-panel:not(:disabled) { cursor: pointer; }
+.side-panel:not(:disabled):hover { background: #3a2c20; box-shadow: inset 0 0 0 2px var(--accent-2); }
+.side-panel.revealed:not(:disabled):hover { box-shadow: inset 0 0 0 2px var(--accent); }
+.side-panel:disabled { opacity: 0.4; cursor: default; }
+.side-tag { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
+.side-panel.revealed .side-tag { color: var(--accent); }
+.side-attack { font-size: 0.82rem; color: var(--accent-2); font-weight: 600; }
+.side-action { font-size: 0.66rem; color: var(--muted); line-height: 1.3; }
+.side-action-type { color: var(--accent-2); }
+.side-action.none { font-style: italic; opacity: 0.6; }
+
+/* Maquis action text — badge on its own line, text full-width below (avoids squeezed wrapping). */
+.card-action {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+  margin-top: 0.3rem; font-size: 0.68rem; line-height: 1.3;
+}
 .card-action .action-type {
-  flex: none; align-self: flex-start; color: var(--accent-2);
-  border: 1px solid var(--line); border-radius: 4px; padding: 0.02rem 0.28rem;
+  color: var(--accent-2); border: 1px solid var(--line); border-radius: 4px; padding: 0.02rem 0.28rem;
   font-size: 0.56rem; letter-spacing: 0.05em; white-space: nowrap;
 }
 .card-action .action-text { color: var(--muted); }
+
+/* Clickable (usable) action on a played Maquis */
+button.card-action {
+  width: 100%; text-align: left; font-family: inherit; cursor: pointer;
+  background: rgba(217, 154, 36, 0.09); border: 1px dashed var(--accent-2); border-radius: 6px;
+  padding: 0.3rem 0.38rem;
+}
+button.card-action:hover { background: rgba(217, 154, 36, 0.2); border-style: solid; }
+button.card-action .action-type { color: #14110e; background: var(--accent-2); border-color: var(--accent-2); text-transform: uppercase; }
+button.card-action .action-text { color: var(--ink); }
 
 /* Actions / decisions */
 .actions { display: flex; flex-direction: column; gap: 0.5rem; }

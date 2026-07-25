@@ -144,16 +144,19 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
   switch (state.phase) {
     case 'PLAN': {
       const played = state.inPlay.length > 0
+      const canUseAction = canDo(actions, 'UseAction')
       return {
         phase: 'PLAN',
         goal: 'Set up your attack.',
-        now: played
-          ? 'Play or use more cards, or choose a Mission to attack — choosing ends PLAN.'
-          : 'Play Maquis from your hand, then choose a Mission to attack.',
+        now: !played
+          ? 'Play Maquis from your hand by clicking a side — Hidden (left) or Revealed (right).'
+          : canUseAction
+            ? "Use a card's action by clicking its highlighted action, or choose a Mission to attack."
+            : 'Play or use more cards, or click a Mission to attack — choosing ends PLAN.',
         steps: [
-          { text: 'Play Maquis — hidden (left) or revealed (right).', active: true },
-          { text: 'Optionally use PLAN card actions.', active: true },
-          { text: 'Choose one Mission to attack; its Enemies are revealed. (Ends PLAN)', active: true },
+          { text: 'Play Maquis — click the Hidden (left) or Revealed (right) side.', active: canDo(actions, 'PlayMaquis') },
+          { text: 'Optionally use PLAN card actions — click the action on a played Maquis.', active: canUseAction },
+          { text: 'Choose one Mission — click the Mission card to attack it. (Ends PLAN)', active: canDo(actions, 'ChooseMission') },
         ],
       }
     }
