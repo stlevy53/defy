@@ -38,22 +38,22 @@ All cards transcribed to `/data` and validated: 24 Maquis (hidden + revealed sid
 - Enemy count is **32** (photo rows 11+11+10); the original "33" was a miscount.
 - Win table re-read from the PDF: Epic = defeat all 10 missions; 22+ Major; 19–21 Victory; 15–18 Minor; 1–14 Draw.
 
-### Phase 2 — Rules engine 🔨 IN PROGRESS
+### Phase 2 — Rules engine ✅ DONE (rulebook-verified)
 Built in verified slices, each with tests:
 
-- **Slice 1 — state + RNG + setup ✅ DONE.** `GameState` model, seeded mulberry32 RNG, `createGame` (standard setup), 13/13 tests passing including card-conservation checks.
-- **Slice 2 — PLAN phase (next).** `applyAction` / `legalActions` / `resolveDecision` + effect-queue driver; play Maquis hidden/revealed; PLAN and PLAN/ATTACK actions (first `pendingDecision` effects); `ChooseMission` + enemy reveal. Add Immer here. Open question (unanswered): full slice including card-action effects, or mechanics first with effects in a follow-up slice.
-- **Slice 3 — ATTACK phase.** DEFEND triggers, mandatory play-out of hand, Attack Strength pooling, target-by-target spending via `SpendAttackOn`, DEFEAT/SURVIVE resolution.
-- **Slice 4 — AFTERMATH + RECOVER.** Civilian/mission-failure loss checks, mission refill, end-or-continue, cleanup, redraw, all-Spy loss, scoring.
-- **Slice 5 — full effect coverage.** All 24 Maquis actions, 20 mission effects, 8 enemy-type effects (per approved decision: no stubs), plus rulebook FAQ edge cases.
-- **Slice 6 — draft-variant setup.** `createGame({draft: true})` per the rulebook's recommended drafting rule (currently designed in `ENGINE_DESIGN.md` but not implemented; interactive, so it needs the decision system from slice 2 — hence sequenced after it, not in setup).
+- **Slice 1 — state + RNG + setup ✅.** `GameState` model, seeded mulberry32 RNG, `createGame` (standard setup), with card-conservation checks.
+- **Slice 2 — PLAN phase ✅.** `applyAction` / `legalActions` / `resolveDecision` + effect-queue driver; play Maquis hidden/revealed; PLAN and PLAN/ATTACK actions (`pendingDecision` effects); `ChooseMission` + enemy reveal. Immer added here.
+- **Slice 3 — ATTACK phase ✅.** DEFEND triggers, mandatory play-out of hand, Attack Strength pooling, target-by-target spending via `SpendAttackOn`, DEFEAT/SURVIVE resolution.
+- **Slice 4 — AFTERMATH + RECOVER ✅.** Civilian/mission-failure loss checks, mission refill, end-or-continue, cleanup, redraw, all-Spy loss, scoring. A full round loops.
+- **Slice 5 — full effect coverage ✅.** All 24 Maquis actions, 20 mission effects, 8 enemy-type effects (no stubs — every effect real, including Emilio's copy), plus the rulebook FAQ edge cases. The enemy-Defense-reset-on-reshuffle bug is fixed (`baseDefense`).
+- **Slice 6 — draft-variant setup ⬜ (optional, not built).** `createGame({draft: true})` per the rulebook's recommended drafting rule (designed in `ENGINE_DESIGN.md`; interactive, so it needs the decision system — hence sequenced after slice 2, not in setup). The only remaining engine item.
 
-*Deliverable:* headless engine playable via a script/console. *Gate (M2):* an automated test reproduces the rulebook's worked example (pp. 11–13) turn-by-turn. If it matches, the rules are right.
+*Deliverable:* headless engine playable via a script/console — **done.** *Gate (M2):* `worked_example.test.ts` reproduces the rulebook's worked example (pp. 11–13) turn-by-turn — **passing.**
 
-### Phase 3 — Playable prototype UI
-Build the tableau, text-rendered cards, and interaction for a full game: fan the hand, commit cards hidden/left or revealed/right, pick a mission, run the attack, see outcomes and score. Rough but complete — clickable start to finish.
+### Phase 3 — Playable prototype UI 🔨 IN PROGRESS (functional + polished)
+The tableau is built and a full game is clickable start to finish: play cards hidden/revealed by clicking a card's side, use actions and choose/strike missions and enemies by clicking them on the board, run the attack, see outcomes and score. Polished with a single `Card` rendering seam (art-swap-ready), a round-phase breadcrumb with new-player guidance, inline action text, and CSS hover tooltips. Undo + new-game via a state-history stack. `ui/playthrough.test.ts` drives full games to an ending across 40 seeds through the UI path.
 
-*Deliverable:* a full game of Resist! playable in the browser.
+*Deliverable:* a full game of Resist! playable in the browser — **achieved; decision-UX polish remains.**
 
 ### Phase 4 — Polish & packaging
 Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay. Then wrap in Tauri for a distributable desktop build if desired. Optional: swap text-rendered cards for the photographed faces.
@@ -68,11 +68,11 @@ Iteration pass: animations/transitions, undo (state-history stack, approved), sa
 |---|---|---|
 | M0 — Scaffold | Dev server runs, test suite passes | ✅ |
 | M1 — Data complete | All cards in JSON, counts reconciled to rulebook | ✅ |
-| M2 — Engine correct | Worked-example test passes headless | 🔨 slice 1 of 6 |
-| M3 — Playable prototype | A full game is completable in-browser | ⬜ |
+| M2 — Engine correct | Worked-example test passes headless | ✅ |
+| M3 — Playable prototype | A full game is completable in-browser | ✅ |
 | M4 — Shippable | Polished, packaged desktop/web build | ⬜ |
 
-M2 is the most important gate. Everything visual rests on it.
+M2 was the most important gate — everything visual rested on it, and it passes. M3 (a full game is completable in-browser) is met; polish toward M4 continues.
 
 ---
 
@@ -94,4 +94,4 @@ Rules-fidelity items surfaced during data transcription and design review — ea
 
 ## 6. Immediate next step
 
-**Phase 2, slice 2 (PLAN phase).** First, answer the open scope question: full slice with card-action effects, or play/choose mechanics first and effects in a follow-up. Then implement per `HANDOFF.md` §8.
+**Phase 3 polish (continue).** The engine is done and the UI is playable end-to-end. Next: playtest full games, then improve decision UX (`DecisionPanel` → fold into the same "click the thing on the board" idiom), and optional niceties (log toasts, post-AFTERMATH summary, seed entry). The optional draft-variant setup is the only remaining engine item. See `HANDOFF.md` §8.

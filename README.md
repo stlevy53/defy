@@ -4,7 +4,7 @@ A single-player digital port of the physical solitaire card game *Resist!* (Salt
 
 ## Status
 
-**Phase 0 scaffold in place** — Vite + React + TypeScript project with the card data wired in and a passing test suite. Phase 1 (card data) is complete and validated against the rulebook. See [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md) for the full plan.
+**Playable prototype.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, substantially-polished React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. **101/101 tests pass**; `tsc` + `build` are clean. Remaining work is Phase 3 decision-UX polish, an optional draft-variant setup, and Phase 4 packaging. For the current working state and a session bootstrap, read [`HANDOFF.md`](./HANDOFF.md); for the phased roadmap see [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md).
 
 ## Getting started
 
@@ -19,10 +19,12 @@ npm run build    # typecheck + production build
 
 | Path | Contents |
 |---|---|
-| `src/` | Application source. `data/` (typed loader), `types/` (shared interfaces), `engine/` (rules engine — Phase 2), `App.tsx` (placeholder UI). |
+| `src/` | Application source. `data/` (typed loader), `types/` (shared interfaces), `engine/` (headless rules engine + effects), `ui/` (React view: `Card` rendering seam, `Tip`, `useGame`, `format`/guidance, `DecisionPanel`), `App.tsx` (board), `index.css`. |
 | `data/` | Structured card data (Maquis, Missions, Enemies, Civilians, Spies) + `rules.json`. See [`data/README.md`](./data/README.md). |
-| `Card Assets/` | Source photos of the physical cards (transcription source of truth). |
+| `docs/ENGINE_DESIGN.md` | Full rules-engine architecture spec. |
+| `Card Assets/` | Source photos of the physical cards (transcription source of truth; a later art swap targets `ui/Card.tsx` only). |
 | `Resist_Rulebook_English_v4_(1).pdf` | Official rulebook. |
+| `HANDOFF.md` | Working handoff — current state + session bootstrap. |
 | `RESIST_PC_PORT_PLAN.md` | Project plan and phased roadmap. |
 | `RESIST_PC_PORT_HANDOFF.md` | Original research handoff (rules, mechanics, layout). |
 
@@ -30,9 +32,9 @@ npm run build    # typecheck + production build
 
 1. ✅ **Phase 1** — card data to JSON
 2. ✅ **Phase 0** — project scaffold (Vite + React + TypeScript)
-3. 🔨 **Phase 2** — headless rules engine (validated against the rulebook's worked example) — slice 1 (state + RNG + setup) done
-4. **Phase 3** — playable prototype UI
-5. **Phase 4** — polish & desktop packaging (Tauri)
+3. ✅ **Phase 2** — headless rules engine, validated against the rulebook's worked example (M2 gate passes)
+4. 🔨 **Phase 3** — playable prototype UI (functional + polished; decision-UX polish remains)
+5. ⬜ **Phase 4** — polish & desktop packaging (Tauri)
 
 ## Credits
 

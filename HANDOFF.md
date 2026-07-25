@@ -2,14 +2,7 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-**Repo state.** Last *committed*: `main` @ `2f48f0a` (Phase 2 ATTACK sub-slice 3 chunk 1). **Uncommitted in the working tree** (verify with `git status`): all of Phase 2 since that commit (every card effect, Guard/Grunt/Train-Depot constraints, AFTERMATH + RECOVER round loop, the M2 acceptance gate) **and Phase 3 — a playable React UI** over the engine, plus this handoff. All verified green (**100/100 tests**, `tsc` + `build` clean). **Phase 2 (engine) is complete and rulebook-verified; Phase 3 (UI) has a working first prototype.** Commit, then re-pin this hash:
-
-```
-del .git\index.lock            REM only if a stale lock exists
-git add -A
-git commit -m "Phase 2 complete (all effects + round loop + M2 gate) and Phase 3 playable UI prototype"
-git push
-```
+**Repo state.** `main` is synced with GitHub (`git status` clean; run `git log --oneline` for the latest hash). **Phase 2 (engine) is complete and rulebook-verified. Phase 3 (UI) has a playable, substantially-polished prototype.** All verified green: **101/101 tests, `tsc --noEmit` + `npm run build` clean.** The known enemy-Defense-reset-on-reshuffle bug is fixed. Remaining before "done": Phase 3 decision-UX polish and the optional draft-variant setup (see §8).
 
 Run the app: `npm install` then `npm run dev`.
 
@@ -21,13 +14,12 @@ A single-player digital port of the physical solitaire card game **Resist!** (Sa
 
 ## 2. Repo & environment
 
-- **Local folder** (connected in Cowork): `C:\Users\stephen.levy\GHRepos\DEFY!`
+- **Local folder**: `C:\Users\stephen.levy\GHRepos\DEFY!` (developed locally in Cursor on Windows/PowerShell).
 - **GitHub**: `https://github.com/stlevy53/defy`, branch `main`.
-- **Sandbox path** for `mcp__workspace__bash`: `/sessions/<session>/mnt/DEFY!` (differs per session; check the Shell access note).
 
-### Critical workflow quirks (read before touching git)
-- **The sandbox cannot complete git commits.** The network mount blocks unlinking `.git/*.lock`, leaving stale `index.lock`/`HEAD.lock` that break later git ops. **Do NOT run git from the agent.** The agent writes & verifies files; **the user runs `git add/commit/push`** from their machine (Claude Code / terminal). If a stale lock exists, delete `.git\index.lock` (and `HEAD.lock`) first.
-- **Develop-and-verify pattern.** Build/test in the sandbox, then copy into the repo. The established flow: keep a working copy at `/tmp/scaffold` with deps installed (`npm install` once), then each iteration `cp -r <repo>/src/. /tmp/scaffold/src/` and run `npx tsc --noEmit` + `npx vitest run` + `npx vite build`. This avoids `npm install` against the mount. Because the agent edits the repo directly (Write/Edit) and only *copies into* the scaffold to test, the repo is always the source of truth.
+### Workflow notes
+- **Develop locally, commit directly.** Work happens in the local repo; the agent runs `npx tsc --noEmit`, `npx vitest run`, and `npx vite build` in place, then commits and pushes. (The old sandbox/no-git caveat from earlier sessions no longer applies.)
+- **PowerShell gotchas.** `&&` isn't a statement separator — chain with `;`. Multi-line commit messages via heredoc don't work; write the message to a temp file and `git commit -F <file>`. Git will warn `LF will be replaced by CRLF` on commit — harmless.
 - **Card image transcription** (complete): `Card Assets/*.jpg` are phone photos, some rotated. ImageMagick (`convert -crop … -rotate … -resize`) was used to slice cards. CCW (`-rotate -90`) for the Maquis sheet; `-rotate 180` for the landscape mission/civilian sheets.
 
 ## 3. Tech stack (decided)
@@ -40,15 +32,22 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (= `tsc --no
 
 - ✅ **Phase 1 — card data** → `/data` (see §5). Validated against rulebook.
 - ✅ **Phase 0 — scaffold** → Vite+React+TS, data loader, placeholder UI, test suite.
-- 🔜 **Phase 2 — rules engine** (in progress):
+- ✅ **Phase 2 — rules engine (COMPLETE, rulebook-verified):**
   - ✅ Slice 1 — state model, seeded RNG, `createGame` setup.
   - ✅ Slice 2 — PLAN core: action/decision system, play-Maquis, choose-mission.
-  - ✅ Slice 3 — PLAN card-action effects (all 21 PLAN-usable Maquis actions).
+  - ✅ Slice 3 — PLAN card-action effects (all 23 PLAN-usable Maquis actions).
   - ✅ ATTACK slice: entry + mandatory play-out · attack resolution · all Maquis/enemy/mission effects (**every effect real — no stubs**, including Emilio's copy) · Guard/Grunt + Train-Depot constraints.
   - ✅ **AFTERMATH + RECOVER** — civilian-loss + mission outcome (success refill / failure) + `EndResistance` scoring + `Continue` → RECOVER cleanup/draw/reset. **A full round loops**, all three loss conditions + win tiers work, Era-2/3 missions enter via refill.
   - ✅ **M2 acceptance gate** — `worked_example.test.ts` replays the rulebook's illustrated first turn (pp. 11–13) end-to-end.
-  - ⬜ **Phase 2 remainder (small, see §8):** a known defense-reset-on-reshuffle bug and the optional draft-variant setup. Otherwise the ruleset is complete and correct.
-- 🔜 **Phase 3 — playable prototype UI** (in progress). First working build shipped (`src/ui/` + `src/App.tsx`): renders the board, offers `legalActions` as buttons, answers `pendingDecision`, shows win/loss, with undo + new-game. `src/ui/playthrough.test.ts` plays full games to an ending across 40 seeds. **Next: playtest polish** (see §8).
+  - ✅ **Enemy Defense reset on reshuffle** — fixed: `EnemyInstance.baseDefense` stores the printed value; `refillEnemyDeckIfEmpty` restores it when an enemy reshuffles back into the deck (regression test in `aftermath.test.ts`).
+  - ⬜ Only leftover: the **optional draft-variant setup** (`createGame` has no `draft` option). The ruleset itself is complete and correct.
+- 🔨 **Phase 3 — playable prototype UI (in progress; substantially polished).** `src/ui/` + `src/App.tsx`: renders the board, drives play through `legalActions`, answers `pendingDecision`, shows win/loss, with undo + new-game. `src/ui/playthrough.test.ts` plays full games to an ending across 40 seeds. Polish shipped so far:
+  - **Single `Card` rendering seam** (`ui/Card.tsx`) — every card face draws here, so the eventual art swap touches one file.
+  - **Inline action text** on Maquis in hand (both sides) and in play.
+  - **Round-phase breadcrumb + new-player guidance** (`PhaseGuide`): PLAN→ATTACK→AFTERMATH→RECOVER with the current phase lit, a "what to do now" line, and sub-step-aware steps derived from `legalActions`.
+  - **Direct card interaction ("click the thing")** — play a Maquis by clicking its Hidden/Revealed side; use a played card's action by clicking the action; choose a Mission by clicking the card; during ATTACK, strike an Enemy or the Mission by clicking it. The only remaining bottom buttons are phase-level "Turn" controls (Done attacking / End / Continue).
+  - **Legibility aids** — CSS hover tooltips (`ui/Tip.tsx` + `keywordTip`) on icons/stats/keywords; face-up Enemies show keyword + effect; a SURVIVE caution tile under the mission row warns about undefeated SURVIVE defenders.
+  - **Next: decision UX polish** (see §8).
 - ⬜ Phase 4 — polish + desktop packaging.
 
 ## 5. Card data (`/data`, all validated — see `data/README.md`)
@@ -64,9 +63,9 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 - **Interaction model (the crux).** Effects needing player input push onto an internal `effectQueue` and **suspend by setting `pendingDecision`**; the caller responds via `resolveDecision`. The engine never calls back into the UI.
 - **Data-driven effects.** Behavior lives in a registry keyed by card id/type: `maquis:{id}:{side}`, `mission:{id}`, `enemy:{typeId}`.
 - **Phase state machine**: `PLAN → ATTACK → AFTERMATH → RECOVER → (loop)`; `legalActions(state)` is derived so the UI holds no rules.
-- **Acceptance gate (M2, not yet built):** encode the rulebook's worked first turn (PDF pp. ~11–13) as a scripted Action/Decision sequence and assert the engine reproduces it. A **card-conservation invariant** is already asserted after every action in tests.
+- **Acceptance gate (M2):** the rulebook's worked first turn (PDF pp. ~11–13) is encoded as a scripted Action/Decision sequence in `worked_example.test.ts` and the engine reproduces it — *done*. A **card-conservation invariant** is also asserted after every action in tests.
 
-**Approved decisions:** (1) **Immer** for handler updates — *done, in package.json*. (2) **Implement all** 24 Maquis + 20 mission + 8 enemy effects (no permanent stubs) — *Maquis + enemy done; missions are chunk 3b*. (3) **State-history undo stack** — *not built yet*. (4) **Cover the rulebook FAQ edge cases** (reshuffle-on-empty; "discard" ≠ "defeat"; mid-round-drawn cards must be played that round) — *in progress; honored so far*. (5) **Expose the RNG seed** in `createGame` — *done*. Decisions 2 and 4 are the ones affecting gameplay fidelity.
+**Approved decisions:** (1) **Immer** for handler updates — *done*. (2) **Implement all** 24 Maquis + 20 mission + 8 enemy effects (no permanent stubs) — *done, every effect real*. (3) **State-history undo stack** — *done (`ui/useGame.ts`)*. (4) **Cover the rulebook FAQ edge cases** (reshuffle-on-empty; "discard" ≠ "defeat"; mid-round-drawn cards must be played that round) — *done*. (5) **Expose the RNG seed** in `createGame` — *done*. Decisions 2 and 4 are the ones affecting gameplay fidelity.
 
 ## 7. Engine built so far (`src/engine/`)
 
@@ -95,23 +94,23 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 **UI** (`src/ui/`, `src/App.tsx`) — thin React view, no rules:
 - `ui/bootstrap.ts` — `ensureEffectsRegistered()` (registers all four effect sets once).
 - `ui/useGame.ts` — hook holding a state-history stack: `state`, `actions` (= `legalActions`), `dispatch` (applyAction), `respond` (resolveDecision), `undo`, `newGame`, `error`.
-- `ui/format.ts` — id→label helpers (`nameOfMaquis`, `describeUid`, `actionLabel`, …); cards render from `/data`, text-first.
+- `ui/format.ts` — id→label helpers (`nameOfMaquis`, `describeUid`, `actionLabel`, `maquisSideAction`, `keywordTip`, …) **and the new-player guidance selector** `guidanceFor(state, actions)` + `ROUND_PHASES` (drives the phase breadcrumb). Cards render from `/data`, text-first.
+- `ui/Card.tsx` — **the single card-rendering seam.** A `Card(face: CardFace)` component with a discriminated union over `maquisHand` / `maquisPlayed` / `mission` (+ the internal `EnemyChip`). Holds all the direct-click interaction (play a side, use an action, choose/strike a mission, strike an enemy). **When art assets arrive, this is the one file to change** — swap the text bodies for `<img>` faces, keep the outer wrappers + state classes.
+- `ui/Tip.tsx` — `Tip` CSS-only hover tooltip (no JS state); `below` variant opens downward for header pills.
 - `ui/DecisionPanel.tsx` — renders all four `pendingDecision` kinds and collects the response.
-- `App.tsx` — board (mission row + enemies, hidden/revealed play areas, hand, pile counts), grouped legal-action buttons, decision panel, result banner, log, undo/new-game. Styling in `index.css` (thematic dark).
+- `App.tsx` — board (phase guide, mission row + enemies, SURVIVE caution, hidden/revealed play areas, hand, pile counts), the residual "Turn" action group (AdvancePhase / EndResistance / Continue — everything else is clicked on the cards), decision panel, result banner, log, undo/new-game. Styling in `index.css` (thematic dark).
 
-**Tests (100/100 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (16) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `effects/emilio.test.ts` (3) · `aftermath.test.ts` (6) · `worked_example.test.ts` (1 — the M2 gate) · `ui/playthrough.test.ts` (1 — full games to an ending, 40 seeds, via the UI path) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
+**Tests (101/101 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (16) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `effects/emilio.test.ts` (3) · `aftermath.test.ts` (7 — includes the enemy-Defense-reset regression) · `worked_example.test.ts` (1 — the M2 gate) · `ui/playthrough.test.ts` (1 — full games to an ending, 40 seeds, via the UI path) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
 
-## 8. Immediate next task — Phase 3 polish (the UI prototype exists)
+## 8. Immediate next task — Phase 3 polish (continue)
 
-A working UI is in `src/ui/` + `src/App.tsx` (`npm run dev`). It's functional but plain — the next slices are playtest-driven polish. Suggested order:
-1. **Playtest it.** Run a few games; watch for confusing moments (e.g. count-based bonuses — see the note below — or mandatory play-out not being obvious). Fix the sharpest rough edges first.
-2. **Clarity passes:** show each card's *action text* on hover/inline (currently only names + attack show for Maquis in hand/play); label the chosen mission and the "you must play out your hand" state more loudly; surface `state.log` events as transient toasts.
-3. **Decision UX:** the `DecisionPanel` works but is utilitarian — improve `selectCards`/`orderCards` affordances; auto-confirm single-candidate `selectTarget`s if desired.
-4. **Optional niceties:** seed entry for reproducible games; a compact "what happened" summary after AFTERMATH.
+A polished-but-not-finished UI is in `src/ui/` + `src/App.tsx` (`npm run dev`). The clarity + direct-interaction passes are done (see §4). Remaining, suggested order:
+1. **Playtest it.** Run a few full games; watch for confusing moments (e.g. count-based bonuses — see the note below — or the mandatory ATTACK play-out). Fix the sharpest rough edges first.
+2. **Decision UX:** the `DecisionPanel` works but is utilitarian — improve `selectCards`/`orderCards` affordances; consider auto-confirming single-candidate `selectTarget`s. Ideally fold decisions into the same "click the thing on the board" idiom the rest of the UI now uses.
+3. **Optional niceties:** surface `state.log` events as transient toasts; a compact "what happened" summary after AFTERMATH; seed entry for reproducible games.
 
-**Two small engine leftovers (fix anytime; independent of the UI):**
-1. **Known bug — enemy Defense isn't reset on reshuffle.** Benigno/Engineer/Mayor mutate `enemy.defense` in place; if an enemy later cycles through `enemyDiscard` and `refillEnemyDeckIfEmpty` reshuffles it back, it keeps the modified value. Fix: store a printed `baseDefense` on `EnemyInstance` (in `setup.ts`) and reset `defense = baseDefense` when an enemy is discarded/reshuffled.
-2. **Optional — draft-variant setup** (`createGame` has no `draft` option). Interactive; a self-contained slice.
+**One engine leftover (optional; independent of the UI):**
+- **Draft-variant setup** (`createGame` has no `draft` option). Interactive, so it needs the decision system; a self-contained slice.
 
 **Design note — count-based ATTACK bonuses snapshot at use-time.** Soledad/Abel/Marcelino add "+1 per revealed/other Maquis" *when their action fires*, not at a final tally. The rulebook totals Attack Strength at the spend step, so to match it the player must fire these actions after the relevant Maquis are in play (the M2 gate fires Abel's last for this reason). The UI could nudge the player to fire count-actions last, or a stricter engine model would defer count bonuses to the spend step.
 
