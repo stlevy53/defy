@@ -1,12 +1,13 @@
 // Resist! — playable prototype UI (Phase 3). A thin view over the headless engine: it renders
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
-import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable } from './ui/format'
+import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus } from './ui/format'
 import type { Action, Decision, GameState } from './engine'
 
 export function App() {
@@ -61,9 +62,7 @@ export function App() {
             <span className={`pill phase-${state.phase}`}>{state.phase}</span>
           </Tip>
           {(state.phase === 'ATTACK' || state.attackStrength > 0) && (
-            <Tip below text="Attack Strength — points banked to spend defeating targets this Attack.">
-              <span className="pill accent">⚔ {state.attackStrength}</span>
-            </Tip>
+            <AttackStrengthPill value={state.attackStrength} />
           )}
           <Tip below text="Victory Points — your score so far from defeated Missions.">
             <span className="pill">★ {victoryPoints(state)} VP</span>
@@ -120,6 +119,7 @@ export function App() {
           title="Hidden Maquis"
           cards={state.inPlay.filter((m) => m.side === 'hidden')}
           side="hidden"
+          state={state}
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
           pickTargets={pickTargets}
@@ -129,6 +129,7 @@ export function App() {
           title="Revealed Maquis"
           cards={state.inPlay.filter((m) => m.side === 'revealed')}
           side="revealed"
+          state={state}
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
           pickTargets={pickTargets}
@@ -256,6 +257,7 @@ function Zone({
   title,
   cards,
   side,
+  state,
   actions,
   onUse,
   pickTargets,
@@ -264,6 +266,7 @@ function Zone({
   title: string
   cards: GameState['inPlay']
   side: 'hidden' | 'revealed'
+  state: GameState
   actions: Action[]
   onUse: (uid: string) => void
   pickTargets: string[]
@@ -284,6 +287,7 @@ function Zone({
             onUse={() => onUse(m.uid)}
             pickable={pickTargets.includes(m.uid)}
             onPick={onPick}
+            liveBonus={countActionBonus(state, m.dataId, side, m.uid)}
           />
         ))}
         {cards.length === 0 && <span className="muted">—</span>}
@@ -323,6 +327,31 @@ function Piles({ state }: { state: GameState }) {
         </span>
       ))}
     </section>
+  )
+}
+
+/** The Attack Strength pill. When the value rises (e.g. Consuelo discards an Enemy and gains its
+ *  Defense as Attack, or a Maquis banks its attack), it pulses and floats a green "+N" so the gain
+ *  is unmistakable. Spends (which lower it) already read clearly on the board, so only gains flash. */
+function AttackStrengthPill({ value }: { value: number }) {
+  const prev = useRef(value)
+  const [gain, setGain] = useState(0)
+  useEffect(() => {
+    const delta = value - prev.current
+    prev.current = value
+    if (delta > 0) {
+      setGain(delta)
+      const t = setTimeout(() => setGain(0), 1300)
+      return () => clearTimeout(t)
+    }
+  }, [value])
+  return (
+    <Tip below text="Attack Strength — points banked to spend defeating targets this Attack.">
+      <span className={`pill accent atk ${gain > 0 ? 'atk-bump' : ''}`}>
+        ⚔ {value}
+        {gain > 0 && <span className="atk-delta">+{gain}</span>}
+      </span>
+    </Tip>
   )
 }
 

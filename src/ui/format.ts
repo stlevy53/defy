@@ -1,7 +1,7 @@
 // Presentation helpers: turn engine ids/actions into human-readable labels. Cards render from the
 // /data JSON (text-first). No rules here — pure formatting over GameState.
 
-import { maquis, missions, enemyTypes } from '../data'
+import { maquis, missions, enemyTypes, civilians } from '../data'
 import type { ActionType } from '../types'
 import type { Action, EnemyInstance, GameState } from '../engine'
 
@@ -9,6 +9,29 @@ const maquisName = new Map(maquis.map((m) => [m.id, m.name]))
 const maquisCard = new Map(maquis.map((m) => [m.id, m]))
 const missionCard = new Map(missions.map((m) => [m.id, m]))
 const enemyTypeById = new Map(enemyTypes.map((t) => [t.id, t]))
+const civilianCount = new Map(civilians.map((c) => [c.id, c.civilians]))
+
+/** Live Attack bonus a count-based ATTACK action would grant right now (it snapshots at use-time),
+ *  or null if the card's action isn't count-based. Mirrors the engine handlers so the played card
+ *  can show, e.g., Abel hidden's "+1 per revealed Maquis" as its current value. */
+export function countActionBonus(
+  state: GameState,
+  dataId: string,
+  side: 'hidden' | 'revealed',
+  uid: string,
+): number | null {
+  switch (`${dataId}:${side}`) {
+    case 'soledad:hidden':
+    case 'abel:hidden':
+      return state.inPlay.filter((m) => m.side === 'revealed').length
+    case 'marcelino:revealed':
+      return state.inPlay.filter((m) => m.uid !== uid).length
+    case 'abel:revealed':
+      return state.graveyard.reduce((n, c) => n + (civilianCount.get(c.dataId) ?? 0), 0)
+    default:
+      return null
+  }
+}
 
 export const nameOfMaquis = (dataId: string): string =>
   dataId === 'spy' ? 'Spy' : maquisName.get(dataId) ?? dataId

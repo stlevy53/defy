@@ -32,6 +32,8 @@ export type CardFace =
       onUse?: () => void
       pickable?: boolean
       onPick?: (uid: string) => void
+      /** Live value of a count-based ATTACK action (e.g. Abel hidden's +1/revealed Maquis), or null. */
+      liveBonus?: number | null
     }
   | {
       kind: 'mission'
@@ -72,6 +74,7 @@ export function Card(face: CardFace) {
           onUse={face.onUse}
           pickable={face.pickable}
           onPick={face.onPick}
+          liveBonus={face.liveBonus}
         />
       )
     case 'mission':
@@ -189,6 +192,7 @@ function MaquisPlayedFace({
   onUse,
   pickable,
   onPick,
+  liveBonus,
 }: {
   dataId: string
   uid: string
@@ -197,6 +201,7 @@ function MaquisPlayedFace({
   onUse?: () => void
   pickable?: boolean
   onPick?: (uid: string) => void
+  liveBonus?: number | null
 }) {
   const action = maquisSideAction(dataId, side)
   const pick = pickable && onPick ? () => onPick(uid) : null
@@ -231,6 +236,11 @@ function MaquisPlayedFace({
             <span className="action-text">{action.text}</span>
           </div>
         ))}
+      {liveBonus != null && (
+        <Tip text="This action's current value — it locks in the moment you use it, so fire it after playing your other Maquis.">
+          <span className="action-live">⚔ +{liveBonus} now</span>
+        </Tip>
+      )}
     </div>
   )
 }
