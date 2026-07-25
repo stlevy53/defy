@@ -4,8 +4,7 @@
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
-import { actionLabel, missionOf, phaseGuide, ROUND_PHASES } from './ui/format'
-import type { RoundPhase } from './ui/format'
+import { actionLabel, missionOf, enemyOf, guidanceFor, ROUND_PHASES } from './ui/format'
 import type { Action, GameState } from './engine'
 
 export function App() {
@@ -50,7 +49,7 @@ export function App() {
         </div>
       )}
 
-      <PhaseGuide phase={state.phase} />
+      <PhaseGuide state={state} actions={actions} />
 
       <section className="missions">
         {state.missionRow.map((slot) => (
@@ -75,6 +74,8 @@ export function App() {
 
       <section className="control-deck">
         {error && <div className="error">{error}</div>}
+
+        <SurviveCaution state={state} />
 
         {state.pendingDecision ? (
           <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
@@ -112,11 +113,12 @@ export function App() {
   )
 }
 
-/** Breadcrumb of the four round phases with the current one highlighted, plus a what-to-do-now
- *  message for that phase. Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. */
-function PhaseGuide({ phase }: { phase: GameState['phase'] }) {
-  const activeIndex = ROUND_PHASES.indexOf(phase as RoundPhase) // -1 at GAME_OVER
-  const guide = activeIndex >= 0 ? phaseGuide[phase as RoundPhase] : null
+/** Breadcrumb of the four round phases with the current one highlighted, plus sub-step-aware
+ *  guidance: a prominent "what to do now" line and the phase's steps with the active ones lit.
+ *  Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. */
+function PhaseGuide({ state, actions }: { state: GameState; actions: Action[] }) {
+  const guide = guidanceFor(state, actions)
+  const activeIndex = guide ? ROUND_PHASES.indexOf(guide.phase) : -1
   return (
     <section className="phase-guide">
       <ol className="breadcrumb">
@@ -139,18 +141,59 @@ function PhaseGuide({ phase }: { phase: GameState['phase'] }) {
       {guide && (
         <div className="phase-message">
           <div className="phase-goal">
-            <span className="phase-name">{phase}</span>
+            <span className="phase-name">{guide.phase}</span>
             {guide.goal}
             {guide.auto && <span className="phase-auto">automatic</span>}
           </div>
+          <p className="phase-now">{guide.now}</p>
           <ol className="phase-steps">
             {guide.steps.map((s, i) => (
-              <li key={i}>{s}</li>
+              <li key={i} className={s.active ? 'active' : ''}>
+                {s.text}
+              </li>
             ))}
           </ol>
         </div>
       )}
     </section>
+  )
+}
+
+/** During ATTACK, warn that any undefeated SURVIVE defenders at the chosen Mission will resolve
+ *  their effect when the player finishes attacking — even if the Mission itself is defeated. */
+function SurviveCaution({ state }: { state: GameState }) {
+  if (state.phase !== 'ATTACK') return null
+  const slot = state.missionRow.find((s) => s.uid === state.chosenMissionUid)
+  if (!slot) return null
+
+  const counts = new Map<string, number>()
+  for (const e of slot.enemies) {
+    if (enemyOf(e.typeId)?.keyword === 'SURVIVE') counts.set(e.typeId, (counts.get(e.typeId) ?? 0) + 1)
+  }
+  const total = [...counts.values()].reduce((n, c) => n + c, 0)
+  if (total === 0) return null
+
+  return (
+    <div className="caution">
+      <div className="caution-head">
+        ⚠ {total} defender{total > 1 ? 's' : ''} will resolve a SURVIVE effect when you finish attacking
+        {slot.defeated ? ' — even though the Mission is defeated' : ''}:
+      </div>
+      <ul>
+        {[...counts.entries()].map(([typeId, n]) => {
+          const t = enemyOf(typeId)
+          return (
+            <li key={typeId}>
+              <b>
+                {t?.name}
+                {n > 1 ? ` ×${n}` : ''}
+              </b>{' '}
+              — {t?.effect}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
 

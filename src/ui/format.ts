@@ -82,8 +82,14 @@ export function actionLabel(state: GameState, action: Action): string {
       const slot = state.missionRow.find((s) => s.uid === action.uid)
       return `Attack: ${slot ? missionCard.get(slot.dataId)?.name ?? slot.dataId : action.uid}`
     }
-    case 'SpendAttackOn':
-      return `Strike ${describeUid(state, action.targetUid)}`
+    case 'SpendAttackOn': {
+      if (action.targetUid === state.chosenMissionUid) {
+        const slot = state.missionRow.find((s) => s.uid === action.targetUid)
+        const name = slot ? missionCard.get(slot.dataId)?.name ?? slot.dataId : action.targetUid
+        return `Strike the Mission — ${name}`
+      }
+      return `Strike defender: ${describeUid(state, action.targetUid)}`
+    }
     case 'AdvancePhase':
       return 'Done attacking →'
     case 'EndResistance':
@@ -97,38 +103,100 @@ export function actionLabel(state: GameState, action: Action): string {
 export const ROUND_PHASES = ['PLAN', 'ATTACK', 'AFTERMATH', 'RECOVER'] as const
 export type RoundPhase = (typeof ROUND_PHASES)[number]
 
-/** New-player guidance for each phase: a one-line goal plus the concrete steps to take. */
-export const phaseGuide: Record<RoundPhase, { goal: string; steps: string[]; auto?: boolean }> = {
-  PLAN: {
-    goal: 'Set up your attack.',
-    steps: [
-      'Play Maquis from your hand — hidden (left) or revealed (right).',
-      'Optionally use PLAN card actions.',
-      'Choose one Mission to attack; its Enemies are revealed.',
-    ],
-  },
-  ATTACK: {
-    goal: 'Defeat the Mission and its Enemies.',
-    steps: [
-      'Play out the rest of your hand — this is mandatory.',
-      'Fire ATTACK card actions to raise Attack Strength or weaken Enemies.',
-      'Spend Attack Strength on targets (each costs its Defense) to defeat them.',
-    ],
-  },
-  AFTERMATH: {
-    goal: 'See the outcome, then decide.',
-    steps: [
-      'A defeated Mission scores and is replaced; a failure flips it (two failures loses).',
-      'Any Enemies still standing may cost you Civilians (5 lost loses).',
-      'End the resistance to score now, or continue to another round.',
-    ],
-  },
-  RECOVER: {
-    goal: 'Reset for the next round.',
-    auto: true,
-    steps: [
-      'Maquis in play are cleaned up automatically.',
-      'You draw a fresh hand of 5 from the Hidden deck.',
-    ],
-  },
+export interface GuideStep {
+  text: string
+  /** Highlighted as a step the player can act on right now; others render dimmed. */
+  active?: boolean
+}
+
+/** Sub-step-aware guidance for the current moment: which round phase, the goal, the single most
+ *  important instruction now, and the phase's steps with the current ones highlighted. */
+export interface Guidance {
+  phase: RoundPhase
+  goal: string
+  now: string
+  steps: GuideStep[]
+  auto?: boolean
+}
+
+const canDo = (actions: Action[], t: Action['type']): boolean => actions.some((a) => a.type === t)
+
+/**
+ * Derive new-player guidance from the current state + legal actions. Sub-steps are read off
+ * `legalActions` rather than re-deriving rules — e.g. in ATTACK, `AdvancePhase` only becomes legal
+ * once the mandatory play-out is complete, which distinguishes the play-out from the spend step.
+ */
+export function guidanceFor(state: GameState, actions: Action[]): Guidance | null {
+  switch (state.phase) {
+    case 'PLAN': {
+      const played = state.inPlay.length > 0
+      return {
+        phase: 'PLAN',
+        goal: 'Set up your attack.',
+        now: played
+          ? 'Play or use more cards, or choose a Mission to attack — choosing ends PLAN.'
+          : 'Play Maquis from your hand, then choose a Mission to attack.',
+        steps: [
+          { text: 'Play Maquis — hidden (left) or revealed (right).', active: true },
+          { text: 'Optionally use PLAN card actions.', active: true },
+          { text: 'Choose one Mission to attack; its Enemies are revealed. (Ends PLAN)', active: true },
+        ],
+      }
+    }
+    case 'ATTACK': {
+      // AdvancePhase ("Done attacking") only appears once every Maquis has been played out.
+      if (!canDo(actions, 'AdvancePhase')) {
+        return {
+          phase: 'ATTACK',
+          goal: 'Defeat the Mission and its Enemies.',
+          now: 'Play out your whole hand first — every remaining Maquis must be played (Spies stay in hand).',
+          steps: [
+            { text: 'Play out the rest of your hand — mandatory.', active: true },
+            { text: 'Fire ATTACK actions to raise Attack Strength or weaken Enemies.', active: true },
+            { text: 'Spend Attack Strength on targets to defeat them.' },
+          ],
+        }
+      }
+      const canStrike = canDo(actions, 'SpendAttackOn')
+      return {
+        phase: 'ATTACK',
+        goal: 'Defeat the Mission and its Enemies.',
+        now: canStrike
+          ? 'Spend Attack Strength on a target (cost = its Defense). Grunts fall first, Guards before the Mission — or click Done attacking.'
+          : 'No target is affordable now — click Done attacking. (Leftover Attack Strength is lost.)',
+        steps: [
+          { text: 'Hand played out.' },
+          { text: 'Fire any remaining ATTACK actions to boost your strike.', active: true },
+          { text: 'Spend Attack Strength on targets, then Done attacking.', active: true },
+        ],
+      }
+    }
+    case 'AFTERMATH': {
+      const canContinue = canDo(actions, 'Continue')
+      return {
+        phase: 'AFTERMATH',
+        goal: 'See the outcome, then decide.',
+        now: canContinue
+          ? 'End the resistance to score now, or Continue to the next round.'
+          : 'No Missions remain — End the resistance to score your game.',
+        steps: [
+          { text: 'Mission outcome and civilian losses resolved automatically.' },
+          { text: 'End the resistance to score, or Continue to another round.', active: true },
+        ],
+      }
+    }
+    case 'RECOVER':
+      return {
+        phase: 'RECOVER',
+        goal: 'Reset for the next round.',
+        auto: true,
+        now: 'Cleaning up and drawing a fresh hand…',
+        steps: [
+          { text: 'Maquis in play are cleaned up.' },
+          { text: 'Draw a fresh hand of 5 from the Hidden deck.' },
+        ],
+      }
+    case 'GAME_OVER':
+      return null
+  }
 }

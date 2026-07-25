@@ -85,10 +85,20 @@ function MissionFace({ slot, state }: { slot: MissionSlot; state: GameState }) {
 
 function EnemyChip({ enemy }: { enemy: EnemyInstance }) {
   const type = enemyOf(enemy.typeId)
+  if (!enemy.faceUp) {
+    return <span className="enemy facedown">🂠</span>
+  }
   return (
-    <span className={`enemy ${enemy.faceUp ? '' : 'facedown'} kw-${type?.keyword}`}>
-      {enemy.faceUp ? `${type?.name} ${enemy.defense}` : '🂠'}
-    </span>
+    <div className={`enemy faceup kw-${type?.keyword}`}>
+      <div className="enemy-head">
+        <span className={`kw kw-${type?.keyword}`}>{type?.keyword}</span>
+        <span className="enemy-name">{type?.name}</span>
+        <span className="enemy-def" title="Defense">
+          🛡 {enemy.defense}
+        </span>
+      </div>
+      {type?.effect && <div className="enemy-effect">{type.effect}</div>}
+    </div>
   )
 }
 
