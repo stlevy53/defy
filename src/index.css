@@ -17,7 +17,15 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; background: radial-gradient(1200px 600px at 50% -10%, #241d16, var(--bg)); }
+/* Themed tabletop: the worn-wood photo fills the viewport (fixed, so play area scrolls over it),
+ *  with a soft dark wash to keep the centered column of cards legible over the mid-table wood. */
+body {
+  margin: 0; min-height: 100vh;
+  background:
+    linear-gradient(rgba(15, 12, 9, 0.32), rgba(15, 12, 9, 0.52)),
+    url('/tabletop.jpg') center top / cover no-repeat fixed,
+    var(--bg);
+}
 #root { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
 
 h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
@@ -27,7 +35,10 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 /* Top bar */
 .topbar {
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-  padding: 0.6rem 0.9rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.6rem 0.9rem; border-radius: 10px;
+  background: rgba(20, 17, 14, 0.74); border: 1px solid rgba(122, 98, 62, 0.45);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 .title strong { color: var(--accent); letter-spacing: 0.12em; font-size: 1.15rem; }
 .status { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
@@ -79,8 +90,9 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 
 .phase-message {
   margin-top: 0.55rem; padding: 0.6rem 0.85rem;
-  background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
-  border-radius: 8px;
+  background: rgba(24, 19, 14, 0.78); border: 1px solid rgba(122, 98, 62, 0.4); border-left: 3px solid var(--accent);
+  border-radius: 8px; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
 }
 .phase-message-main { flex: 2 1 340px; min-width: 0; }
@@ -118,7 +130,8 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 /* Missions */
 .missions { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
 .card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.7rem;
+  background: var(--panel); border: 1px solid #4a3d2c; border-radius: 10px; padding: 0.6rem 0.7rem;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 236, 200, 0.04) inset;
 }
 .card.mission { position: relative; }
 .card.mission.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
@@ -208,7 +221,12 @@ button.enemy.faceup.pickable:hover, button.enemy.faceup.pickable:focus-visible {
 
 /* Play area + hand */
 .play-area { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.6rem 0; }
-.zone, .hand { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; }
+/* Play zones read as marked-out areas on the table: faintly translucent so the wood shows through,
+ *  with the cards inside lifting off them via their own shadow. */
+.zone, .hand {
+  background: rgba(24, 19, 14, 0.5); border: 1px solid rgba(122, 98, 62, 0.32); border-radius: 10px;
+  padding: 0.6rem 0.75rem; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
 .hand { margin: 0.6rem 0; }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
 .card.played { width: 200px; padding: 0.45rem 0.55rem; }
