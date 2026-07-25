@@ -7,6 +7,7 @@
 import type { KeyboardEvent } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
+import { maquisArt, enemyArt, enemyBackArt, missionArt, spyArt } from './cardArt'
 import { Tip } from './Tip'
 
 type Side = 'hidden' | 'revealed'
@@ -113,25 +114,77 @@ function MaquisHandFace({
   onPick?: (uid: string) => void
 }) {
   if (dataId === 'spy') {
+    const spyImg = spyArt()
+    if (spyImg) {
+      return (
+        <div className="card hand-card has-art spy">
+          <img className="card-art" src={spyImg} alt="Spy" draggable={false} />
+        </div>
+      )
+    }
     return (
-      <div className="card hand-card spy">
-        <div className="card-name">Spy</div>
-        <div className="spy-note">Can't be played — sits in hand until Recover.</div>
+      <div className="card hand-card mcard spy">
+        <div className="mcard-banner">Spy</div>
+        <div className="portrait spy">
+          <span className="portrait-monogram">S</span>
+        </div>
+        <div className="spy-note">Can't be played — sits in your hand until Recover.</div>
       </div>
     )
   }
+  const name = nameOfMaquis(dataId)
   const pick = pickable && onPick ? () => onPick(uid) : null
+  const art = maquisArt(dataId)
+
+  // Real card art: the image already carries the name + both Hidden/Revealed halves, so we just
+  // overlay two invisible "play this side" hotspots over the left (Hidden) and right (Revealed) halves.
+  if (art) {
+    return (
+      <div
+        className={`card hand-card has-art ${pick ? 'pickable' : ''}`}
+        onClick={pick ?? undefined}
+        role={pick ? 'button' : undefined}
+        tabIndex={pick ? 0 : undefined}
+        title={pick ? `Select ${name}` : undefined}
+        onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+      >
+        {pick && <div className="click-hint">Click to select</div>}
+        <img className="card-art" src={art} alt={name} draggable={false} />
+        <div className="play-hotspots">
+          <button
+            type="button"
+            className="hot"
+            disabled={!canPlayHidden}
+            onClick={() => onPlay(uid, 'hidden')}
+            title={canPlayHidden ? `Play ${name} — Hidden` : undefined}
+          >
+            <span className="hot-label">Play Hidden</span>
+          </button>
+          <button
+            type="button"
+            className="hot"
+            disabled={!canPlayRevealed}
+            onClick={() => onPlay(uid, 'revealed')}
+            title={canPlayRevealed ? `Play ${name} — Revealed` : undefined}
+          >
+            <span className="hot-label">Play Revealed</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
-      className={`card hand-card ${pick ? 'pickable' : ''}`}
+      className={`card hand-card mcard ${pick ? 'pickable' : ''}`}
       onClick={pick ?? undefined}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
-      title={pick ? `Select ${nameOfMaquis(dataId)}` : undefined}
+      title={pick ? `Select ${name}` : undefined}
       onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
     >
       {pick && <div className="click-hint">Click to select</div>}
-      <div className="card-name">{nameOfMaquis(dataId)}</div>
+      <div className="mcard-banner">{name}</div>
       <div className="sides">
         <SidePanel dataId={dataId} side="hidden" enabled={canPlayHidden} onPlay={() => onPlay(uid, 'hidden')} />
         <SidePanel dataId={dataId} side="revealed" enabled={canPlayRevealed} onPlay={() => onPlay(uid, 'revealed')} />
@@ -161,6 +214,7 @@ function SidePanel({
   onPlay: () => void
 }) {
   const action = maquisSideAction(dataId, side)
+  const monogram = nameOfMaquis(dataId).charAt(0)
   return (
     <button
       type="button"
@@ -170,7 +224,10 @@ function SidePanel({
       title={enabled ? `Play ${nameOfMaquis(dataId)} — ${side}` : undefined}
     >
       <div className="side-tag">{side === 'hidden' ? 'Hidden' : 'Revealed'}</div>
-      <div className="side-attack">⚔ {maquisAttack(dataId, side)}</div>
+      <div className={`portrait ${side}`}>
+        <span className="atk-burst">{maquisAttack(dataId, side)}</span>
+        <span className="portrait-monogram">{monogram}</span>
+      </div>
       {action ? (
         <div className="side-action">
           <span className="side-action-type">{action.type}</span> {action.text}
@@ -204,21 +261,62 @@ function MaquisPlayedFace({
   liveBonus?: number | null
 }) {
   const action = maquisSideAction(dataId, side)
+  const name = nameOfMaquis(dataId)
+  const monogram = name.charAt(0)
   const pick = pickable && onPick ? () => onPick(uid) : null
+  const art = maquisArt(dataId)
+
+  // Real card art: show the whole card and dim the half that isn't in play, so the active side reads
+  // clearly. The action fires from an overlaid "Use" ribbon; the live count-bonus sits in the corner.
+  if (art) {
+    const dimSide = side === 'hidden' ? 'right' : 'left'
+    return (
+      <div
+        className={`card played has-art ${side} ${pick ? 'pickable' : ''}`}
+        onClick={pick ?? undefined}
+        role={pick ? 'button' : undefined}
+        tabIndex={pick ? 0 : undefined}
+        title={pick ? `Select ${name}` : undefined}
+        onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+      >
+        {pick && <div className="click-hint">Click to select</div>}
+        <img className="card-art" src={art} alt={`${name} — ${side}`} draggable={false} />
+        <div className={`side-dim ${dimSide}`} aria-hidden="true" />
+        <span className={`side-badge ${side}`}>{side}</span>
+        {action && canUse && onUse && (
+          <button type="button" className="use-ribbon" onClick={onUse} title={`Use ${name}'s action`}>
+            {action.type} ▸ use
+          </button>
+        )}
+        {liveBonus != null && (
+          <Tip text="This action's current value — it locks in the moment you use it, so fire it after playing your other Maquis.">
+            <span className="action-live art">⚔ +{liveBonus}</span>
+          </Tip>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
-      className={`card played ${side} ${pick ? 'pickable' : ''}`}
+      className={`card played mcard ${side} ${pick ? 'pickable' : ''}`}
       onClick={pick ?? undefined}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
-      title={pick ? `Select ${nameOfMaquis(dataId)}` : undefined}
+      title={pick ? `Select ${name}` : undefined}
       onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
     >
       {pick && <div className="click-hint">Click to select</div>}
-      <div className="card-name">{nameOfMaquis(dataId)}</div>
-      <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
-        <span className="card-sub">⚔ {maquisAttack(dataId, side)}</span>
-      </Tip>
+      <div className="mcard-banner">
+        {name}
+        <span className="banner-side">{side}</span>
+      </div>
+      <div className={`portrait ${side}`}>
+        <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
+          <span className="atk-burst">{maquisAttack(dataId, side)}</span>
+        </Tip>
+        <span className="portrait-monogram">{monogram}</span>
+      </div>
       {action &&
         (canUse && onUse ? (
           <button
@@ -282,9 +380,11 @@ function MissionFace({
           ? { run: () => onPick!(slot.uid), hint: 'Click to select', title: `Select this Mission: ${name}` }
           : null
 
+  const art = missionArt(slot.dataId)
   const cls = [
     'card',
     'mission',
+    art ? 'has-art' : '',
     chosen ? 'chosen' : '',
     slot.faceDown ? 'failed' : '',
     slot.defeated ? 'defeated' : '',
@@ -292,31 +392,63 @@ function MissionFace({
   ]
     .filter(Boolean)
     .join(' ')
+
+  const stamp = slot.defeated ? (
+    <div className="defeated-stamp" aria-label="Mission defeated">
+      <span className="defeated-word">Defeated</span>
+      <span className="defeated-vp">+{data?.victoryPoints} VP</span>
+    </div>
+  ) : null
+
+  const enemiesRow = (
+    <div className="enemies">
+      {slot.enemies.map((e) => (
+        <EnemyChip
+          key={e.uid}
+          enemy={e}
+          canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
+          onStrike={onStrike ? () => onStrike(e.uid) : undefined}
+          canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
+          onPick={onPick ? () => onPick(e.uid) : undefined}
+        />
+      ))}
+      {slot.enemies.length === 0 && <span className="muted">clear</span>}
+    </div>
+  )
+
+  const wrap = {
+    className: cls,
+    onClick: act?.run,
+    role: act ? ('button' as const) : undefined,
+    tabIndex: act ? 0 : undefined,
+    title: act?.title,
+    onKeyDown: act ? (e: KeyboardEvent) => onEnter(e, act.run) : undefined,
+  }
+
+  // Real mission art: the image carries name/stats/effect; we keep the click behaviour, the defeated
+  // stamp, a Defense pill when it's modified this round, and the Enemies guarding it below.
+  if (art) {
+    const modified =
+      chosen && state.missionDefenseOverride != null && data != null && state.missionDefenseOverride !== data.defense
+    return (
+      <div {...wrap}>
+        {act && <div className="click-hint">{act.hint}</div>}
+        {stamp}
+        <img className="card-art" src={art} alt={name} draggable={false} />
+        {modified && (
+          <Tip text="Defense modified for this round.">
+            <span className="def-override">🛡 {defense}</span>
+          </Tip>
+        )}
+        <div className="mission-body">{enemiesRow}</div>
+      </div>
+    )
+  }
+
   return (
-    <div
-      className={cls}
-      onClick={act?.run}
-      role={act ? 'button' : undefined}
-      tabIndex={act ? 0 : undefined}
-      title={act?.title}
-      onKeyDown={
-        act
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                act.run()
-              }
-            }
-          : undefined
-      }
-    >
+    <div {...wrap}>
       {act && <div className="click-hint">{act.hint}</div>}
-      {slot.defeated && (
-        <div className="defeated-stamp" aria-label="Mission defeated">
-          <span className="defeated-word">Defeated</span>
-          <span className="defeated-vp">+{data?.victoryPoints} VP</span>
-        </div>
-      )}
+      {stamp}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
         <Tip text={keywordTip(data?.keyword)}>
@@ -335,19 +467,7 @@ function MissionFace({
         </Tip>
       </div>
       <p className="effect">{data?.effect}</p>
-      <div className="enemies">
-        {slot.enemies.map((e) => (
-          <EnemyChip
-            key={e.uid}
-            enemy={e}
-            canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
-            onStrike={onStrike ? () => onStrike(e.uid) : undefined}
-            canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
-            onPick={onPick ? () => onPick(e.uid) : undefined}
-          />
-        ))}
-        {slot.enemies.length === 0 && <span className="muted">clear</span>}
-      </div>
+      {enemiesRow}
     </div>
   )
 }
@@ -366,10 +486,34 @@ function EnemyChip({
   onPick?: () => void
 }) {
   const type = enemyOf(enemy.typeId)
+  const art = enemyArt(enemy.typeId)
+
   if (!enemy.faceUp) {
-    return <span className="enemy facedown">🂠</span>
+    const back = enemyBackArt()
+    return back ? (
+      <span className="enemy facedown has-art">
+        <img className="enemy-art" src={back} alt="Face-down Enemy" draggable={false} />
+      </span>
+    ) : (
+      <span className="enemy facedown">🂠</span>
+    )
   }
-  const body = (
+
+  // Copies of a type share the same art but differ in Defense, so with art we show the portrait and
+  // overlay this instance's Defense; the full text lives in the hover tooltip.
+  const tip = [
+    `${type?.name ?? enemy.typeId} — Defense ${enemy.defense}${type?.keyword ? ` · ${type.keyword}` : ''}`,
+    type?.effect,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const body = art ? (
+    <>
+      <img className="enemy-art" src={art} alt={type?.name ?? enemy.typeId} draggable={false} />
+      <span className="enemy-def-pill">🛡 {enemy.defense}</span>
+    </>
+  ) : (
     <>
       <div className="enemy-head">
         <Tip text={keywordTip(type?.keyword)}>
@@ -383,13 +527,15 @@ function EnemyChip({
       {type?.effect && <div className="enemy-effect">{type.effect}</div>}
     </>
   )
+  const artCls = art ? ' has-art' : ''
+
   // A legal target during ATTACK: click to strike. stopPropagation so the click doesn't also bubble
   // to the Mission card (which may itself be a strike target).
   if (canStrike && onStrike) {
     return (
       <button
         type="button"
-        className={`enemy faceup strikeable kw-${type?.keyword}`}
+        className={`enemy faceup strikeable kw-${type?.keyword}${artCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onStrike()
@@ -406,7 +552,7 @@ function EnemyChip({
     return (
       <button
         type="button"
-        className={`enemy faceup pickable kw-${type?.keyword}`}
+        className={`enemy faceup pickable kw-${type?.keyword}${artCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onPick()
@@ -417,5 +563,9 @@ function EnemyChip({
       </button>
     )
   }
-  return <div className={`enemy faceup kw-${type?.keyword}`}>{body}</div>
+  return (
+    <div className={`enemy faceup kw-${type?.keyword}${artCls}`} title={art ? tip : undefined}>
+      {body}
+    </div>
+  )
 }
