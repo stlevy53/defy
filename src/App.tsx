@@ -4,6 +4,7 @@
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
+import { Tip } from './ui/Tip'
 import { actionLabel, missionOf, enemyOf, guidanceFor, ROUND_PHASES } from './ui/format'
 import type { Action, GameState } from './engine'
 
@@ -20,12 +21,22 @@ export function App() {
         </div>
         <div className="status">
           <span className="pill">Round {state.round}</span>
-          <span className={`pill phase-${state.phase}`}>{state.phase}</span>
+          <Tip below text="The current phase of the round.">
+            <span className={`pill phase-${state.phase}`}>{state.phase}</span>
+          </Tip>
           {(state.phase === 'ATTACK' || state.attackStrength > 0) && (
-            <span className="pill accent">⚔ {state.attackStrength}</span>
+            <Tip below text="Attack Strength — points banked to spend defeating targets this Attack.">
+              <span className="pill accent">⚔ {state.attackStrength}</span>
+            </Tip>
           )}
-          <span className="pill">★ {victoryPoints(state)} VP</span>
-          {state.failedMissions > 0 && <span className="pill warn">✗ {state.failedMissions} failed</span>}
+          <Tip below text="Victory Points — your score so far from defeated Missions.">
+            <span className="pill">★ {victoryPoints(state)} VP</span>
+          </Tip>
+          {state.failedMissions > 0 && (
+            <Tip below text="Failed Missions — fail two and the resistance is crushed.">
+              <span className="pill warn">✗ {state.failedMissions} failed</span>
+            </Tip>
+          )}
         </div>
         <div className="controls">
           <button className="ghost" onClick={undo} disabled={!canUndo}>

@@ -5,7 +5,8 @@
 // state classes for selection/defeat/face-down overlays) and the rest of the UI is untouched.
 
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
-import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf } from './format'
+import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
+import { Tip } from './Tip'
 
 export type CardFace =
   | { kind: 'maquisHand'; dataId: string }
@@ -32,9 +33,11 @@ function MaquisHandFace({ dataId }: { dataId: string }) {
       <div className="card-name">{nameOfMaquis(dataId)}</div>
       {!isSpy && (
         <>
-          <div className="card-sub">
-            H {maquisAttack(dataId, 'hidden')} · R {maquisAttack(dataId, 'revealed')}
-          </div>
+          <Tip text="Attack value — the strength this Maquis adds, played Hidden (H) vs. Revealed (R).">
+            <div className="card-sub">
+              H {maquisAttack(dataId, 'hidden')} · R {maquisAttack(dataId, 'revealed')}
+            </div>
+          </Tip>
           <ActionLine dataId={dataId} side="hidden" label="H" />
           <ActionLine dataId={dataId} side="revealed" label="R" />
         </>
@@ -48,7 +51,9 @@ function MaquisPlayedFace({ dataId, side }: { dataId: string; side: 'hidden' | '
   return (
     <div className={`card played ${side}`}>
       <div className="card-name">{nameOfMaquis(dataId)}</div>
-      <div className="card-sub">⚔ {maquisAttack(dataId, side)}</div>
+      <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
+        <span className="card-sub">⚔ {maquisAttack(dataId, side)}</span>
+      </Tip>
       <ActionLine dataId={dataId} side={side} />
     </div>
   )
@@ -65,12 +70,20 @@ function MissionFace({ slot, state }: { slot: MissionSlot; state: GameState }) {
     <div className={cls}>
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
-        <span className={`kw kw-${data?.keyword}`}>{data?.keyword}</span>
+        <Tip text={keywordTip(data?.keyword)}>
+          <span className={`kw kw-${data?.keyword}`}>{data?.keyword}</span>
+        </Tip>
       </div>
       <div className="mission-stats">
-        <span title="Defense">🛡 {defense}</span>
-        <span title="Victory Points">★ {data?.victoryPoints}</span>
-        <span title="Garrison">☗ {data?.garrison}</span>
+        <Tip text="Defense — the Attack Strength needed to defeat this Mission.">
+          <span>🛡 {defense}</span>
+        </Tip>
+        <Tip text="Victory Points — scored when you defeat this Mission.">
+          <span>★ {data?.victoryPoints}</span>
+        </Tip>
+        <Tip text="Garrison — how many Enemies guard this Mission.">
+          <span>☗ {data?.garrison}</span>
+        </Tip>
       </div>
       <p className="effect">{data?.effect}</p>
       <div className="enemies">
@@ -91,11 +104,13 @@ function EnemyChip({ enemy }: { enemy: EnemyInstance }) {
   return (
     <div className={`enemy faceup kw-${type?.keyword}`}>
       <div className="enemy-head">
-        <span className={`kw kw-${type?.keyword}`}>{type?.keyword}</span>
+        <Tip text={keywordTip(type?.keyword)}>
+          <span className={`kw kw-${type?.keyword}`}>{type?.keyword}</span>
+        </Tip>
         <span className="enemy-name">{type?.name}</span>
-        <span className="enemy-def" title="Defense">
-          🛡 {enemy.defense}
-        </span>
+        <Tip text="Defense — the Attack Strength needed to defeat this Enemy.">
+          <span className="enemy-def">🛡 {enemy.defense}</span>
+        </Tip>
       </div>
       {type?.effect && <div className="enemy-effect">{type.effect}</div>}
     </div>

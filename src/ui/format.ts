@@ -12,6 +12,20 @@ const enemyTypeById = new Map(enemyTypes.map((t) => [t.id, t]))
 
 export const nameOfMaquis = (dataId: string): string =>
   dataId === 'spy' ? 'Spy' : maquisName.get(dataId) ?? dataId
+
+/** Plain-language explanation of an effect keyword, for tooltips. */
+export function keywordTip(kw?: string): string {
+  switch (kw) {
+    case 'DEFEND':
+      return 'DEFEND — this effect resolves at the start of the Attack, when this Mission is chosen.'
+    case 'DEFEAT':
+      return 'DEFEAT — this effect resolves when this card is defeated.'
+    case 'SURVIVE':
+      return 'SURVIVE — this effect resolves at the end of the Attack if this Enemy is still standing.'
+    default:
+      return ''
+  }
+}
 export const missionOf = (dataId: string) => missionCard.get(dataId)
 export const maquisOf = (dataId: string) => maquisCard.get(dataId)
 export const enemyOf = (typeId: string) => enemyTypeById.get(typeId)
