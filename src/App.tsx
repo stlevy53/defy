@@ -19,6 +19,10 @@ export function App() {
   const canChoose = (acts: Action[], uid: string) =>
     acts.some((a) => a.type === 'ChooseMission' && a.uid === uid)
 
+  // Every legal strike target this Attack (the chosen Mission and/or its Enemies), so the board can
+  // make them directly clickable instead of listing them as buttons.
+  const strikeTargets = actions.flatMap((a) => (a.type === 'SpendAttackOn' ? [a.targetUid] : []))
+
   return (
     <div className="app">
       <header className="topbar">
@@ -77,9 +81,13 @@ export function App() {
             state={state}
             canChoose={canChoose(actions, slot.uid)}
             onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
+            strikeTargets={strikeTargets}
+            onStrike={(uid) => dispatch({ type: 'SpendAttackOn', targetUid: uid })}
           />
         ))}
       </section>
+
+      <SurviveCaution state={state} />
 
       <section className="play-area">
         <Zone
@@ -119,13 +127,10 @@ export function App() {
       <section className="control-deck">
         {error && <div className="error">{error}</div>}
 
-        <SurviveCaution state={state} />
-
         {state.pendingDecision ? (
           <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
         ) : state.result ? null : (
           <div className="actions">
-            <ActionGroup title="Strike" actions={group('SpendAttackOn')} state={state} onClick={dispatch} />
             <ActionGroup
               title="Turn"
               actions={[...group('AdvancePhase'), ...group('EndResistance'), ...group('Continue')]}

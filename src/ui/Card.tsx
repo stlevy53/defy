@@ -20,7 +20,16 @@ export type CardFace =
       onPlay: (uid: string, side: Side) => void
     }
   | { kind: 'maquisPlayed'; dataId: string; side: Side; canUse?: boolean; onUse?: () => void }
-  | { kind: 'mission'; slot: MissionSlot; state: GameState; canChoose?: boolean; onChoose?: (uid: string) => void }
+  | {
+      kind: 'mission'
+      slot: MissionSlot
+      state: GameState
+      canChoose?: boolean
+      onChoose?: (uid: string) => void
+      /** UIDs (the Mission and/or its Enemies) that are legal SpendAttackOn targets right now. */
+      strikeTargets?: string[]
+      onStrike?: (uid: string) => void
+    }
 
 /** Render any card face. Discriminated on `kind` so callers pass only what that face needs. */
 export function Card(face: CardFace) {
@@ -38,7 +47,16 @@ export function Card(face: CardFace) {
     case 'maquisPlayed':
       return <MaquisPlayedFace dataId={face.dataId} side={face.side} canUse={face.canUse} onUse={face.onUse} />
     case 'mission':
-      return <MissionFace slot={face.slot} state={face.state} canChoose={face.canChoose} onChoose={face.onChoose} />
+      return (
+        <MissionFace
+          slot={face.slot}
+          state={face.state}
+          canChoose={face.canChoose}
+          onChoose={face.onChoose}
+          strikeTargets={face.strikeTargets}
+          onStrike={face.onStrike}
+        />
+      )
   }
 }
 
@@ -156,45 +174,60 @@ function MissionFace({
   state,
   canChoose,
   onChoose,
+  strikeTargets,
+  onStrike,
 }: {
   slot: MissionSlot
   state: GameState
   canChoose?: boolean
   onChoose?: (uid: string) => void
+  strikeTargets?: string[]
+  onStrike?: (uid: string) => void
 }) {
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
+  const name = data?.name ?? slot.dataId
+
+  // The whole card is clickable for one of two reasons, never both (they live in different phases):
+  // choose it to attack (PLAN), or strike the Mission itself (ATTACK, once its guards are cleared).
+  const canStrikeMission = !!onStrike && (strikeTargets?.includes(slot.uid) ?? false)
+  const act =
+    canChoose && onChoose
+      ? { run: () => onChoose(slot.uid), hint: 'Click to attack', title: `Attack this Mission: ${name}` }
+      : canStrikeMission
+        ? { run: () => onStrike!(slot.uid), hint: 'Click to strike', title: `Strike this Mission: ${name}` }
+        : null
+
   const cls = [
     'card',
     'mission',
     chosen ? 'chosen' : '',
     slot.faceDown ? 'failed' : '',
     slot.defeated ? 'defeated' : '',
-    canChoose ? 'choosable' : '',
+    act ? 'actionable' : '',
   ]
     .filter(Boolean)
     .join(' ')
-  const choose = canChoose && onChoose ? () => onChoose(slot.uid) : undefined
   return (
     <div
       className={cls}
-      onClick={choose}
-      role={choose ? 'button' : undefined}
-      tabIndex={choose ? 0 : undefined}
-      title={choose ? `Attack this Mission: ${data?.name ?? slot.dataId}` : undefined}
+      onClick={act?.run}
+      role={act ? 'button' : undefined}
+      tabIndex={act ? 0 : undefined}
+      title={act?.title}
       onKeyDown={
-        choose
+        act
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-                choose()
+                act.run()
               }
             }
           : undefined
       }
     >
-      {choose && <div className="choose-hint">Click to attack</div>}
+      {act && <div className="click-hint">{act.hint}</div>}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
         <Tip text={keywordTip(data?.keyword)}>
@@ -215,7 +248,12 @@ function MissionFace({
       <p className="effect">{data?.effect}</p>
       <div className="enemies">
         {slot.enemies.map((e) => (
-          <EnemyChip key={e.uid} enemy={e} />
+          <EnemyChip
+            key={e.uid}
+            enemy={e}
+            canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
+            onStrike={onStrike ? () => onStrike(e.uid) : undefined}
+          />
         ))}
         {slot.enemies.length === 0 && <span className="muted">clear</span>}
       </div>
@@ -223,13 +261,21 @@ function MissionFace({
   )
 }
 
-function EnemyChip({ enemy }: { enemy: EnemyInstance }) {
+function EnemyChip({
+  enemy,
+  canStrike,
+  onStrike,
+}: {
+  enemy: EnemyInstance
+  canStrike?: boolean
+  onStrike?: () => void
+}) {
   const type = enemyOf(enemy.typeId)
   if (!enemy.faceUp) {
     return <span className="enemy facedown">🂠</span>
   }
-  return (
-    <div className={`enemy faceup kw-${type?.keyword}`}>
+  const body = (
+    <>
       <div className="enemy-head">
         <Tip text={keywordTip(type?.keyword)}>
           <span className={`kw kw-${type?.keyword}`}>{type?.keyword}</span>
@@ -240,6 +286,24 @@ function EnemyChip({ enemy }: { enemy: EnemyInstance }) {
         </Tip>
       </div>
       {type?.effect && <div className="enemy-effect">{type.effect}</div>}
-    </div>
+    </>
   )
+  // A legal target during ATTACK: click to strike. stopPropagation so the click doesn't also bubble
+  // to the Mission card (which may itself be a strike target).
+  if (canStrike && onStrike) {
+    return (
+      <button
+        type="button"
+        className={`enemy faceup strikeable kw-${type?.keyword}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onStrike()
+        }}
+        title={`Strike ${type?.name} (cost ${enemy.defense})`}
+      >
+        {body}
+      </button>
+    )
+  }
+  return <div className={`enemy faceup kw-${type?.keyword}`}>{body}</div>
 }

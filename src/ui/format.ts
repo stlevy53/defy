@@ -179,12 +179,12 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
         phase: 'ATTACK',
         goal: 'Defeat the Mission and its Enemies.',
         now: canStrike
-          ? 'Spend Attack Strength on a target (cost = its Defense). Grunts fall first, Guards before the Mission — or click Done attacking.'
+          ? 'Click an Enemy or the Mission to strike it (cost = its Defense). Grunts fall first, Guards before the Mission — or click Done attacking.'
           : 'No target is affordable now — click Done attacking. (Leftover Attack Strength is lost.)',
         steps: [
           { text: 'Hand played out.' },
           { text: 'Fire any remaining ATTACK actions to boost your strike.', active: true },
-          { text: 'Spend Attack Strength on targets, then Done attacking.', active: true },
+          { text: 'Click targets on the board to strike them, then Done attacking.', active: true },
         ],
       }
     }

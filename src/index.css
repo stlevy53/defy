@@ -93,20 +93,21 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 }
 .card.mission { position: relative; }
 .card.mission.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.card.mission.choosable { cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
-.card.mission.choosable:hover,
-.card.mission.choosable:focus-visible {
+/* A clickable Mission — choose it to attack (PLAN) or strike it (ATTACK). */
+.card.mission.actionable { cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
+.card.mission.actionable:hover,
+.card.mission.actionable:focus-visible {
   border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
 }
-.choose-hint {
+.click-hint {
   position: absolute; left: 50%; bottom: 0.5rem; transform: translateX(-50%);
   background: var(--accent-2); color: #14110e; border-radius: 999px;
   font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   padding: 0.12rem 0.55rem; white-space: nowrap;
-  opacity: 0; transition: opacity 0.1s; pointer-events: none;
+  opacity: 0; transition: opacity 0.1s; pointer-events: none; z-index: 1;
 }
-.card.mission.choosable:hover .choose-hint,
-.card.mission.choosable:focus-visible .choose-hint { opacity: 1; }
+.card.mission.actionable:hover .click-hint,
+.card.mission.actionable:focus-visible .click-hint { opacity: 1; }
 .card.mission.failed { opacity: 0.5; }
 .card.mission.defeated { border-color: var(--win); }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
@@ -125,10 +126,19 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .enemy-name { font-weight: 600; color: var(--ink); font-size: 0.76rem; }
 .enemy-def { margin-left: auto; color: var(--accent-2); font-size: 0.72rem; }
 .enemy-effect { color: var(--muted); font-size: 0.68rem; line-height: 1.3; margin-top: 0.15rem; }
+/* A face-up Enemy that can be struck this Attack — click it to spend Attack Strength. */
+button.enemy.faceup.strikeable {
+  font-family: inherit; text-align: left; color: var(--ink); cursor: pointer;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+button.enemy.faceup.strikeable:hover,
+button.enemy.faceup.strikeable:focus-visible {
+  border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; outline: none;
+}
 
 /* Caution / SURVIVE warning */
 .caution {
-  margin-bottom: 0.6rem; padding: 0.55rem 0.75rem;
+  margin: 0.6rem 0; padding: 0.55rem 0.75rem;
   background: #33251a; border: 1px solid var(--warn); border-left: 3px solid var(--warn);
   border-radius: 8px; font-size: 0.84rem;
 }
