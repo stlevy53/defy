@@ -2,7 +2,7 @@
 
 Bootstrap file for continuing this project in a fresh chat. Read this first, then `docs/ENGINE_DESIGN.md` and `data/README.md`. This supersedes the original research handoff (`RESIST_PC_PORT_HANDOFF.md`, kept for its full rules writeup).
 
-**Repo state.** `main` is synced with GitHub (`git status` clean; run `git log --oneline` for the latest hash). **Phase 2 (engine) is complete and rulebook-verified. Phase 3 (UI) has a playable, substantially-polished prototype.** All verified green: **101/101 tests, `tsc --noEmit` + `npm run build` clean.** The known enemy-Defense-reset-on-reshuffle bug is fixed. Remaining before "done": Phase 3 decision-UX polish and the optional draft-variant setup (see §8).
+**Repo state.** `main` is synced with GitHub (`git status` clean; run `git log --oneline` for the latest hash). **Phase 2 (engine) is complete and rulebook-verified. Phase 3 (UI) has a playable, substantially-polished prototype with a themed visual layer.** All verified green: **102/102 tests, `tsc --noEmit` + `npm run build` clean.** The known enemy-Defense-reset-on-reshuffle bug is fixed. The decision-UX polish pass has shipped; a themed wooden **tabletop** background and a **real card-art rendering seam** are in (art renders per-card when its image exists, else a themed frame). Remaining before "done": drop in the real card art (reshoot + slice — see §8 + `tools/card-art.md`), minor remaining polish, and the optional draft-variant setup.
 
 Run the app: `npm install` then `npm run dev`.
 
@@ -20,11 +20,12 @@ A single-player digital port of the physical solitaire card game **Resist!** (Sa
 ### Workflow notes
 - **Develop locally, commit directly.** Work happens in the local repo; the agent runs `npx tsc --noEmit`, `npx vitest run`, and `npx vite build` in place, then commits and pushes. (The old sandbox/no-git caveat from earlier sessions no longer applies.)
 - **PowerShell gotchas.** `&&` isn't a statement separator — chain with `;`. Multi-line commit messages via heredoc don't work; write the message to a temp file and `git commit -F <file>`. Git will warn `LF will be replaced by CRLF` on commit — harmless.
-- **Card image transcription** (complete): `Card Assets/*.jpg` are phone photos, some rotated. ImageMagick (`convert -crop … -rotate … -resize`) was used to slice cards. CCW (`-rotate -90`) for the Maquis sheet; `-rotate 180` for the landscape mission/civilian sheets.
+- **Card data transcription** (complete): `Card Assets/*.jpg` are phone photos of the physical cards, laid out on a blanket; the game data in `/data` was transcribed from them.
+- **Real card art** (pipeline built; art not yet added): the UI renders a real per-card image when one exists, else a themed frame — see the "Card art" note in §8 and `tools/card-art.md`. This is a **personal, non-commercial port the owner intends to show the game's creators, using their own artwork.** The original blanket photos don't auto-slice reliably (busy background, angled/close cards), so the plan is to **reshoot the cards flat on a plain background** and run `tools/slice_cards.py`.
 
 ## 3. Tech stack (decided)
 
-TypeScript + **React 18** + **Vite 5** + **Vitest**, **Immer** for immutable state updates. Text-rendered cards (render from JSON; photos remain a possible later swap). Rules engine is plain TypeScript, no React. Tauri for desktop packaging is a Phase 4 option.
+TypeScript + **React 18** + **Vite 5** + **Vitest**, **Immer** for immutable state updates. Cards render from `/data` as **themed frames**, upgrading to **real card-art images** per card when present (`src/ui/cardArt.ts` + `src/assets/cards/**`, bundled via `import.meta.glob`). Rules engine is plain TypeScript, no React. Tauri for desktop packaging is a Phase 4 option.
 
 Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (= `tsc --noEmit && vite build`).
 
@@ -41,13 +42,14 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (= `tsc --no
   - ✅ **M2 acceptance gate** — `worked_example.test.ts` replays the rulebook's illustrated first turn (pp. 11–13) end-to-end.
   - ✅ **Enemy Defense reset on reshuffle** — fixed: `EnemyInstance.baseDefense` stores the printed value; `refillEnemyDeckIfEmpty` restores it when an enemy reshuffles back into the deck (regression test in `aftermath.test.ts`).
   - ⬜ Only leftover: the **optional draft-variant setup** (`createGame` has no `draft` option). The ruleset itself is complete and correct.
-- 🔨 **Phase 3 — playable prototype UI (in progress; substantially polished).** `src/ui/` + `src/App.tsx`: renders the board, drives play through `legalActions`, answers `pendingDecision`, shows win/loss, with undo + new-game. `src/ui/playthrough.test.ts` plays full games to an ending across 40 seeds. Polish shipped so far:
-  - **Single `Card` rendering seam** (`ui/Card.tsx`) — every card face draws here, so the eventual art swap touches one file.
-  - **Inline action text** on Maquis in hand (both sides) and in play.
-  - **Round-phase breadcrumb + new-player guidance** (`PhaseGuide`): PLAN→ATTACK→AFTERMATH→RECOVER with the current phase lit, a "what to do now" line, and sub-step-aware steps derived from `legalActions`.
-  - **Direct card interaction ("click the thing")** — play a Maquis by clicking its Hidden/Revealed side; use a played card's action by clicking the action; choose a Mission by clicking the card; during ATTACK, strike an Enemy or the Mission by clicking it. The only remaining bottom buttons are phase-level "Turn" controls (Done attacking / End / Continue).
-  - **Legibility aids** — CSS hover tooltips (`ui/Tip.tsx` + `keywordTip`) on icons/stats/keywords; face-up Enemies show keyword + effect; a SURVIVE caution tile under the mission row warns about undefeated SURVIVE defenders.
-  - **Next: decision UX polish** (see §8).
+- 🔨 **Phase 3 — playable prototype UI (in progress; substantially polished + themed).** `src/ui/` + `src/App.tsx`: renders the board, drives play through `legalActions`, answers `pendingDecision`, shows win/loss, with undo + new-game. `src/ui/playthrough.test.ts` plays full games to an ending across 40 seeds. Shipped so far:
+  - **Single `Card` rendering seam** (`ui/Card.tsx`) — every card face draws here. It now renders **real card art (`<img>`) when the image exists, with the themed frame as a per-card fallback**, so art lands one card at a time with no code change.
+  - **Themed visuals** — a fixed wooden **tabletop** background (`public/tabletop.jpg`) with frosted-glass surfaces; cards lift off the table with shadow. Un-arted cards use a themed frame (ochre title banner, red/purple Hidden/Revealed duotone portrait, sunburst attack badge).
+  - **Round-phase breadcrumb + new-player guidance** (`PhaseGuide`): PLAN→ATTACK→AFTERMATH→RECOVER lit, a "what to do now" line, and sub-step steps from `legalActions`. **All player choices — decisions AND the "Turn" controls (End / Continue) — live in the right half of this tile**, so nothing pushes the page taller.
+  - **Direct card interaction ("click the thing")** — play a Maquis by clicking its Hidden/Revealed side; use a played card's action by clicking it; choose/strike a Mission or Enemy by clicking it; answer single-target decisions by clicking the candidate on the board.
+  - **Decision-UX polish (done)** — trivial decisions auto-resolve (`settle` in `ui/useGame.ts`: single-candidate `selectTarget`, forced `selectCards`, ≤1-card `orderCards`, single `chooseOption`); `DecisionPanel` has live count/select-all/clear for `selectCards`, click-to-unplace `orderCards`, and rich card tooltips.
+  - **Feedback aids** — animated **"Defeated · +N VP" stamp** on a struck Mission; **Attack-Strength pill** that pulses `+N` when it rises (e.g. Consuelo); live **"⚔ +N now"** badge on count-based ATTACK actions (Abel/Soledad/Marcelino); CSS hover tooltips (`ui/Tip.tsx`, `describeUidTip`, `keywordTip`) on cards/icons/keywords.
+  - **Next:** add the real card art (reshoot + slice), then minor polish (see §8).
 - ⬜ Phase 4 — polish + desktop packaging.
 
 ## 5. Card data (`/data`, all validated — see `data/README.md`)
@@ -93,21 +95,26 @@ Full spec: `docs/ENGINE_DESIGN.md`. Core architecture:
 
 **UI** (`src/ui/`, `src/App.tsx`) — thin React view, no rules:
 - `ui/bootstrap.ts` — `ensureEffectsRegistered()` (registers all four effect sets once).
-- `ui/useGame.ts` — hook holding a state-history stack: `state`, `actions` (= `legalActions`), `dispatch` (applyAction), `respond` (resolveDecision), `undo`, `newGame`, `error`.
-- `ui/format.ts` — id→label helpers (`nameOfMaquis`, `describeUid`, `actionLabel`, `maquisSideAction`, `keywordTip`, …) **and the new-player guidance selector** `guidanceFor(state, actions)` + `ROUND_PHASES` (drives the phase breadcrumb). Cards render from `/data`, text-first.
-- `ui/Card.tsx` — **the single card-rendering seam.** A `Card(face: CardFace)` component with a discriminated union over `maquisHand` / `maquisPlayed` / `mission` (+ the internal `EnemyChip`). Holds all the direct-click interaction (play a side, use an action, choose/strike a mission, strike an enemy). **When art assets arrive, this is the one file to change** — swap the text bodies for `<img>` faces, keep the outer wrappers + state classes.
+- `ui/useGame.ts` — hook holding a state-history stack: `state`, `actions` (= `legalActions`), `dispatch` (applyAction), `respond` (resolveDecision), `undo`, `newGame`, `error`. **`settle`** auto-resolves trivial decisions after every state change (single-candidate `selectTarget`, forced `selectCards`, ≤1-card `orderCards`, single `chooseOption`) so the UI never shows a pointless prompt.
+- `ui/format.ts` — id→label helpers (`nameOfMaquis`, `describeUid`, `actionLabel`, `maquisSideAction`, `keywordTip`, …), the guidance selector `guidanceFor(state, actions)` + `ROUND_PHASES`, plus `boardPickable` (is a UID a clickable board card?), `describeUidTip` (multi-line card tooltip), and `countActionBonus` (live value of count-based ATTACK actions).
+- `ui/cardArt.ts` — **card-art manifest.** Maps a card id → bundled image URL via `import.meta.glob` over `src/assets/cards/<category>/<id>.(jpg|png|webp)`: `maquisArt`, `enemyArt`, `enemyBackArt`, `missionArt`, `civilianArt`, `spyArt`. Empty today (no art committed); drop a file in and it's picked up automatically.
+- `ui/Card.tsx` — **the single card-rendering seam.** `Card(face: CardFace)` over `maquisHand` / `maquisPlayed` / `mission` (+ internal `EnemyChip`). Each face **renders the real card image when `cardArt` has one, with the themed frame as a per-card fallback.** Art faces overlay the interactive controls (hand: play-side hotspots; played: dim the off-side + Use ribbon + live bonus; mission: image + Enemies row + Defeated stamp + modified-Defense pill; enemy: portrait token + Defense pill + face-down back). Themed frame = ochre banner + duotone portrait + sunburst attack.
 - `ui/Tip.tsx` — `Tip` CSS-only hover tooltip (no JS state); `below` variant opens downward for header pills.
-- `ui/DecisionPanel.tsx` — renders all four `pendingDecision` kinds and collects the response.
-- `App.tsx` — board (phase guide, mission row + enemies, SURVIVE caution, hidden/revealed play areas, hand, pile counts), the residual "Turn" action group (AdvancePhase / EndResistance / Continue — everything else is clicked on the cards), decision panel, result banner, log, undo/new-game. Styling in `index.css` (thematic dark).
+- `ui/DecisionPanel.tsx` — renders all four `pendingDecision` kinds; single-target picks offload to clicking the board, `selectCards` has a live count + select-all/clear, `orderCards` items are click-to-unplace, chips carry `describeUidTip` tooltips.
+- `App.tsx` — board (phase guide, mission row + enemies, hidden/revealed play areas, hand, pile counts), themed **tabletop** background, result banner, log, undo/new-game. **All player choices — the `DecisionPanel` and the "Turn" controls (AdvancePhase / EndResistance / Continue) — render in the right half of the `PhaseGuide` tile**; everything else is clicked on the cards. Styling in `index.css`.
 
-**Tests (101/101 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (16) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `effects/emilio.test.ts` (3) · `aftermath.test.ts` (7 — includes the enemy-Defense-reset regression) · `worked_example.test.ts` (1 — the M2 gate) · `ui/playthrough.test.ts` (1 — full games to an ending, 40 seeds, via the UI path) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
+**Tests (102/102 pass; `tsc --noEmit` + `npm run build` clean).** `setup.test.ts` (9) · `plan.test.ts` (8, includes the `[stub]`-path test) · `effects/plan.test.ts` (17 — includes the Juana look-top-3 reshuffle regression) · `attack.test.ts` (5) · `attack_resolution.test.ts` (7) · `effects/attack.test.ts` (5) · `effects/attack_actions.test.ts` (7) · `effects/enemies.test.ts` (8) · `effects/missions.test.ts` (20) · `effects/emilio.test.ts` (3) · `aftermath.test.ts` (7 — includes the enemy-Defense-reset regression) · `worked_example.test.ts` (1 — the M2 gate) · `ui/playthrough.test.ts` (1 — full games to an ending, 40 seeds, via the UI path) · `data/data.test.ts` (4). Conservation asserted wherever cards move.
 
-## 8. Immediate next task — Phase 3 polish (continue)
+## 8. Immediate next task — real card art, then remaining polish
 
-A polished-but-not-finished UI is in `src/ui/` + `src/App.tsx` (`npm run dev`). The clarity + direct-interaction passes are done (see §4). Remaining, suggested order:
-1. **Playtest it.** Run a few full games; watch for confusing moments (e.g. count-based bonuses — see the note below — or the mandatory ATTACK play-out). Fix the sharpest rough edges first.
-2. **Decision UX:** the `DecisionPanel` works but is utilitarian — improve `selectCards`/`orderCards` affordances; consider auto-confirming single-candidate `selectTarget`s. Ideally fold decisions into the same "click the thing on the board" idiom the rest of the UI now uses.
-3. **Optional niceties:** surface `state.log` events as transient toasts; a compact "what happened" summary after AFTERMATH; seed entry for reproducible games.
+The clarity, direct-interaction, and decision-UX passes are done (see §4), and the visual theme + real-art rendering seam are in. Suggested order:
+
+1. **Add the real card art (the big one).** The rendering seam is ready; only the images are missing.
+   - **Reshoot** the physical cards flat on a plain, contrasting background with gaps (originals are angled on a fur blanket and don't auto-slice). Full shooting guide + tuning tips + the exact id→filename checklist are in **`tools/card-art.md`**.
+   - **Slice**: `python tools/slice_cards.py <photo> <landscape|portrait> <out_dir>` (uses OpenCV; already installed). It deskews + crops each card and writes a `_debug.jpg` to eyeball detection.
+   - **Place**: rename crops to their card id and drop into `src/assets/cards/{maquis,enemy,mission,civilian,spy}/`. `npm run build` to confirm they bundle; they appear in-game per card automatically (themed frame remains the fallback for any not yet done).
+   - Naming: maquis/mission/civilian by data id; enemy by **type** id (8 types; per-copy Defense is overlaid by the app); optional `enemy/back` for the face-down back; `spy/spy`.
+2. **Playtest + minor polish.** Run a few full games; fix any sharp edges. Optional niceties: surface `state.log` as transient toasts; a compact "what happened" summary after AFTERMATH; a seed-entry box for reproducible games. If you'd rather not keep the themed frames long-term, an "art coming soon" placeholder could replace them.
 
 **One engine leftover (optional; independent of the UI):**
 - **Draft-variant setup** (`createGame` has no `draft` option). Interactive, so it needs the decision system; a self-contained slice.

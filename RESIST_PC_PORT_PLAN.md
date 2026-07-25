@@ -50,13 +50,13 @@ Built in verified slices, each with tests:
 
 *Deliverable:* headless engine playable via a script/console — **done.** *Gate (M2):* `worked_example.test.ts` reproduces the rulebook's worked example (pp. 11–13) turn-by-turn — **passing.**
 
-### Phase 3 — Playable prototype UI 🔨 IN PROGRESS (functional + polished)
-The tableau is built and a full game is clickable start to finish: play cards hidden/revealed by clicking a card's side, use actions and choose/strike missions and enemies by clicking them on the board, run the attack, see outcomes and score. Polished with a single `Card` rendering seam (art-swap-ready), a round-phase breadcrumb with new-player guidance, inline action text, and CSS hover tooltips. Undo + new-game via a state-history stack. `ui/playthrough.test.ts` drives full games to an ending across 40 seeds through the UI path.
+### Phase 3 — Playable prototype UI 🔨 IN PROGRESS (functional, polished, themed)
+The tableau is built and a full game is clickable start to finish: play cards hidden/revealed by clicking a card's side, use actions and choose/strike missions and enemies by clicking them on the board, run the attack, see outcomes and score. Polished with a single `Card` rendering seam, a round-phase breadcrumb with new-player guidance, all player choices consolidated into the guidance tile, auto-resolved trivial decisions, feedback aids (defeated stamp, Attack-Strength pulse, live count-bonus badges), and CSS hover tooltips. Themed with a wooden tabletop background and, via the `Card` seam, **real per-card art when present with a themed frame fallback**. Undo + new-game via a state-history stack. `ui/playthrough.test.ts` drives full games to an ending across 40 seeds through the UI path.
 
-*Deliverable:* a full game of Resist! playable in the browser — **achieved; decision-UX polish remains.**
+*Deliverable:* a full game of Resist! playable in the browser — **achieved.** Remaining: drop in the real card art (reshoot + slice; pipeline in `tools/`), then minor polish.
 
 ### Phase 4 — Polish & packaging
-Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay. Then wrap in Tauri for a distributable desktop build if desired. Optional: swap text-rendered cards for the photographed faces.
+Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay. Then wrap in Tauri for a distributable desktop build if desired.
 
 *Deliverable:* shippable build.
 
@@ -94,4 +94,4 @@ Rules-fidelity items surfaced during data transcription and design review — ea
 
 ## 6. Immediate next step
 
-**Phase 3 polish (continue).** The engine is done and the UI is playable end-to-end. Next: playtest full games, then improve decision UX (`DecisionPanel` → fold into the same "click the thing on the board" idiom), and optional niceties (log toasts, post-AFTERMATH summary, seed entry). The optional draft-variant setup is the only remaining engine item. See `HANDOFF.md` §8.
+**Phase 3 (continue).** The engine is done, the UI is playable end-to-end, and the decision-UX polish + visual theme have shipped. Next: **add the real card art** — reshoot the cards flat and run the slicer (`tools/card-art.md`); the rendering seam is already in place. Then playtest and minor niceties (log toasts, post-AFTERMATH summary, seed entry). The optional draft-variant setup is the only remaining engine item. See `HANDOFF.md` §8.
