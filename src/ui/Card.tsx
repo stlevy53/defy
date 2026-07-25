@@ -4,6 +4,7 @@
 // file to change: swap the text bodies below for <img> faces (keeping the same outer wrappers +
 // state classes for selection/defeat/face-down overlays) and the rest of the UI is untouched.
 
+import type { KeyboardEvent } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
 import { Tip } from './Tip'
@@ -18,8 +19,20 @@ export type CardFace =
       canPlayHidden: boolean
       canPlayRevealed: boolean
       onPlay: (uid: string, side: Side) => void
+      /** True when this card is a candidate for the pending decision — click it to answer. */
+      pickable?: boolean
+      onPick?: (uid: string) => void
     }
-  | { kind: 'maquisPlayed'; dataId: string; side: Side; canUse?: boolean; onUse?: () => void }
+  | {
+      kind: 'maquisPlayed'
+      dataId: string
+      uid: string
+      side: Side
+      canUse?: boolean
+      onUse?: () => void
+      pickable?: boolean
+      onPick?: (uid: string) => void
+    }
   | {
       kind: 'mission'
       slot: MissionSlot
@@ -29,6 +42,9 @@ export type CardFace =
       /** UIDs (the Mission and/or its Enemies) that are legal SpendAttackOn targets right now. */
       strikeTargets?: string[]
       onStrike?: (uid: string) => void
+      /** UIDs (the Mission and/or its Enemies) that are pending-decision candidates — click to pick. */
+      pickTargets?: string[]
+      onPick?: (uid: string) => void
     }
 
 /** Render any card face. Discriminated on `kind` so callers pass only what that face needs. */
@@ -42,10 +58,22 @@ export function Card(face: CardFace) {
           canPlayHidden={face.canPlayHidden}
           canPlayRevealed={face.canPlayRevealed}
           onPlay={face.onPlay}
+          pickable={face.pickable}
+          onPick={face.onPick}
         />
       )
     case 'maquisPlayed':
-      return <MaquisPlayedFace dataId={face.dataId} side={face.side} canUse={face.canUse} onUse={face.onUse} />
+      return (
+        <MaquisPlayedFace
+          dataId={face.dataId}
+          uid={face.uid}
+          side={face.side}
+          canUse={face.canUse}
+          onUse={face.onUse}
+          pickable={face.pickable}
+          onPick={face.onPick}
+        />
+      )
     case 'mission':
       return (
         <MissionFace
@@ -55,6 +83,8 @@ export function Card(face: CardFace) {
           onChoose={face.onChoose}
           strikeTargets={face.strikeTargets}
           onStrike={face.onStrike}
+          pickTargets={face.pickTargets}
+          onPick={face.onPick}
         />
       )
   }
@@ -68,12 +98,16 @@ function MaquisHandFace({
   canPlayHidden,
   canPlayRevealed,
   onPlay,
+  pickable,
+  onPick,
 }: {
   dataId: string
   uid: string
   canPlayHidden: boolean
   canPlayRevealed: boolean
   onPlay: (uid: string, side: Side) => void
+  pickable?: boolean
+  onPick?: (uid: string) => void
 }) {
   if (dataId === 'spy') {
     return (
@@ -83,8 +117,17 @@ function MaquisHandFace({
       </div>
     )
   }
+  const pick = pickable && onPick ? () => onPick(uid) : null
   return (
-    <div className="card hand-card">
+    <div
+      className={`card hand-card ${pick ? 'pickable' : ''}`}
+      onClick={pick ?? undefined}
+      role={pick ? 'button' : undefined}
+      tabIndex={pick ? 0 : undefined}
+      title={pick ? `Select ${nameOfMaquis(dataId)}` : undefined}
+      onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+    >
+      {pick && <div className="click-hint">Click to select</div>}
       <div className="card-name">{nameOfMaquis(dataId)}</div>
       <div className="sides">
         <SidePanel dataId={dataId} side="hidden" enabled={canPlayHidden} onPlay={() => onPlay(uid, 'hidden')} />
@@ -92,6 +135,14 @@ function MaquisHandFace({
       </div>
     </div>
   )
+}
+
+/** Shared keyboard handler: activate a click-run on Enter/Space. */
+function onEnter(e: KeyboardEvent, run: () => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    run()
+  }
 }
 
 /** One clickable side of a hand Maquis (its attack value + action), playable when `enabled`. */
@@ -132,18 +183,33 @@ function SidePanel({
  *  in the current phase (`canUse`); otherwise it renders as plain reference text. */
 function MaquisPlayedFace({
   dataId,
+  uid,
   side,
   canUse,
   onUse,
+  pickable,
+  onPick,
 }: {
   dataId: string
+  uid: string
   side: Side
   canUse?: boolean
   onUse?: () => void
+  pickable?: boolean
+  onPick?: (uid: string) => void
 }) {
   const action = maquisSideAction(dataId, side)
+  const pick = pickable && onPick ? () => onPick(uid) : null
   return (
-    <div className={`card played ${side}`}>
+    <div
+      className={`card played ${side} ${pick ? 'pickable' : ''}`}
+      onClick={pick ?? undefined}
+      role={pick ? 'button' : undefined}
+      tabIndex={pick ? 0 : undefined}
+      title={pick ? `Select ${nameOfMaquis(dataId)}` : undefined}
+      onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+    >
+      {pick && <div className="click-hint">Click to select</div>}
       <div className="card-name">{nameOfMaquis(dataId)}</div>
       <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
         <span className="card-sub">⚔ {maquisAttack(dataId, side)}</span>
@@ -176,6 +242,8 @@ function MissionFace({
   onChoose,
   strikeTargets,
   onStrike,
+  pickTargets,
+  onPick,
 }: {
   slot: MissionSlot
   state: GameState
@@ -183,21 +251,26 @@ function MissionFace({
   onChoose?: (uid: string) => void
   strikeTargets?: string[]
   onStrike?: (uid: string) => void
+  pickTargets?: string[]
+  onPick?: (uid: string) => void
 }) {
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
   const name = data?.name ?? slot.dataId
 
-  // The whole card is clickable for one of two reasons, never both (they live in different phases):
-  // choose it to attack (PLAN), or strike the Mission itself (ATTACK, once its guards are cleared).
+  // The whole card is clickable for exactly one reason at a time (they live in different moments):
+  // choose it to attack (PLAN), strike it (ATTACK), or pick it as a decision target.
   const canStrikeMission = !!onStrike && (strikeTargets?.includes(slot.uid) ?? false)
+  const canPickMission = !!onPick && (pickTargets?.includes(slot.uid) ?? false)
   const act =
     canChoose && onChoose
       ? { run: () => onChoose(slot.uid), hint: 'Click to attack', title: `Attack this Mission: ${name}` }
       : canStrikeMission
         ? { run: () => onStrike!(slot.uid), hint: 'Click to strike', title: `Strike this Mission: ${name}` }
-        : null
+        : canPickMission
+          ? { run: () => onPick!(slot.uid), hint: 'Click to select', title: `Select this Mission: ${name}` }
+          : null
 
   const cls = [
     'card',
@@ -228,6 +301,12 @@ function MissionFace({
       }
     >
       {act && <div className="click-hint">{act.hint}</div>}
+      {slot.defeated && (
+        <div className="defeated-stamp" aria-label="Mission defeated">
+          <span className="defeated-word">Defeated</span>
+          <span className="defeated-vp">+{data?.victoryPoints} VP</span>
+        </div>
+      )}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
         <Tip text={keywordTip(data?.keyword)}>
@@ -253,6 +332,8 @@ function MissionFace({
             enemy={e}
             canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
             onStrike={onStrike ? () => onStrike(e.uid) : undefined}
+            canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
+            onPick={onPick ? () => onPick(e.uid) : undefined}
           />
         ))}
         {slot.enemies.length === 0 && <span className="muted">clear</span>}
@@ -265,10 +346,14 @@ function EnemyChip({
   enemy,
   canStrike,
   onStrike,
+  canPick,
+  onPick,
 }: {
   enemy: EnemyInstance
   canStrike?: boolean
   onStrike?: () => void
+  canPick?: boolean
+  onPick?: () => void
 }) {
   const type = enemyOf(enemy.typeId)
   if (!enemy.faceUp) {
@@ -300,6 +385,23 @@ function EnemyChip({
           onStrike()
         }}
         title={`Strike ${type?.name} (cost ${enemy.defense})`}
+      >
+        {body}
+      </button>
+    )
+  }
+  // A pending-decision candidate: click to pick it. stopPropagation so the pick doesn't bubble to a
+  // pickable Mission card.
+  if (canPick && onPick) {
+    return (
+      <button
+        type="button"
+        className={`enemy faceup pickable kw-${type?.keyword}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onPick()
+        }}
+        title={`Select ${type?.name}`}
       >
         {body}
       </button>

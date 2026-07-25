@@ -1,12 +1,13 @@
 // Resist! — playable prototype UI (Phase 3). A thin view over the headless engine: it renders
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
+import type { ReactNode } from 'react'
 import { useGame } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
-import { actionLabel, missionOf, enemyOf, guidanceFor, ROUND_PHASES } from './ui/format'
-import type { Action, GameState } from './engine'
+import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable } from './ui/format'
+import type { Action, Decision, GameState } from './engine'
 
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed } = useGame()
@@ -22,6 +23,31 @@ export function App() {
   // Every legal strike target this Attack (the chosen Mission and/or its Enemies), so the board can
   // make them directly clickable instead of listing them as buttons.
   const strikeTargets = actions.flatMap((a) => (a.type === 'SpendAttackOn' ? [a.targetUid] : []))
+
+  // A "pick exactly one" pending decision can be answered by clicking the candidate on the board
+  // (same idiom as striking). Candidates without a board representation stay in the DecisionPanel.
+  const pickTargets = singlePickCandidates(state.pendingDecision)
+    .filter((uid) => boardPickable(state, uid))
+  const onPick = (uid: string) => respond([uid])
+
+  // Every player choice — a pending decision, the phase-level Turn buttons, or an error — lives in
+  // one place: the right half of the guidance tile (see PhaseGuide), so the player never hunts for it.
+  const turnActions = [...group('AdvancePhase'), ...group('EndResistance'), ...group('Continue')]
+  const playerChoice = state.pendingDecision ? (
+    // Keyed on the prompt so each step of a multi-stage decision re-mounts and flashes.
+    <div className="phase-decision" key={state.pendingDecision.prompt}>
+      <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
+    </div>
+  ) : !state.result && turnActions.length > 0 ? (
+    <ActionGroup title="Your turn" actions={turnActions} state={state} onClick={dispatch} />
+  ) : null
+  const sideContent =
+    error || playerChoice ? (
+      <>
+        {error && <div className="error">{error}</div>}
+        {playerChoice}
+      </>
+    ) : null
 
   return (
     <div className="app">
@@ -70,7 +96,7 @@ export function App() {
         </div>
       )}
 
-      <PhaseGuide state={state} actions={actions} />
+      <PhaseGuide state={state} actions={actions} choices={sideContent} />
 
       <section className="missions">
         {state.missionRow.map((slot) => (
@@ -83,11 +109,11 @@ export function App() {
             onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
             strikeTargets={strikeTargets}
             onStrike={(uid) => dispatch({ type: 'SpendAttackOn', targetUid: uid })}
+            pickTargets={pickTargets}
+            onPick={onPick}
           />
         ))}
       </section>
-
-      <SurviveCaution state={state} />
 
       <section className="play-area">
         <Zone
@@ -96,6 +122,8 @@ export function App() {
           side="hidden"
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+          pickTargets={pickTargets}
+          onPick={onPick}
         />
         <Zone
           title="Revealed Maquis"
@@ -103,6 +131,8 @@ export function App() {
           side="revealed"
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+          pickTargets={pickTargets}
+          onPick={onPick}
         />
       </section>
 
@@ -118,28 +148,12 @@ export function App() {
               canPlayHidden={canPlay(actions, c.uid, 'hidden')}
               canPlayRevealed={canPlay(actions, c.uid, 'revealed')}
               onPlay={(uid, side) => dispatch({ type: 'PlayMaquis', uid, side })}
+              pickable={pickTargets.includes(c.uid)}
+              onPick={onPick}
             />
           ))}
           {state.hand.length === 0 && <span className="muted">empty</span>}
         </div>
-      </section>
-
-      <section className="control-deck">
-        {error && <div className="error">{error}</div>}
-
-        {state.pendingDecision ? (
-          <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
-        ) : state.result ? null : (
-          <div className="actions">
-            <ActionGroup
-              title="Turn"
-              actions={[...group('AdvancePhase'), ...group('EndResistance'), ...group('Continue')]}
-              state={state}
-              onClick={dispatch}
-            />
-            {actions.length === 0 && <span className="muted">Nothing to do.</span>}
-          </div>
-        )}
       </section>
 
       <Piles state={state} />
@@ -161,8 +175,10 @@ export function App() {
 
 /** Breadcrumb of the four round phases with the current one highlighted, plus sub-step-aware
  *  guidance: a prominent "what to do now" line and the phase's steps with the active ones lit.
- *  Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. */
-function PhaseGuide({ state, actions }: { state: GameState; actions: Action[] }) {
+ *  Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. Any player choice (a decision
+ *  or the Turn buttons), when present, fills the right half of the tile — no separate section, so
+ *  the page doesn't grow and choices always appear in one consistent place. */
+function PhaseGuide({ state, actions, choices }: { state: GameState; actions: Action[]; choices: ReactNode }) {
   const guide = guidanceFor(state, actions)
   const activeIndex = guide ? ROUND_PHASES.indexOf(guide.phase) : -1
   return (
@@ -184,62 +200,29 @@ function PhaseGuide({ state, actions }: { state: GameState; actions: Action[] })
           )
         })}
       </ol>
-      {guide && (
+      {(guide || choices) && (
         <div className="phase-message">
-          <div className="phase-goal">
-            <span className="phase-name">{guide.phase}</span>
-            {guide.goal}
-            {guide.auto && <span className="phase-auto">automatic</span>}
-          </div>
-          <p className="phase-now">{guide.now}</p>
-          <ol className="phase-steps">
-            {guide.steps.map((s, i) => (
-              <li key={i} className={s.active ? 'active' : ''}>
-                {s.text}
-              </li>
-            ))}
-          </ol>
+          {guide && (
+            <div className="phase-message-main">
+              <div className="phase-goal">
+                <span className="phase-name">{guide.phase}</span>
+                {guide.goal}
+                {guide.auto && <span className="phase-auto">automatic</span>}
+              </div>
+              <p className="phase-now">{guide.now}</p>
+              <ol className="phase-steps">
+                {guide.steps.map((s, i) => (
+                  <li key={i} className={s.active ? 'active' : ''}>
+                    {s.text}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {choices && <div className="phase-message-side">{choices}</div>}
         </div>
       )}
     </section>
-  )
-}
-
-/** During ATTACK, warn that any undefeated SURVIVE defenders at the chosen Mission will resolve
- *  their effect when the player finishes attacking — even if the Mission itself is defeated. */
-function SurviveCaution({ state }: { state: GameState }) {
-  if (state.phase !== 'ATTACK') return null
-  const slot = state.missionRow.find((s) => s.uid === state.chosenMissionUid)
-  if (!slot) return null
-
-  const counts = new Map<string, number>()
-  for (const e of slot.enemies) {
-    if (enemyOf(e.typeId)?.keyword === 'SURVIVE') counts.set(e.typeId, (counts.get(e.typeId) ?? 0) + 1)
-  }
-  const total = [...counts.values()].reduce((n, c) => n + c, 0)
-  if (total === 0) return null
-
-  return (
-    <div className="caution">
-      <div className="caution-head">
-        ⚠ {total} defender{total > 1 ? 's' : ''} will resolve a SURVIVE effect when you finish attacking
-        {slot.defeated ? ' — even though the Mission is defeated' : ''}:
-      </div>
-      <ul>
-        {[...counts.entries()].map(([typeId, n]) => {
-          const t = enemyOf(typeId)
-          return (
-            <li key={typeId}>
-              <b>
-                {t?.name}
-                {n > 1 ? ` ×${n}` : ''}
-              </b>{' '}
-              — {t?.effect}
-            </li>
-          )
-        })}
-      </ul>
-    </div>
   )
 }
 
@@ -275,12 +258,16 @@ function Zone({
   side,
   actions,
   onUse,
+  pickTargets,
+  onPick,
 }: {
   title: string
   cards: GameState['inPlay']
   side: 'hidden' | 'revealed'
   actions: Action[]
   onUse: (uid: string) => void
+  pickTargets: string[]
+  onPick: (uid: string) => void
 }) {
   return (
     <div className="zone">
@@ -291,15 +278,27 @@ function Zone({
             key={m.uid}
             kind="maquisPlayed"
             dataId={m.dataId}
+            uid={m.uid}
             side={side}
             canUse={actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)}
             onUse={() => onUse(m.uid)}
+            pickable={pickTargets.includes(m.uid)}
+            onPick={onPick}
           />
         ))}
         {cards.length === 0 && <span className="muted">—</span>}
       </div>
     </div>
   )
+}
+
+/** Candidate uids for a decision that is answered by picking exactly one card: any selectTarget, or
+ *  a selectCards that must take exactly one. Other decisions return [] (handled by the panel). */
+function singlePickCandidates(decision: Decision | null): string[] {
+  if (!decision) return []
+  if (decision.kind === 'selectTarget') return decision.candidates
+  if (decision.kind === 'selectCards' && decision.min === 1 && decision.max === 1) return decision.candidates
+  return []
 }
 
 function Piles({ state }: { state: GameState }) {

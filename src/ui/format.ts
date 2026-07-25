@@ -71,6 +71,20 @@ function findCardDataId(state: GameState, uid: string): string | undefined {
   return zones.find((c) => c.uid === uid)?.dataId ?? state.inPlay.find((m) => m.uid === uid)?.dataId
 }
 
+/** Whether a decision-candidate uid corresponds to a card the board draws as a clickable element —
+ *  a face-up Enemy, a Mission slot, a played Maquis, or a hand card. Candidates without a board
+ *  representation (deck peeks, the Revealed pile, face-down Enemies) fall back to the panel chips. */
+export function boardPickable(state: GameState, uid: string): boolean {
+  if (state.missionRow.some((s) => s.uid === uid)) return true
+  if (state.inPlay.some((m) => m.uid === uid)) return true
+  if (state.hand.some((c) => c.uid === uid)) return true
+  for (const slot of state.missionRow) {
+    const e = slot.enemies.find((x) => x.uid === uid)
+    if (e) return e.faceUp
+  }
+  return false
+}
+
 /** Human label for a candidate uid appearing in a decision (enemy / mission / Maquis / Spy). */
 export function describeUid(state: GameState, uid: string): string {
   const enemy = findEnemy(state, uid)
@@ -79,6 +93,35 @@ export function describeUid(state: GameState, uid: string): string {
   if (slot) return missionCard.get(slot.dataId)?.name ?? slot.dataId
   const dataId = findCardDataId(state, uid) ?? uid
   return nameOfMaquis(dataId)
+}
+
+/** Multi-line tooltip explaining a candidate card's attributes — so a decision chip that shows only
+ *  a name still tells a new player what the card does. Newlines render via `white-space: pre-line`. */
+export function describeUidTip(state: GameState, uid: string): string {
+  const enemy = findEnemy(state, uid)
+  if (enemy) {
+    const t = enemyTypeById.get(enemy.typeId)
+    return [`${t?.name ?? enemy.typeId} — Defense ${enemy.defense}${t?.keyword ? ` · ${t.keyword}` : ''}`, t?.effect]
+      .filter(Boolean)
+      .join('\n')
+  }
+  const slot = state.missionRow.find((s) => s.uid === uid)
+  if (slot) {
+    const m = missionCard.get(slot.dataId)
+    return [
+      `${m?.name ?? slot.dataId} — Defense ${m?.defense}, ${m?.victoryPoints} VP, Garrison ${m?.garrison}${m?.keyword ? ` · ${m.keyword}` : ''}`,
+      m?.effect,
+    ]
+      .filter(Boolean)
+      .join('\n')
+  }
+  const dataId = findCardDataId(state, uid) ?? uid
+  if (dataId === 'spy') return 'Spy — cannot be played; clogs your hand until Recover.'
+  const m = maquisCard.get(dataId)
+  if (!m) return nameOfMaquis(dataId)
+  const sideLine = (label: string, s: { attack: number; actionType: string | null; action: string | null }): string =>
+    `${label} — Attack ${s.attack}; ${s.action ? `${s.actionType}: ${s.action}` : 'no action'}`
+  return [m.name, sideLine('Hidden', m.hidden), sideLine('Revealed', m.revealed)].join('\n')
 }
 
 /** Button label for a legal action. */

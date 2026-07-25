@@ -111,6 +111,20 @@ describe('look at top 3, discard, reorder', () => {
     expect(s.hidden.deck[1].uid).toBe(top[1])
   })
 
+  it('Juana still looks at 3 when the Hidden deck is nearly empty (reshuffles the discard)', () => {
+    const s0 = seedWhere(handHas('juana'))
+    // Deplete the Hidden deck to a single card, banking the rest in the discard.
+    while (s0.hidden.deck.length > 1) s0.hidden.discard.push(s0.hidden.deck.pop()!)
+    expect(s0.hidden.deck.length).toBe(1)
+    expect(s0.hidden.discard.length).toBeGreaterThanOrEqual(2)
+
+    let s = play(s0, 'juana', 'hidden')
+    s = useAction(s, 'juana')
+    expect(s.pendingDecision?.kind).toBe('selectCards')
+    expect((s.pendingDecision as { candidates: string[] }).candidates).toHaveLength(3) // reshuffled discard tops the deck back up
+    assertConservation(s)
+  })
+
   it('Roberto hidden operates on the Enemy deck', () => {
     let s = seedWhere(handHas('roberto'))
     s = play(s, 'roberto', 'hidden')

@@ -77,7 +77,20 @@ function lookDiscardReorder(
   fromLabel: string,
 ): EffectHandler {
   return ({ state, responses }): Decision | void => {
-    const deck = getDeck(state as Draft<GameState>)
+    const s = state as Draft<GameState>
+    // Rulebook: looking at the top 3 draws one card at a time, reshuffling the discard into the
+    // deck the moment it runs out. So top up from the discard when fewer than 3 remain — the
+    // existing top cards stay on top, the reshuffled discard falls in below them.
+    const deck = getDeck(s)
+    if (deck.length < 3) {
+      const discard = getDiscard(s)
+      if (discard.length > 0) {
+        const shuffled = shuffle(discard.slice(), s.rng)
+        s.rng = shuffled.state
+        discard.length = 0
+        deck.push(...shuffled.result)
+      }
+    }
     const topLen = Math.min(3, deck.length)
     const topUids = deck.slice(0, topLen).map((c) => c.uid)
 

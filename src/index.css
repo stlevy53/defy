@@ -61,6 +61,15 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
   margin-top: 0.55rem; padding: 0.6rem 0.85rem;
   background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: 8px;
+  display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+}
+.phase-message-main { flex: 2 1 340px; min-width: 0; }
+/* A pending decision fills the tile's right half (its empty space) instead of a new section. */
+.phase-message-side { flex: 1 1 280px; min-width: 0; border-left: 1px solid var(--line); padding-left: 0.9rem; }
+.phase-decision { border-radius: 8px; animation: decision-flash 0.5s ease-out; }
+@keyframes decision-flash {
+  0% { box-shadow: 0 0 0 2px var(--accent-2); }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 .phase-goal { color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .phase-name { color: var(--accent-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }
@@ -110,6 +119,27 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .card.mission.actionable:focus-visible .click-hint { opacity: 1; }
 .card.mission.failed { opacity: 0.5; }
 .card.mission.defeated { border-color: var(--win); }
+
+/* Victory feedback: a stamp that pops onto a Mission the moment it's defeated (it leaves the board
+ *  at Continue, when the row refills). Shows the VP earned so the strike feels rewarding. */
+.defeated-stamp {
+  position: absolute; inset: 0; z-index: 3; border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem;
+  background: rgba(20, 17, 14, 0.45); animation: stamp-fade 0.35s ease-out;
+}
+.defeated-word {
+  color: var(--win); border: 3px solid var(--win); border-radius: 8px; padding: 0.15rem 0.75rem;
+  font-weight: 800; font-size: 1.15rem; letter-spacing: 0.14em; text-transform: uppercase;
+  transform: rotate(-11deg); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  animation: stamp-pop 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.5);
+}
+.defeated-vp { color: #cfe6bd; font-weight: 700; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+@keyframes stamp-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes stamp-pop {
+  0% { transform: rotate(-11deg) scale(2.3); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: rotate(-11deg) scale(1); opacity: 1; }
+}
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
 .card-name { font-weight: 700; color: var(--ink); }
 .kw { font-size: 0.6rem; letter-spacing: 0.08em; padding: 0.05rem 0.35rem; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
@@ -136,21 +166,30 @@ button.enemy.faceup.strikeable:focus-visible {
   border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; outline: none;
 }
 
-/* Caution / SURVIVE warning */
-.caution {
-  margin: 0.6rem 0; padding: 0.55rem 0.75rem;
-  background: #33251a; border: 1px solid var(--warn); border-left: 3px solid var(--warn);
-  border-radius: 8px; font-size: 0.84rem;
+/* Pending-decision "pick this card" affordance (mirrors the strike/choose idiom, in ochre). */
+.card.pickable { position: relative; cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
+.card.pickable:hover, .card.pickable:focus-visible {
+  border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
 }
-.caution-head { color: #f0c99a; font-weight: 600; }
-.caution ul { margin: 0.35rem 0 0; padding-left: 1.2rem; color: var(--muted); }
-.caution li { margin: 0.1rem 0; }
-.caution li b { color: var(--ink); }
+.card.pickable:hover .click-hint, .card.pickable:focus-visible .click-hint { opacity: 1; }
+/* When a hand card is a pick target, let clicks anywhere on it answer (its play-sides are disabled). */
+.card.hand-card.pickable .sides { pointer-events: none; }
+button.enemy.faceup.pickable {
+  font-family: inherit; text-align: left; color: var(--ink); cursor: pointer;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+button.enemy.faceup.pickable:hover, button.enemy.faceup.pickable:focus-visible {
+  border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none;
+}
+.board-hint {
+  margin: 0 0 0.4rem; padding-left: 0.9rem; position: relative; color: var(--accent-2); font-weight: 600; font-size: 0.86rem;
+}
+.board-hint::before { content: '▸'; position: absolute; left: 0; }
 
 /* Play area + hand */
 .play-area { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.6rem 0; }
-.zone, .hand, .control-deck { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; }
-.hand, .control-deck { margin: 0.6rem 0; }
+.zone, .hand { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; }
+.hand { margin: 0.6rem 0; }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
 .card.played { width: 200px; padding: 0.45rem 0.55rem; }
 .hand-card { width: 250px; padding: 0.45rem 0.5rem 0.5rem; }
@@ -218,15 +257,29 @@ button { font: inherit; cursor: pointer; }
 .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem; }
 
 .decision-prompt { font-weight: 600; margin: 0 0 0.4rem; }
-.order-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: var(--accent-2); }
+.pick-count {
+  display: inline-block; margin: 0 0 0.45rem;
+  font-weight: 600; font-size: 0.72rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.55rem;
+}
+.pick-count.ok { color: #14110e; background: var(--win); border-color: var(--win); }
+.order-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+button.order-item {
+  font: inherit; font-size: 0.8rem; color: var(--accent-2);
+  background: rgba(217, 154, 36, 0.1); border: 1px solid var(--line); border-radius: 7px;
+  padding: 0.2rem 0.5rem;
+}
+button.order-item:hover { border-color: var(--accent); color: var(--ink); }
 .error { background: #38201c; border: 1px solid var(--loss); color: #efc3bb; padding: 0.4rem 0.6rem; border-radius: 7px; margin-bottom: 0.5rem; font-size: 0.85rem; }
 
 /* Tooltips */
 .tip { position: relative; cursor: help; }
+/* Clickable candidate chips are still tooltip hosts, but should read as clickable, not "help". */
+button.chip.tip, button.order-item.tip { cursor: pointer; }
 .tip::after {
   content: attr(data-tip);
   position: absolute; left: 50%; bottom: calc(100% + 7px); transform: translateX(-50%);
-  width: max-content; max-width: 230px; text-align: left;
+  width: max-content; max-width: 260px; text-align: left; white-space: pre-line;
   background: #0e0b08; color: var(--ink); border: 1px solid var(--line);
   padding: 0.4rem 0.55rem; border-radius: 7px;
   font-size: 0.72rem; font-weight: 400; line-height: 1.35; letter-spacing: normal; text-transform: none;
