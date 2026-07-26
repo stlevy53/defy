@@ -1,20 +1,37 @@
 // Resist! — playable prototype UI (Phase 3). A thin view over the headless engine: it renders
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useGame, useReinforcements } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus } from './ui/format'
-import type { Action, Decision, GameState } from './engine'
+import type { Action, Decision, GameResult, GameState } from './engine'
 
 export function App() {
-  const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed } = useGame()
+  const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed, gameId } = useGame()
+
+  // Dev/preview aid: append `?preview=<state>` to the URL to see any end-of-game overlay without
+  // reaching it in play — useful for iterating on the animations. Values: loss, draw, minor,
+  // victory, major, epic. Off by default.
+  const preview =
+    typeof window !== 'undefined' ? window.location.search.match(/[?&]preview=([^&]+)/)?.[1] ?? null : null
+  const playAgain = () => {
+    if (preview && typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('preview')
+      window.history.replaceState({}, '', url)
+    }
+    newGame()
+  }
+
+  // What end-of-game overlay to show: a preview override wins, else the real game result.
+  const shown = previewResult(preview) ?? state.result
 
   // Enemy chips added to a Mission this transition (reinforcements) — used to animate them in.
-  const reinforced = useReinforcements(state)
+  const reinforced = useReinforcements(state, gameId)
 
   const group = (t: Action['type']) => actions.filter((a) => a.type === t)
 
@@ -87,15 +104,9 @@ export function App() {
         </div>
       </header>
 
-      {state.result && (
-        <div className={`banner ${state.result.outcome}`}>
-          {state.result.outcome === 'win'
-            ? `${state.result.tier} — ${state.result.points} Victory Points`
-            : `Defeat — ${lossReason(state.result.reason)}`}
-          <button className="confirm" onClick={() => newGame()}>
-            Play again
-          </button>
-        </div>
+      {shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
+      {shown?.outcome === 'win' && (
+        <WinOverlay tier={shown.tier} points={shown.points} onPlayAgain={playAgain} />
       )}
 
       <PhaseGuide state={state} actions={actions} choices={sideContent} />
@@ -388,9 +399,182 @@ function HandDrawNote({ state }: { state: GameState }) {
   )
 }
 
-function lossReason(reason?: string): string {
-  if (reason === 'civilians') return '5 civilians lost'
-  if (reason === 'missions') return 'two missions failed'
-  if (reason === 'spies') return 'a hand of only Spies'
-  return 'the resistance is broken'
+/** A full-sentence, thematic cause of defeat for the game-over modal. */
+function lossHeadline(reason?: string): string {
+  if (reason === 'civilians') return 'Too many civilians have fallen — the people can bear no more.'
+  if (reason === 'missions') return 'Two missions failed. The network is shattered.'
+  if (reason === 'spies') return 'Informants have overrun your cell — nothing but spies remain.'
+  return 'The resistance is broken.'
+}
+
+/** Full-screen, animated defeat modal. Covers the board so the loss lands with weight; the only
+ *  action out is Play again. */
+function LossOverlay({ reason, onPlayAgain }: { reason?: string; onPlayAgain: () => void }) {
+  return (
+    <div className="gameover-overlay loss" role="alertdialog" aria-modal="true" aria-label="Defeat">
+      <div className="gameover-vignette" aria-hidden="true" />
+      <div className="gameover-panel loss">
+        <div className="gameover-emblem" aria-hidden="true">✶</div>
+        <h1 className="gameover-title">The Resistance Has Fallen</h1>
+        <p className="gameover-sub">You lose.</p>
+        <p className="gameover-reason">{lossHeadline(reason)}</p>
+        <button className="gameover-btn" onClick={onPlayAgain}>
+          Play again
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// --- Victory --------------------------------------------------------------------------------------
+// The win overlay escalates with the score tier: a subdued Draw (level 0) up to a full-spectacle
+// Epic Victory (level 4). Higher levels add rotating rays and more confetti (see CSS `.win-l{n}`).
+
+interface WinTier {
+  level: 0 | 1 | 2 | 3 | 4
+  headline: string
+  flavor: string
+}
+
+/** Tier metadata keyed by the engine's `scoreTier` strings. Flavor text is from the rulebook table. */
+const WIN_TIERS: Record<string, WinTier> = {
+  Draw: {
+    level: 0,
+    headline: 'Draw',
+    flavor:
+      'The Maquis fight valiantly, but are unable to achieve any major victories in the battle against Franco’s forces.',
+  },
+  'Minor Victory': {
+    level: 1,
+    headline: 'Minor Victory',
+    flavor:
+      'The Maquis liberate some villages and towns, raising the Spanish Republican flag over them — though they are ultimately defeated by Franco’s forces.',
+  },
+  Victory: {
+    level: 2,
+    headline: 'Victory',
+    flavor:
+      'Victories against Franco’s forces inspire guerrilla activity across Spain. Spain is not liberated, but the Maquis achieve major successes in their battle against Franco.',
+  },
+  'Major Victory': {
+    level: 3,
+    headline: 'Major Victory',
+    flavor:
+      'The Maquis achieve major success, victory after victory across Spain, forcing Franco to the negotiation table and ending his dictatorship early.',
+  },
+  'Epic Victory': {
+    level: 4,
+    headline: 'Epic Victory',
+    flavor: 'The Maquis overwhelm Franco’s forces, overthrow the dictator, and liberate Spain!',
+  },
+}
+
+/** Full-screen victory modal, escalating with the tier. */
+function WinOverlay({ tier, points, onPlayAgain }: { tier?: string; points?: number; onPlayAgain: () => void }) {
+  const info = WIN_TIERS[tier ?? 'Draw'] ?? WIN_TIERS.Draw
+  const level = info.level
+  return (
+    <div className={`gameover-overlay win win-l${level}`} role="alertdialog" aria-modal="true" aria-label={tier}>
+      {level >= 2 && <div className="win-rays" aria-hidden="true" />}
+      {level >= 1 && <Confetti count={CONFETTI_BY_LEVEL[level]} />}
+      <div className={`gameover-panel win win-l${level}`}>
+        <WinEmblem level={level} />
+        {tier && tier !== info.headline && <div className="win-tier-tag">{tier}</div>}
+        <h1 className="gameover-title win">{info.headline}</h1>
+        <p className="gameover-sub win">{points} Victory Points</p>
+        <p className="gameover-reason win">{info.flavor}</p>
+        <button className="gameover-btn win" onClick={onPlayAgain}>
+          Play again
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** The emblem escalates in form, not just size: a single star (Victory), a pulsing trio (Major),
+ *  and a large star wrapped in its own spinning sunburst (Epic). */
+function WinEmblem({ level }: { level: number }) {
+  if (level >= 4) {
+    return (
+      <div className="gameover-emblem win emblem-epic" aria-hidden="true">
+        <span className="emblem-sunburst" />
+        <span className="emblem-star">★</span>
+      </div>
+    )
+  }
+  if (level === 3) {
+    return (
+      <div className="gameover-emblem win emblem-trio" aria-hidden="true">
+        <span>★</span>
+        <span className="mid">★</span>
+        <span>★</span>
+      </div>
+    )
+  }
+  return (
+    <div className="gameover-emblem win" aria-hidden="true">
+      {level === 2 ? '★' : level === 1 ? '✦' : '✷'}
+    </div>
+  )
+}
+
+const CONFETTI_BY_LEVEL: Record<number, number> = { 1: 16, 2: 30, 3: 56, 4: 100 }
+const CONFETTI_COLORS = ['#c8452f', '#d99a24', '#efe6d6', '#7c5cff', '#6ea84f']
+
+/** CSS-only falling confetti. Pieces are randomized once (useMemo) so they don't reshuffle on
+ *  re-render, and loop continuously to keep the celebration alive. */
+function Confetti({ count }: { count: number }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 3,
+        dur: 2.6 + Math.random() * 2.4,
+        size: 6 + Math.random() * 8,
+        drift: (Math.random() * 2 - 1) * 80,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        round: Math.random() < 0.35,
+      })),
+    [count],
+  )
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="confetti-piece"
+          style={{
+            left: `${p.left}%`,
+            width: `${p.size}px`,
+            height: `${p.round ? p.size : p.size * 0.5}px`,
+            background: p.color,
+            borderRadius: p.round ? '50%' : '1px',
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.dur}s`,
+            ['--drift' as string]: `${p.drift}px`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Map a `?preview=` value to a synthetic result so end-of-game overlays can be previewed. */
+function previewResult(preview: string | null): GameResult | null {
+  switch (preview) {
+    case 'loss':
+      return { outcome: 'loss', reason: 'missions' }
+    case 'draw':
+      return { outcome: 'win', tier: 'Draw', points: 10 }
+    case 'minor':
+      return { outcome: 'win', tier: 'Minor Victory', points: 16 }
+    case 'victory':
+      return { outcome: 'win', tier: 'Victory', points: 20 }
+    case 'major':
+      return { outcome: 'win', tier: 'Major Victory', points: 24 }
+    case 'epic':
+      return { outcome: 'win', tier: 'Epic Victory', points: 34 }
+    default:
+      return null
+  }
 }

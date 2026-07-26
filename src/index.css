@@ -32,12 +32,13 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .muted { color: var(--muted); }
 .seed { font-size: 0.72rem; }
 
-/* Top bar */
+/* Top bar — sticky so critical controls (Undo, New game, status) stay reachable while scrolling. */
 .topbar {
+  position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
   padding: 0.6rem 0.9rem; border-radius: 10px;
-  background: rgba(20, 17, 14, 0.74); border: 1px solid rgba(122, 98, 62, 0.45);
-  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  background: rgba(20, 17, 14, 0.92); border: 1px solid rgba(122, 98, 62, 0.45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 .title strong { color: var(--accent); letter-spacing: 0.12em; font-size: 1.15rem; }
@@ -527,6 +528,247 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .tip.below::after { top: calc(100% + 7px); bottom: auto; }
 .tip.below::before { top: calc(100% + 2px); bottom: auto; border-top-color: transparent; border-bottom-color: var(--line); }
 .tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
+
+/* Card zoom (right-click a card to read it enlarged) */
+.zoom-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem;
+  padding: 2rem;
+  background: rgba(8, 6, 4, 0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  cursor: zoom-out;
+  animation: zoom-fade 0.12s ease;
+}
+@keyframes zoom-fade { from { opacity: 0; } to { opacity: 1; } }
+.zoom-inner { display: flex; align-items: center; justify-content: center; max-width: 92vw; max-height: 82vh; }
+.zoom-hint { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.02em; }
+.zoom-art {
+  max-width: min(560px, 92vw); max-height: 82vh; width: auto; height: auto;
+  border-radius: 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+}
+.zoom-card {
+  width: min(460px, 92vw); max-height: 82vh; overflow: auto;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px;
+  padding: 1.2rem 1.4rem; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+}
+.zoom-card h2 {
+  margin: 0 0 0.7rem; font-size: 1.5rem; color: var(--accent-2);
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+}
+.zoom-card h2 .kw { font-size: 0.68rem; }
+.zoom-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 1.05rem; margin-bottom: 0.7rem; }
+.zoom-effect { font-size: 1rem; line-height: 1.5; margin: 0; }
+.zoom-note { color: var(--muted); font-style: italic; }
+.zoom-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.zoom-side { border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 0.8rem; background: rgba(0, 0, 0, 0.18); }
+.zoom-side.hidden { border-left: 3px solid var(--accent); }
+.zoom-side.revealed { border-left: 3px solid #7c5cff; }
+.zoom-side-tag { font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem; }
+.zoom-side p { margin: 0; font-size: 0.95rem; line-height: 1.45; }
+.zoom-action-type { color: var(--accent-2); font-weight: 700; }
+@media (max-width: 520px) { .zoom-sides { grid-template-columns: 1fr; } }
+
+/* Game-over modal — a full-screen, animated end-of-game state. */
+.gameover-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+  animation: gameover-fade 0.45s ease both;
+}
+.gameover-overlay.loss { background: radial-gradient(ellipse at center, rgba(60, 10, 6, 0.82), rgba(6, 4, 3, 0.94)); }
+@keyframes gameover-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* A slow, breathing red vignette behind the panel to add menace. */
+.gameover-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(120, 20, 12, 0.35) 100%);
+  animation: gameover-pulse 3.2s ease-in-out infinite;
+}
+@keyframes gameover-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.9; } }
+
+.gameover-panel {
+  position: relative; text-align: center; max-width: 560px;
+  padding: 2.4rem 2.6rem; border-radius: 16px;
+}
+.gameover-panel.loss {
+  background: linear-gradient(180deg, rgba(40, 16, 12, 0.96), rgba(24, 10, 8, 0.96));
+  border: 1px solid var(--loss);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 40px rgba(150, 30, 20, 0.35) inset;
+  animation: loss-slam 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both, loss-shake 0.5s ease 0.6s;
+}
+@keyframes loss-slam {
+  0% { opacity: 0; transform: scale(1.5) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes loss-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+.gameover-emblem {
+  font-size: 3.2rem; color: var(--loss); line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(180, 40, 30, 0.6));
+  opacity: 0; animation: gameover-rise 0.5s ease 0.35s both;
+}
+.gameover-title {
+  margin: 0.6rem 0 0; font-size: 2.5rem; line-height: 1.05; letter-spacing: 0.03em;
+  text-transform: uppercase; font-weight: 800; color: #f4d3cc;
+  text-shadow: 0 2px 14px rgba(150, 20, 12, 0.8);
+  opacity: 0; animation: gameover-rise 0.5s ease 0.45s both;
+}
+.gameover-sub {
+  margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 700; color: var(--loss); letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0; animation: gameover-rise 0.5s ease 0.6s both;
+}
+.gameover-reason {
+  margin: 0.8rem auto 0; max-width: 420px; font-size: 1.02rem; line-height: 1.5; color: #e7cfc9;
+  opacity: 0; animation: gameover-rise 0.5s ease 0.75s both;
+}
+.gameover-btn {
+  margin-top: 1.6rem; padding: 0.7rem 1.8rem; font-size: 1.05rem; font-weight: 700;
+  color: #fff; background: var(--loss); border: 1px solid #e06a58; border-radius: 999px;
+  cursor: pointer; letter-spacing: 0.03em;
+  box-shadow: 0 6px 20px rgba(150, 30, 20, 0.45);
+  opacity: 0; animation: gameover-rise 0.5s ease 0.95s both;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.gameover-btn:hover { transform: translateY(-2px); background: #c8452f; box-shadow: 0 10px 26px rgba(150, 30, 20, 0.6); }
+.gameover-btn:active { transform: translateY(0); }
+@keyframes gameover-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Victory: escalates with the tier (win-l0 subdued → win-l4 spectacle) --- */
+.gameover-overlay.win { background: radial-gradient(ellipse at center, rgba(36, 30, 18, 0.9), rgba(6, 5, 3, 0.95)); }
+.gameover-overlay.win.win-l2 { background: radial-gradient(ellipse at center, rgba(58, 44, 18, 0.9), rgba(8, 6, 3, 0.95)); }
+.gameover-overlay.win.win-l3 { background: radial-gradient(ellipse at center, rgba(78, 58, 18, 0.92), rgba(8, 6, 3, 0.96)); }
+.gameover-overlay.win.win-l4 { background: radial-gradient(ellipse at center, rgba(98, 72, 20, 0.94), rgba(10, 6, 3, 0.97)); }
+/* Epic gets a one-shot golden flash on entry. */
+.gameover-overlay.win.win-l4::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255, 230, 160, 0.6), transparent 62%);
+  animation: win-flash 1.1s ease-out 2 both;
+}
+@keyframes win-flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+
+.gameover-panel.win {
+  background: linear-gradient(180deg, rgba(38, 32, 20, 0.97), rgba(24, 18, 10, 0.97));
+  border: 1px solid var(--accent-2);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 40px rgba(217, 154, 36, 0.25) inset;
+  animation: win-rise 0.6s ease both;
+}
+.gameover-panel.win.win-l1, .gameover-panel.win.win-l2 {
+  animation: win-pop 0.6s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+.gameover-panel.win.win-l3 {
+  animation: win-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both, win-glow 2.4s ease 0.7s infinite;
+}
+.gameover-panel.win.win-l4 {
+  border-color: #ffd766;
+  animation: win-pop 0.7s cubic-bezier(0.2, 1.5, 0.35, 1) both, win-glow 1.8s ease 0.8s infinite;
+}
+@keyframes win-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes win-pop {
+  0% { opacity: 0; transform: scale(0.6) translateY(20px); }
+  60% { opacity: 1; transform: scale(1.05) translateY(0); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes win-glow {
+  0%, 100% { box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 30px rgba(217, 154, 36, 0.25) inset; }
+  50% { box-shadow: 0 24px 90px rgba(0, 0, 0, 0.7), 0 0 65px rgba(217, 154, 36, 0.55) inset; }
+}
+
+.gameover-emblem.win { color: var(--accent-2); filter: drop-shadow(0 0 14px rgba(217, 154, 36, 0.7)); }
+
+/* Major (l3): a trio of stars, the middle larger, pulsing in a staggered wave. */
+.emblem-trio { display: flex; align-items: center; justify-content: center; gap: 0.55rem; font-size: 2.1rem; }
+.emblem-trio span { animation: emblem-pulse 1.6s ease infinite; }
+.emblem-trio span:first-child { animation-delay: 0s; }
+.emblem-trio .mid { font-size: 3.4rem; animation-delay: 0.2s; filter: drop-shadow(0 0 16px rgba(217, 154, 36, 0.9)); }
+.emblem-trio span:last-child { animation-delay: 0.4s; }
+
+/* Epic (l4): a big star inside its own spinning, multi-colour sunburst ring. */
+.emblem-epic { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 6.2rem; height: 6.2rem; margin: 0 auto; }
+.emblem-sunburst {
+  position: absolute; inset: -0.7rem; border-radius: 50%;
+  background: conic-gradient(from 0deg, #ffd766, #c8452f, #ffe08a, #d99a24, #ffd766);
+  -webkit-mask: radial-gradient(circle, transparent 42%, #000 45%);
+  mask: radial-gradient(circle, transparent 42%, #000 45%);
+  opacity: 0.92; animation: emblem-spin 5s linear infinite;
+}
+.emblem-epic .emblem-star {
+  position: relative; font-size: 4.6rem; color: #ffe08a;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 120, 0.95)); animation: emblem-pulse 1.3s ease infinite;
+}
+@keyframes emblem-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes emblem-spin { to { transform: rotate(360deg); } }
+
+.win-tier-tag {
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.78rem;
+  margin-top: 0.3rem; opacity: 0; animation: gameover-rise 0.5s ease 0.4s both;
+}
+.gameover-title.win { color: var(--accent-2); text-shadow: 0 2px 16px rgba(217, 154, 36, 0.7); }
+.win-l3 .gameover-title.win, .win-l4 .gameover-title.win {
+  background: linear-gradient(90deg, #ffe08a, #ffb638, #ffe08a); background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: gameover-rise 0.5s ease 0.45s both, title-shimmer 2.6s linear 1s infinite;
+}
+.win-l3 .gameover-title.win { font-size: 2.9rem; }
+.win-l4 .gameover-title.win {
+  font-size: 3.4rem;
+  animation: gameover-rise 0.5s ease 0.45s both, title-shimmer 2.2s linear 1s infinite, title-throb 2.2s ease 1s infinite;
+}
+@keyframes title-shimmer { to { background-position: 200% center; } }
+@keyframes title-throb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+.gameover-sub.win { color: #f0d9a0; letter-spacing: 0.1em; }
+.gameover-reason.win { color: #ece0c8; }
+.gameover-btn.win { background: var(--accent-2); border-color: #ffd766; color: #2a1c05; box-shadow: 0 6px 20px rgba(217, 154, 36, 0.45); }
+.gameover-btn.win:hover { background: #e8ac2e; box-shadow: 0 10px 26px rgba(217, 154, 36, 0.6); }
+
+/* Rotating sunburst behind the panel (win-l2+), faster and richer at higher tiers. */
+.win-rays {
+  position: absolute; left: 50%; top: 46%; width: 200vmax; height: 200vmax; transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(from 0deg, rgba(217, 154, 36, 0.12) 0deg 8deg, transparent 8deg 18deg);
+  opacity: 0.5; pointer-events: none; animation: rays-spin 32s linear infinite;
+}
+.win-l3 .win-rays {
+  opacity: 0.95; animation-duration: 15s;
+  background: repeating-conic-gradient(from 0deg, rgba(217, 154, 36, 0.2) 0deg 7deg, transparent 7deg 15deg);
+}
+.win-l4 .win-rays {
+  opacity: 1; animation-duration: 9s;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 205, 90, 0.28) 0deg 6deg, rgba(200, 69, 47, 0.14) 6deg 9deg, transparent 9deg 14deg);
+}
+/* Epic gets a second, faster, counter-rotating ray layer for a shimmering interference effect. */
+.win-l4 .win-rays::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(from 9deg, rgba(255, 225, 140, 0.16) 0deg 3deg, transparent 3deg 11deg);
+  animation: rays-spin-rev 13s linear infinite;
+}
+@keyframes rays-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes rays-spin-rev { to { transform: rotate(-360deg); } }
+
+/* Falling confetti (win-l1+); pieces positioned/colored inline in React. */
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti-piece {
+  position: absolute; top: -8%; opacity: 0;
+  animation-name: confetti-fall; animation-timing-function: linear; animation-iteration-count: infinite;
+}
+@keyframes confetti-fall {
+  0% { transform: translate(0, -10vh) rotate(0); opacity: 0; }
+  8% { opacity: 1; }
+  100% { transform: translate(var(--drift, 0), 112vh) rotate(720deg); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameover-overlay, .gameover-vignette, .gameover-panel,
+  .gameover-emblem, .gameover-title, .gameover-sub, .gameover-reason, .gameover-btn,
+  .win-rays, .confetti-piece, .emblem-sunburst, .emblem-star, .emblem-trio span {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+  }
+  .confetti, .win-rays { display: none; }
+}
 
 /* Piles + log */
 .piles { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; margin: 0.6rem 0; font-size: 0.76rem; color: var(--muted); }

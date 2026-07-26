@@ -48,6 +48,8 @@ export interface UseGame {
   state: GameState
   actions: Action[]
   seed: number
+  /** Monotonic id that changes only when a new game starts (immune to seed reuse). */
+  gameId: number
   dispatch: (action: Action) => void
   respond: (selection: string[]) => void
   undo: () => void
@@ -58,6 +60,7 @@ export interface UseGame {
 
 export function useGame(initialSeed?: number): UseGame {
   const [seed, setSeed] = useState<number>(() => initialSeed ?? randomSeed())
+  const [gameId, setGameId] = useState(0)
   const [history, setHistory] = useState<GameState[]>(() => [settle(createGame({ seed: initialSeed ?? seed }))])
   const [error, setError] = useState<string | null>(null)
 
@@ -98,11 +101,12 @@ export function useGame(initialSeed?: number): UseGame {
   const newGame = useCallback((s?: number) => {
     const next = s ?? randomSeed()
     setSeed(next)
+    setGameId((n) => n + 1)
     setError(null)
     setHistory([settle(createGame({ seed: next }))])
   }, [])
 
-  return { state, actions, seed, dispatch, respond, undo, newGame, canUndo: history.length > 1, error }
+  return { state, actions, seed, gameId, dispatch, respond, undo, newGame, canUndo: history.length > 1, error }
 }
 
 /**
@@ -114,15 +118,28 @@ export function useGame(initialSeed?: number): UseGame {
  * Freshly refilled Mission slots (a uid not present in the previous state) are ignored — dealing a
  * new Mission's garrison is not a reinforcement. Undo naturally produces no additions, so it never
  * animates spuriously.
+ *
+ * `gameId` identifies the current game: because card uids are only unique *within* a game (they're
+ * reused across games), we must NOT diff the old game's final state against a new game's initial
+ * deal — that would flag every mission as reinforced. When `gameId` changes we adopt the new state
+ * without animating.
  */
-export function useReinforcements(state: GameState): Record<string, string[]> {
+export function useReinforcements(state: GameState, gameId: number): Record<string, string[]> {
   const seen = useRef<GameState | null>(null)
+  const gameRef = useRef(gameId)
   const [added, setAdded] = useState<Record<string, string[]>>({})
 
   // Diff the incoming state against the last one we processed. `seen` is a ref (not deps) so this
   // survives React 18 StrictMode's mount-time double-invoke; the clear-timer lives in the effect
   // below, keyed on `added`, so it schedules cleanly regardless.
   useEffect(() => {
+    // A new game started: adopt its initial state as the baseline, clearing any lingering badge.
+    if (gameRef.current !== gameId) {
+      gameRef.current = gameId
+      seen.current = state
+      setAdded({})
+      return
+    }
     const prev = seen.current
     if (prev === state) return
     seen.current = state
@@ -137,7 +154,7 @@ export function useReinforcements(state: GameState): Record<string, string[]> {
       if (fresh.length > 0) next[slot.uid] = fresh
     }
     if (Object.keys(next).length > 0) setAdded(next)
-  }, [state])
+  }, [state, gameId])
 
   useEffect(() => {
     if (Object.keys(added).length === 0) return

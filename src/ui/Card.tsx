@@ -4,11 +4,12 @@
 // file to change: swap the text bodies below for <img> faces (keeping the same outer wrappers +
 // state classes for selection/defeat/face-down overlays) and the rest of the UI is untouched.
 
-import type { KeyboardEvent } from 'react'
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
 import { maquisArt, enemyArt, enemyBackArt, missionArt, spyArt } from './cardArt'
 import { Tip } from './Tip'
+import { useZoom } from './Zoom'
 
 type Side = 'hidden' | 'revealed'
 
@@ -116,17 +117,18 @@ function MaquisHandFace({
   pickable?: boolean
   onPick?: (uid: string) => void
 }) {
+  const zoom = useMaquisZoom(dataId)
   if (dataId === 'spy') {
     const spyImg = spyArt()
     if (spyImg) {
       return (
-        <div className="card hand-card has-art spy">
+        <div className="card hand-card has-art spy" onContextMenu={zoom}>
           <img className="card-art" src={spyImg} alt="Spy" draggable={false} />
         </div>
       )
     }
     return (
-      <div className="card hand-card mcard spy">
+      <div className="card hand-card mcard spy" onContextMenu={zoom}>
         <div className="mcard-banner">Spy</div>
         <div className="portrait spy">
           <span className="portrait-monogram">S</span>
@@ -146,6 +148,7 @@ function MaquisHandFace({
       <div
         className={`card hand-card has-art ${pick ? 'pickable' : ''}`}
         onClick={pick ?? undefined}
+        onContextMenu={zoom}
         role={pick ? 'button' : undefined}
         tabIndex={pick ? 0 : undefined}
         title={pick ? `Select ${name}` : undefined}
@@ -181,6 +184,7 @@ function MaquisHandFace({
     <div
       className={`card hand-card mcard ${pick ? 'pickable' : ''}`}
       onClick={pick ?? undefined}
+      onContextMenu={zoom}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
       title={pick ? `Select ${name}` : undefined}
@@ -268,6 +272,7 @@ function MaquisPlayedFace({
   const monogram = name.charAt(0)
   const pick = pickable && onPick ? () => onPick(uid) : null
   const art = maquisArt(dataId)
+  const zoom = useMaquisZoom(dataId)
 
   // Real card art: show the whole card and dim the half that isn't in play, so the active side reads
   // clearly. The action fires from an overlaid "Use" ribbon; the live count-bonus sits in the corner.
@@ -277,6 +282,7 @@ function MaquisPlayedFace({
       <div
         className={`card played has-art ${side} ${pick ? 'pickable' : ''}`}
         onClick={pick ?? undefined}
+        onContextMenu={zoom}
         role={pick ? 'button' : undefined}
         tabIndex={pick ? 0 : undefined}
         title={pick ? `Select ${name}` : undefined}
@@ -304,6 +310,7 @@ function MaquisPlayedFace({
     <div
       className={`card played mcard ${side} ${pick ? 'pickable' : ''}`}
       onClick={pick ?? undefined}
+      onContextMenu={zoom}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
       title={pick ? `Select ${name}` : undefined}
@@ -368,6 +375,7 @@ function MissionFace({
   newEnemyUids?: string[]
 }) {
   const reinforcedCount = newEnemyUids?.length ?? 0
+  const zoomMission = useMissionZoom(slot.dataId)
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
@@ -443,6 +451,7 @@ function MissionFace({
   const wrap = {
     className: cls,
     onClick: act?.run,
+    onContextMenu: zoomMission,
     role: act ? ('button' as const) : undefined,
     tabIndex: act ? 0 : undefined,
     title: act?.title,
@@ -526,6 +535,7 @@ function EnemyChip({
   const type = enemyOf(enemy.typeId)
   const art = enemyArt(enemy.typeId)
   const newCls = isNew ? ' reinforce-enter' : ''
+  const zoom = useEnemyZoom(enemy)
 
   if (!enemy.faceUp) {
     const back = enemyBackArt()
@@ -579,6 +589,7 @@ function EnemyChip({
           e.stopPropagation()
           onStrike()
         }}
+        onContextMenu={zoom}
         title={`Strike ${type?.name} (cost ${enemy.defense})`}
       >
         {body}
@@ -596,6 +607,7 @@ function EnemyChip({
           e.stopPropagation()
           onPick()
         }}
+        onContextMenu={zoom}
         title={`Select ${type?.name}`}
       >
         {body}
@@ -603,8 +615,114 @@ function EnemyChip({
     )
   }
   return (
-    <div className={`enemy faceup kw-${type?.keyword}${artCls}${newCls}`} title={art ? tip : undefined}>
+    <div
+      className={`enemy faceup kw-${type?.keyword}${artCls}${newCls}`}
+      title={art ? tip : undefined}
+      onContextMenu={zoom}
+    >
       {body}
+    </div>
+  )
+}
+
+// --- Right-click zoom ------------------------------------------------------------------------------
+// A right-click on any face-up card opens a large, read-only view (see Zoom.tsx) so the text is easy
+// to read. Left-click behaviour is untouched. When real art exists we zoom the image; otherwise we
+// render a big, legible text version of the same card.
+
+/** Build a right-click handler that opens the zoom overlay with `content`. Stops the event from
+ *  bubbling (an Enemy shouldn't also zoom its Mission) and suppresses the browser context menu. */
+function useZoomHandler(content: () => ReactNode): (e: MouseEvent) => void {
+  const openZoom = useZoom()
+  return (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    openZoom(content())
+  }
+}
+
+const useMaquisZoom = (dataId: string) => useZoomHandler(() => <ZoomMaquisCard dataId={dataId} />)
+const useMissionZoom = (dataId: string) => useZoomHandler(() => <ZoomMissionCard dataId={dataId} />)
+const useEnemyZoom = (enemy: EnemyInstance) =>
+  useZoomHandler(() => <ZoomEnemyCard typeId={enemy.typeId} defense={enemy.defense} />)
+
+function ZoomMaquisCard({ dataId }: { dataId: string }) {
+  const name = nameOfMaquis(dataId)
+  const art = maquisArt(dataId)
+  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
+  if (dataId === 'spy') {
+    return (
+      <div className="zoom-card zoom-maquis">
+        <h2>Spy</h2>
+        <p className="zoom-note">Can't be played — sits in your hand until Recover.</p>
+      </div>
+    )
+  }
+  const hidden = maquisSideAction(dataId, 'hidden')
+  const revealed = maquisSideAction(dataId, 'revealed')
+  return (
+    <div className="zoom-card zoom-maquis">
+      <h2>{name}</h2>
+      <div className="zoom-sides">
+        <div className="zoom-side hidden">
+          <div className="zoom-side-tag">Hidden · Attack {maquisAttack(dataId, 'hidden')}</div>
+          {hidden ? (
+            <p>
+              <span className="zoom-action-type">{hidden.type}</span> {hidden.text}
+            </p>
+          ) : (
+            <p className="zoom-note">No action</p>
+          )}
+        </div>
+        <div className="zoom-side revealed">
+          <div className="zoom-side-tag">Revealed · Attack {maquisAttack(dataId, 'revealed')}</div>
+          {revealed ? (
+            <p>
+              <span className="zoom-action-type">{revealed.type}</span> {revealed.text}
+            </p>
+          ) : (
+            <p className="zoom-note">No action</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ZoomMissionCard({ dataId }: { dataId: string }) {
+  const data = missionOf(dataId)
+  const name = data?.name ?? dataId
+  const art = missionArt(dataId)
+  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
+  return (
+    <div className="zoom-card zoom-mission">
+      <h2>
+        {name} <span className={`kw kw-${data?.keyword}`}>{data?.keyword}</span>
+      </h2>
+      <div className="zoom-stats">
+        <span>🛡 Defense {data?.defense}</span>
+        <span>★ {data?.victoryPoints} VP</span>
+        <span>☗ Garrison {data?.garrison}</span>
+      </div>
+      {data?.effect && <p className="zoom-effect">{data.effect}</p>}
+    </div>
+  )
+}
+
+function ZoomEnemyCard({ typeId, defense }: { typeId: string; defense: number }) {
+  const type = enemyOf(typeId)
+  const name = type?.name ?? typeId
+  const art = enemyArt(typeId)
+  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
+  return (
+    <div className="zoom-card zoom-enemy">
+      <h2>
+        {name} <span className={`kw kw-${type?.keyword}`}>{type?.keyword}</span>
+      </h2>
+      <div className="zoom-stats">
+        <span>🛡 Defense {defense}</span>
+      </div>
+      {type?.effect && <p className="zoom-effect">{type.effect}</p>}
     </div>
   )
 }
