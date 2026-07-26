@@ -147,9 +147,17 @@ const discardCounterGuerrillas: EffectHandler = ({ state }) => {
   slot.enemies = remaining
 }
 
-/** "Draw one card from the Hidden deck." on ATTACK. (Nicolás hidden, Ricardo hidden) */
-const drawOneAttack: EffectHandler = ({ state }) => {
-  drawHidden(state as Draft<GameState>, 1)
+/** "Draw N cards from the Hidden deck." on ATTACK. (Nicolás/Ricardo hidden draw 1; Sagrario revealed draws 2.) */
+const drawFromHiddenAttack = (n: number): EffectHandler => ({ state }) => {
+  drawHidden(state as Draft<GameState>, n)
+}
+
+/** "Draw a card from the Recruit deck and put it in your hand." on ATTACK. (Ramona revealed) */
+const drawRecruitToHand: EffectHandler = ({ state }) => {
+  const s = state as Draft<GameState>
+  if (s.recruit.deck.length === 0) return
+  const card = s.recruit.deck.shift()!
+  s.hand.push({ uid: card.uid, dataId: card.dataId })
 }
 
 /** Chunk 1 + 2 ATTACK effects, keyed by effect id. */
@@ -171,8 +179,10 @@ export const ATTACK_EFFECTS: Record<string, EffectHandler> = {
   [maquisEffectId('adela', 'hidden')]: adelaMove,
   [maquisEffectId('soledad', 'revealed')]: discardCounterGuerrillas,
   [maquisEffectId('adela', 'revealed')]: discardCounterGuerrillas,
-  [maquisEffectId('nicolas', 'hidden')]: drawOneAttack,
-  [maquisEffectId('ricardo', 'hidden')]: drawOneAttack,
+  [maquisEffectId('nicolas', 'hidden')]: drawFromHiddenAttack(1),
+  [maquisEffectId('ricardo', 'hidden')]: drawFromHiddenAttack(1),
+  [maquisEffectId('sagrario', 'revealed')]: drawFromHiddenAttack(2),
+  [maquisEffectId('ramona', 'revealed')]: drawRecruitToHand,
 }
 
 // --- preconditions (consulted by legalActions via effects/preconditions.ts) -----------------
@@ -200,6 +210,8 @@ export const ATTACK_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('adela', 'hidden')]: canMoveEnemy,
   [maquisEffectId('soledad', 'revealed')]: chosenHasCounterGuerrilla,
   [maquisEffectId('adela', 'revealed')]: chosenHasCounterGuerrilla,
+  // Ramona revealed draws from the Recruit deck (which never reshuffles) — only offer it with cards left.
+  [maquisEffectId('ramona', 'revealed')]: (s) => s.recruit.deck.length > 0,
 }
 
 /** Register the ATTACK effects into the global registry. Like registerPlanEffects, this is

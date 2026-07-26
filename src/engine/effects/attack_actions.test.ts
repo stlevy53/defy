@@ -135,6 +135,30 @@ describe('ATTACK draw', () => {
     expect(g.hand.length).toBe(handBefore + 1)
     expect(g.hidden.deck.length).toBe(deckBefore - 1)
   })
+
+  it('Sagrario revealed draws two cards from the Hidden deck', () => {
+    const { s, mi } = findSeed('sagrario', () => true)
+    let g = playThenChoose(s, 'sagrario', 'revealed', mi)
+    const handBefore = g.hand.length
+    const deckBefore = g.hidden.deck.length
+    g = apply(g, { type: 'UseAction', uid: 'sagrario' })
+    expect(g.pendingDecision).toBeNull()
+    expect(g.hand.length).toBe(handBefore + 2)
+    expect(g.hidden.deck.length).toBe(deckBefore - 2)
+  })
+
+  it('Ramona revealed draws one card from the Recruit deck into the hand', () => {
+    const { s, mi } = findSeed('ramona', () => true)
+    let g = playThenChoose(s, 'ramona', 'revealed', mi)
+    const handBefore = g.hand.length
+    const recruitBefore = g.recruit.deck.length
+    const topUid = g.recruit.deck[0].uid
+    g = apply(g, { type: 'UseAction', uid: 'ramona' })
+    expect(g.pendingDecision).toBeNull()
+    expect(g.hand.length).toBe(handBefore + 1)
+    expect(g.recruit.deck.length).toBe(recruitBefore - 1)
+    expect(g.hand.map((c) => c.uid)).toContain(topUid)
+  })
 })
 
 describe('precondition gating', () => {
