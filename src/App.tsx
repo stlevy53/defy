@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useGame } from './ui/useGame'
+import { useGame, useReinforcements } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
@@ -12,6 +12,9 @@ import type { Action, Decision, GameState } from './engine'
 
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed } = useGame()
+
+  // Enemy chips added to a Mission this transition (reinforcements) — used to animate them in.
+  const reinforced = useReinforcements(state)
 
   const group = (t: Action['type']) => actions.filter((a) => a.type === t)
 
@@ -110,6 +113,7 @@ export function App() {
             onStrike={(uid) => dispatch({ type: 'SpendAttackOn', targetUid: uid })}
             pickTargets={pickTargets}
             onPick={onPick}
+            newEnemyUids={reinforced[slot.uid]}
           />
         ))}
       </section>
@@ -138,7 +142,10 @@ export function App() {
       </section>
 
       <section className="hand">
-        <h3>Your hand</h3>
+        <h3 className="hand-head">
+          Your hand
+          <HandDrawNote state={state} />
+        </h3>
         <div className="cards">
           {state.hand.map((c) => (
             <Card
@@ -357,6 +364,28 @@ function AttackStrengthPill({ value }: { value: number }) {
 
 function victoryPoints(state: GameState): number {
   return state.defeatedMissions.reduce((n, m) => n + (missionOf(m.dataId)?.victoryPoints ?? 0), 0)
+}
+
+/** A defeated Mission (Cross the Border −1 / Attack Francoists in the Valley +1) can change the size
+ *  of the hand drawn next Recover. `recoverDrawModifier` is live from the moment of defeat until the
+ *  new hand is drawn, so this note warns the player ahead of clicking Continue. */
+function HandDrawNote({ state }: { state: GameState }) {
+  const delta = state.recoverDrawModifier
+  if (delta === 0 || state.result) return null
+  const size = Math.max(0, 5 + delta)
+  const srcId = delta < 0 ? 'border' : 'valley'
+  const source = state.defeatedMissions.some((m) => m.dataId === srcId) ? missionOf(srcId)?.name : undefined
+  const sign = delta > 0 ? `+${delta}` : `${delta}` // e.g. "+1" or "-1"
+  const tip = `${source ? `${source} was defeated — you'll` : "You'll"} draw ${size} card${size === 1 ? '' : 's'} (${
+    delta > 0 ? 'one extra' : 'one fewer'
+  }) when you Continue to the next round.`
+  return (
+    <Tip text={tip}>
+      <span className={`hand-draw-note ${delta < 0 ? 'warn' : 'good'}`}>
+        Next hand: {size} ({sign})
+      </span>
+    </Tip>
+  )
 }
 
 function lossReason(reason?: string): string {

@@ -48,6 +48,8 @@ export type CardFace =
       /** UIDs (the Mission and/or its Enemies) that are pending-decision candidates — click to pick. */
       pickTargets?: string[]
       onPick?: (uid: string) => void
+      /** Enemy uids just added to this Mission (a reinforcement) — animated in when present. */
+      newEnemyUids?: string[]
     }
 
 /** Render any card face. Discriminated on `kind` so callers pass only what that face needs. */
@@ -89,6 +91,7 @@ export function Card(face: CardFace) {
           onStrike={face.onStrike}
           pickTargets={face.pickTargets}
           onPick={face.onPick}
+          newEnemyUids={face.newEnemyUids}
         />
       )
   }
@@ -352,6 +355,7 @@ function MissionFace({
   onStrike,
   pickTargets,
   onPick,
+  newEnemyUids,
 }: {
   slot: MissionSlot
   state: GameState
@@ -361,11 +365,19 @@ function MissionFace({
   onStrike?: (uid: string) => void
   pickTargets?: string[]
   onPick?: (uid: string) => void
+  newEnemyUids?: string[]
 }) {
+  const reinforcedCount = newEnemyUids?.length ?? 0
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
   const name = data?.name ?? slot.dataId
+
+  // Garrison is a printed card stat, but effects can add Enemies beyond it (Radio Operator,
+  // Barracks, a moved Enemy). Show a persistent "+N" so the number always matches the chips on the
+  // card. Based on the live count vs printed, so it self-corrects as Enemies are added or defeated.
+  const garrisonBase = data?.garrison ?? 0
+  const garrisonExtra = slot.enemies.length - garrisonBase
 
   // The whole card is clickable for exactly one reason at a time (they live in different moments):
   // choose it to attack (PLAN), strike it (ATTACK), or pick it as a decision target.
@@ -389,6 +401,7 @@ function MissionFace({
     slot.faceDown ? 'failed' : '',
     slot.defeated ? 'defeated' : '',
     act ? 'actionable' : '',
+    reinforcedCount > 0 ? 'reinforced' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -400,6 +413,16 @@ function MissionFace({
     </div>
   ) : null
 
+  // Reinforcement callout: a rising badge over the tile so the player can't miss that this
+  // Mission's garrison just grew (Radio Operator, Barracks, or a moved Enemy).
+  const reinforceBadge =
+    reinforcedCount > 0 ? (
+      <div className="reinforce-badge" aria-label={`${reinforcedCount} Enemy reinforcement`}>
+        <span className="rb-count">+{reinforcedCount}</span>
+        <span className="rb-cap">REINFORCED</span>
+      </div>
+    ) : null
+
   const enemiesRow = (
     <div className="enemies">
       {slot.enemies.map((e) => (
@@ -410,6 +433,7 @@ function MissionFace({
           onStrike={onStrike ? () => onStrike(e.uid) : undefined}
           canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
           onPick={onPick ? () => onPick(e.uid) : undefined}
+          isNew={newEnemyUids?.includes(e.uid) ?? false}
         />
       ))}
       {slot.enemies.length === 0 && <span className="muted">clear</span>}
@@ -434,6 +458,7 @@ function MissionFace({
       <div {...wrap}>
         {act && <div className="click-hint">{act.hint}</div>}
         {stamp}
+        {reinforceBadge}
         <img className="card-art" src={art} alt={name} draggable={false} />
         {modified && (
           <Tip text="Defense modified for this round.">
@@ -449,6 +474,7 @@ function MissionFace({
     <div {...wrap}>
       {act && <div className="click-hint">{act.hint}</div>}
       {stamp}
+      {reinforceBadge}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
         <Tip text={keywordTip(data?.keyword)}>
@@ -462,8 +488,17 @@ function MissionFace({
         <Tip text="Victory Points — scored when you defeat this Mission.">
           <span>★ {data?.victoryPoints}</span>
         </Tip>
-        <Tip text="Garrison — how many Enemies guard this Mission.">
-          <span>☗ {data?.garrison}</span>
+        <Tip
+          text={
+            garrisonExtra > 0
+              ? `Garrison — ${garrisonBase} printed, +${garrisonExtra} reinforced (${slot.enemies.length} Enemies here now).`
+              : 'Garrison — how many Enemies guard this Mission.'
+          }
+        >
+          <span className="garrison-stat">
+            ☗ {garrisonBase}
+            {garrisonExtra > 0 && <span className="garrison-plus">+{garrisonExtra}</span>}
+          </span>
         </Tip>
       </div>
       <p className="effect">{data?.effect}</p>
@@ -478,24 +513,28 @@ function EnemyChip({
   onStrike,
   canPick,
   onPick,
+  isNew,
 }: {
   enemy: EnemyInstance
   canStrike?: boolean
   onStrike?: () => void
   canPick?: boolean
   onPick?: () => void
+  /** True when this Enemy was just added to the Mission (reinforcement) — plays an enter animation. */
+  isNew?: boolean
 }) {
   const type = enemyOf(enemy.typeId)
   const art = enemyArt(enemy.typeId)
+  const newCls = isNew ? ' reinforce-enter' : ''
 
   if (!enemy.faceUp) {
     const back = enemyBackArt()
     return back ? (
-      <span className="enemy facedown has-art">
+      <span className={`enemy facedown has-art${newCls}`}>
         <img className="enemy-art" src={back} alt="Face-down Enemy" draggable={false} />
       </span>
     ) : (
-      <span className="enemy facedown">🂠</span>
+      <span className={`enemy facedown${newCls}`}>🂠</span>
     )
   }
 
@@ -535,7 +574,7 @@ function EnemyChip({
     return (
       <button
         type="button"
-        className={`enemy faceup strikeable kw-${type?.keyword}${artCls}`}
+        className={`enemy faceup strikeable kw-${type?.keyword}${artCls}${newCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onStrike()
@@ -552,7 +591,7 @@ function EnemyChip({
     return (
       <button
         type="button"
-        className={`enemy faceup pickable kw-${type?.keyword}${artCls}`}
+        className={`enemy faceup pickable kw-${type?.keyword}${artCls}${newCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onPick()
@@ -564,7 +603,7 @@ function EnemyChip({
     )
   }
   return (
-    <div className={`enemy faceup kw-${type?.keyword}${artCls}`} title={art ? tip : undefined}>
+    <div className={`enemy faceup kw-${type?.keyword}${artCls}${newCls}`} title={art ? tip : undefined}>
       {body}
     </div>
   )

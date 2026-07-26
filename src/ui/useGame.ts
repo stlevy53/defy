@@ -1,7 +1,7 @@
 // Game state hook: holds a history stack (for undo), exposes the current state + legal actions,
 // and dispatches actions / decision responses through the pure engine.
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { createGame, applyAction, legalActions, resolveDecision } from '../engine'
 import type { Action, Decision, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
@@ -103,4 +103,47 @@ export function useGame(initialSeed?: number): UseGame {
   }, [])
 
   return { state, actions, seed, dispatch, respond, undo, newGame, canUndo: history.length > 1, error }
+}
+
+/**
+ * Enemies newly added to an *existing* Mission between two committed states — e.g. a surviving
+ * Radio Operator's "place a face-down Enemy on all other Missions", the Barracks, or an Enemy
+ * moved by a Maquis action. Returns `missionUid -> new enemy uids` so the Mission tile can animate
+ * the reinforcement, then clears itself after the animation window.
+ *
+ * Freshly refilled Mission slots (a uid not present in the previous state) are ignored — dealing a
+ * new Mission's garrison is not a reinforcement. Undo naturally produces no additions, so it never
+ * animates spuriously.
+ */
+export function useReinforcements(state: GameState): Record<string, string[]> {
+  const seen = useRef<GameState | null>(null)
+  const [added, setAdded] = useState<Record<string, string[]>>({})
+
+  // Diff the incoming state against the last one we processed. `seen` is a ref (not deps) so this
+  // survives React 18 StrictMode's mount-time double-invoke; the clear-timer lives in the effect
+  // below, keyed on `added`, so it schedules cleanly regardless.
+  useEffect(() => {
+    const prev = seen.current
+    if (prev === state) return
+    seen.current = state
+    if (!prev) return // first commit — don't animate the initial deal
+
+    const next: Record<string, string[]> = {}
+    for (const slot of state.missionRow) {
+      const before = prev.missionRow.find((m) => m.uid === slot.uid)
+      if (!before) continue // a newly refilled Mission slot, not a reinforcement
+      const had = new Set(before.enemies.map((e) => e.uid))
+      const fresh = slot.enemies.filter((e) => !had.has(e.uid)).map((e) => e.uid)
+      if (fresh.length > 0) next[slot.uid] = fresh
+    }
+    if (Object.keys(next).length > 0) setAdded(next)
+  }, [state])
+
+  useEffect(() => {
+    if (Object.keys(added).length === 0) return
+    const t = setTimeout(() => setAdded({}), 1700)
+    return () => clearTimeout(t)
+  }, [added])
+
+  return added
 }

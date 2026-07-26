@@ -174,8 +174,15 @@ export function actionLabel(state: GameState, action: Action): string {
       return 'Done attacking →'
     case 'EndResistance':
       return 'End the resistance'
-    case 'Continue':
-      return 'Continue to next round'
+    case 'Continue': {
+      // Surface a defeated Mission's Recover-draw effect (Cross the Border −1 / Valley +1) right on
+      // the button that triggers the draw, so the player is warned at the point of decision.
+      const delta = state.recoverDrawModifier
+      if (delta === 0) return 'Continue to next round'
+      const size = Math.max(0, 5 + delta)
+      const sign = delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`
+      return `Continue to next round · draw ${size} (${sign})`
+    }
   }
 }
 
