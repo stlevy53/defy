@@ -111,6 +111,8 @@ export function App() {
 
       <PhaseGuide state={state} actions={actions} choices={sideContent} />
 
+      <div className="board-grid">
+      <div className="board-main">
       <section className="missions">
         {state.missionRow.map((slot) => (
           <Card
@@ -175,8 +177,6 @@ export function App() {
         </div>
       </section>
 
-      <Piles state={state} />
-
       <details className="log">
         <summary>Log</summary>
         <ol>
@@ -188,6 +188,10 @@ export function App() {
             ))}
         </ol>
       </details>
+      </div>
+
+      <Piles state={state} />
+      </div>
     </div>
   )
 }
@@ -323,28 +327,39 @@ function singlePickCandidates(decision: Decision | null): string[] {
   return []
 }
 
+interface PileInfo {
+  label: string
+  n: number
+  tone: string
+  hint: string
+}
+
 function Piles({ state }: { state: GameState }) {
-  const p: [string, number][] = [
-    ['Hidden deck', state.hidden.deck.length],
-    ['Hidden discard', state.hidden.discard.length],
-    ['Recruit', state.recruit.deck.length],
-    ['Revealed pile', state.recruit.revealed.length],
-    ['Enemy deck', state.enemyDeck.length],
-    ['Enemy discard', state.enemyDiscard.length],
-    ['Mission deck', state.missionDeck.length],
-    ['Defeated', state.defeatedMissions.length],
-    ['Graveyard', state.graveyard.length],
-    ['Spy supply', state.spiesAvailable],
-    ['Removed', state.removedFromGame.length],
+  const piles: PileInfo[] = [
+    { label: 'Hidden deck', n: state.hidden.deck.length, tone: 'hidden', hint: 'Hidden Maquis (and shuffled Spies) you draw your hand from.' },
+    { label: 'Hidden discard', n: state.hidden.discard.length, tone: 'hidden', hint: 'Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out.' },
+    { label: 'Recruit deck', n: state.recruit.deck.length, tone: 'revealed', hint: 'Inactive Maquis — only recovered by specific effects.' },
+    { label: 'Revealed pile', n: state.recruit.revealed.length, tone: 'revealed', hint: 'Maquis played revealed this game — set aside, out of the decks.' },
+    { label: 'Enemy deck', n: state.enemyDeck.length, tone: 'enemy', hint: 'Face-down Enemies dealt to refilled Missions by their Garrison.' },
+    { label: 'Enemy discard', n: state.enemyDiscard.length, tone: 'enemy', hint: 'Defeated/discarded Enemies; reshuffled into the Enemy deck when it runs out.' },
+    { label: 'Mission deck', n: state.missionDeck.length, tone: 'mission', hint: 'Era-2 then Era-3 Missions that refill the row as you defeat Missions.' },
+    { label: 'Defeated', n: state.defeatedMissions.length, tone: 'mission', hint: 'Missions you have defeated — these score their Victory Points.' },
+    { label: 'Graveyard', n: state.graveyard.length, tone: 'civ', hint: 'Lost Civilians. Reach 5 civilians here and the resistance is crushed.' },
+    { label: 'Spy supply', n: state.spiesAvailable, tone: 'spy', hint: 'Spies available to be added to your Hidden deck by enemy effects.' },
+    { label: 'Removed', n: state.removedFromGame.length, tone: 'removed', hint: 'Cards removed from the game entirely (back in the box).' },
   ]
   return (
-    <section className="piles">
-      {p.map(([label, n]) => (
-        <span key={label} className="pile">
-          <b>{n}</b> {label}
-        </span>
+    <aside className="piles">
+      <h3 className="piles-head">Card Piles</h3>
+      {piles.map((p) => (
+        <div key={p.label} className={`pile ${p.n === 0 ? 'empty' : ''}`} title={`${p.label} — ${p.hint}`}>
+          <span className={`deck-ico tone-${p.tone}`}>
+            <span className="deck-count">{p.n}</span>
+          </span>
+          <span className="pile-label">{p.label}</span>
+        </div>
       ))}
-    </section>
+    </aside>
   )
 }
 
