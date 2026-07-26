@@ -14,7 +14,7 @@ import type { Draft } from 'immer'
 import { civilians as civilianData, missions as missionsData } from '../../data'
 import type { Decision, GameState, MissionSlot } from '../types'
 import { maquisEffectId, registerEffect, type EffectHandler } from './registry'
-import { drawHidden } from './plan'
+import { drawHiddenAndLog } from './plan'
 
 const COUNTER_GUERRILLA = 'counter_guerrilla'
 
@@ -147,9 +147,10 @@ const discardCounterGuerrillas: EffectHandler = ({ state }) => {
   slot.enemies = remaining
 }
 
-/** "Draw N cards from the Hidden deck." on ATTACK. (Nicolás/Ricardo hidden draw 1; Sagrario revealed draws 2.) */
-const drawFromHiddenAttack = (n: number): EffectHandler => ({ state }) => {
-  drawHidden(state as Draft<GameState>, n)
+/** "Draw N cards from the Hidden deck." on ATTACK. (Nicolás/Ricardo hidden draw 1; Sagrario revealed
+ *  draws 2.) Logs how many were actually drawn so a short draw (deck+discard exhausted) is explained. */
+const drawFromHiddenAttack = (n: number): EffectHandler => (ctx) => {
+  drawHiddenAndLog(ctx, n)
 }
 
 /** "Draw a card from the Recruit deck and put it in your hand." on ATTACK. (Ramona revealed) */

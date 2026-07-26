@@ -20,6 +20,7 @@ import {
   effectRegistry,
   maquisEffectId,
   registerEffect,
+  type EffectContext,
   type EffectHandler,
 } from './registry'
 
@@ -54,20 +55,42 @@ function refillHiddenIfEmpty(state: Draft<GameState>): void {
 }
 
 /** Draw n cards from the top of the Hidden deck into the hand, reshuffling on empty. Draws
- *  fewer than n only if the deck and discard are both exhausted. Shared with the ATTACK effects. */
-export function drawHidden(state: Draft<GameState>, n: number): void {
+ *  fewer than n only if the deck and discard are both exhausted. Returns how many were actually
+ *  drawn. Shared with the ATTACK effects. */
+export function drawHidden(state: Draft<GameState>, n: number): number {
+  let drawn = 0
   for (let i = 0; i < n; i++) {
     if (state.hidden.deck.length === 0) refillHiddenIfEmpty(state)
     if (state.hidden.deck.length === 0) break
     state.hand.push(state.hidden.deck.shift()!)
+    drawn++
   }
+  return drawn
+}
+
+const pluralCards = (k: number): string => `${k} card${k === 1 ? '' : 's'}`
+
+/** Draw n from the Hidden deck and log it — naming the acting Maquis and calling out a short draw
+ *  when the deck + discard were exhausted, so the player understands why they got fewer than n
+ *  (e.g. Sagrario asking for 2 but only 1 card left). Shared by the PLAN and ATTACK draw actions. */
+export function drawHiddenAndLog(ctx: EffectContext, n: number): void {
+  const s = ctx.state
+  const drawn = drawHidden(s, n)
+  const who = cardName(s.inPlay.find((m) => m.uid === ctx.sourceUid)?.dataId ?? '') || 'A Maquis'
+  s.log.push(
+    drawn === n
+      ? `${s.phase}: ${who} drew ${pluralCards(n)} from the Hidden deck`
+      : drawn === 0
+        ? `${s.phase}: ${who}'s draw got nothing — the Hidden deck and discard are both empty`
+        : `${s.phase}: ${who} drew only ${pluralCards(drawn)} of ${n} — the Hidden deck and discard ran out`,
+  )
 }
 
 // --- effect factories & handlers --------------------------------------------
 
-/** Draw exactly n from the Hidden deck (no player choice). */
-const drawN = (n: number): EffectHandler => ({ state }) => {
-  drawHidden(state as Draft<GameState>, n)
+/** Draw exactly n from the Hidden deck (no player choice), logging the result. */
+const drawN = (n: number): EffectHandler => (ctx) => {
+  drawHiddenAndLog(ctx, n)
 }
 
 /**

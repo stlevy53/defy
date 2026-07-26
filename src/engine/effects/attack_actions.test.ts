@@ -7,6 +7,7 @@ import { createGame } from '../setup'
 import { applyAction, resolveDecision } from '../actions'
 import { assertConservation } from '../zones'
 import { unregisterEffect, maquisEffectId } from './registry'
+import type { EffectContext } from './registry'
 import { registerAttackEffects, ATTACK_EFFECTS } from './attack'
 import { canFireEffect } from './preconditions'
 import type { Action, GameState, Side } from '../types'
@@ -145,6 +146,27 @@ describe('ATTACK draw', () => {
     expect(g.pendingDecision).toBeNull()
     expect(g.hand.length).toBe(handBefore + 2)
     expect(g.hidden.deck.length).toBe(deckBefore - 2)
+    expect(g.log.some((l) => l.includes('Sagrario drew 2 cards from the Hidden deck'))).toBe(true)
+  })
+
+  it('logs a short draw when the Hidden deck + discard run out (Sagrario asks for 2, gets 1)', () => {
+    const { s, mi } = findSeed('sagrario', () => true)
+    // structuredClone gives a mutable copy of the frozen post-action state so we can starve the deck.
+    const g = structuredClone(playThenChoose(s, 'sagrario', 'revealed', mi)) as GameState
+    const src = g.inPlay.find((m) => m.dataId === 'sagrario')!.uid
+    // Leave exactly one drawable card; move the rest aside (removedFromGame keeps conservation balanced).
+    g.removedFromGame.push(...g.hidden.discard, ...g.hidden.deck.slice(1))
+    g.hidden.deck = g.hidden.deck.slice(0, 1)
+    g.hidden.discard = []
+    const handBefore = g.hand.length
+
+    const ctx: EffectContext = { state: g, sourceUid: src, args: {}, responses: [] }
+    ATTACK_EFFECTS[maquisEffectId('sagrario', 'revealed')](ctx)
+
+    expect(g.hand.length).toBe(handBefore + 1)
+    expect(g.hidden.deck.length).toBe(0)
+    expect(g.log.some((l) => l.includes('drew only 1 card of 2'))).toBe(true)
+    assertConservation(g)
   })
 
   it('Ramona revealed draws one card from the Recruit deck into the hand', () => {

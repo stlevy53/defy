@@ -4,7 +4,7 @@ A single-player digital port of the physical solitaire card game *Resist!* (Salt
 
 ## Status
 
-**Playable prototype.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. It has a wooden **tabletop** theme and a **real card-art rendering seam** (each card shows its real image when present, else a themed frame). **146/146 tests pass**; `tsc` + `build` are clean. Remaining work: add the real card art (reshoot + slice — see [`tools/card-art.md`](./tools/card-art.md)), minor polish, an optional draft-variant setup, and Phase 4 packaging. For the current working state and a session bootstrap, read [`HANDOFF.md`](./HANDOFF.md); for the phased roadmap see [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md).
+**Playable prototype.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. It has a wooden **tabletop** theme and a **real card-art rendering seam** (each card shows its real image when present, else a themed frame). **147/147 tests pass**; `tsc` + `build` are clean. Remaining work: add the real card art (reshoot + slice — see [`tools/card-art.md`](./tools/card-art.md)), minor polish, an optional draft-variant setup, and Phase 4 packaging. For the current working state and a session bootstrap, read [`HANDOFF.md`](./HANDOFF.md); for the phased roadmap see [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md).
 
 ## Getting started
 

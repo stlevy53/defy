@@ -23,7 +23,7 @@ End-game moments and table clarity.
 - **Card-pile rail** — a right-side rail summarizing the decks and piles.
 - **Card-flight animations** — when a card leaves your hand to a pile (a discard) or is drawn from a pile into your hand, a card token flies between the two. Discard-then-draw effects (Antonio's spy swap, etc.) now read visually instead of looking like nothing happened; also fires on the Recover reshuffle/redraw. Skips new-game and undo so cards never fly spuriously.
 - **Pick hidden Enemies on the board** — effects that discard "an Enemy from another Mission" (e.g. Railroad Bridge) are now resolved by clicking the Enemy on its Mission, so you always know which Mission you're hitting. Face-down Enemies keep their identity concealed — the old choice panel used to list every candidate's name + Defense, which let you peek at hidden garrisons; that leak is gone.
-- **Log clarity** — the game log now spells out spy discard/draw swaps (e.g. "discarded a Spy — but drew another Spy from the Hidden deck").
+- **Log clarity** — the game log now spells out spy discard/draw swaps (e.g. "discarded a Spy — but drew another Spy from the Hidden deck"), and every Hidden-deck draw action (Sagrario, Carlos, Nicolás, Ricardo, Manuela) logs how many cards it drew — including a short draw when the Hidden deck **and** its discard are exhausted (e.g. "Sagrario drew only 1 card of 2 — the Hidden deck and discard ran out"). This explains the not-obvious rule that draws come up short only when both piles are empty, which happens sooner than expected because Maquis played *revealed* leave the Hidden pool for good.
 - **Fix** — the reinforcement animation no longer misfires when you start a new game.
 - Audio is noted as planned (not in yet).
 
