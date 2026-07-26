@@ -36,6 +36,10 @@ type UidItem = { uid: string }
 
 const isSpy = (c: { dataId: string }): boolean => c.dataId === 'spy'
 
+const maquisNameById = new Map(maquisData.map((m) => [m.id, m.name]))
+/** Player-facing card name for log lines ('Spy' for spies, else the Maquis name). */
+const cardName = (dataId: string): string => (dataId === 'spy' ? 'Spy' : maquisNameById.get(dataId) ?? dataId)
+
 // --- shared deck helpers ----------------------------------------------------
 
 /** Rulebook: reshuffle the Hidden discard into a fresh Hidden deck only once the deck is empty. */
@@ -132,13 +136,24 @@ function lookDiscardReorder(
   }
 }
 
-/** "Discard one Spy from your hand to the Hidden discard pile then draw a card." (Celia/Antonio hidden) */
+/** "Discard one Spy from your hand to the Hidden discard pile then draw a card." (Celia/Antonio hidden)
+ *  Logs what was drawn — and flags the case where the replacement card is itself a Spy — so the
+ *  player can see the swap happened even when a Spy remains in hand. */
 const spyDiscardDraw: EffectHandler = ({ state }) => {
   const s = state as Draft<GameState>
   const i = s.hand.findIndex(isSpy)
   if (i === -1) return
   s.hidden.discard.push(s.hand.splice(i, 1)[0])
+  const before = s.hand.length
   drawHidden(s, 1)
+  const drew = s.hand.length > before ? s.hand[s.hand.length - 1] : null
+  s.log.push(
+    drew === null
+      ? `${s.phase}: discarded a Spy (Hidden deck empty — no card drawn)`
+      : isSpy(drew)
+        ? `${s.phase}: discarded a Spy — but drew another Spy from the Hidden deck`
+        : `${s.phase}: discarded a Spy and drew ${cardName(drew.dataId)}`,
+  )
 }
 
 /** "Remove one Spy in your hand from the game." (Manuela/Manuel revealed) */

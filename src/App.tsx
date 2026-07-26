@@ -3,17 +3,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useGame, useReinforcements } from './ui/useGame'
+import { useGame, useReinforcements, useCardFlights } from './ui/useGame'
+import type { CardFlight } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
 import { APP_VERSION } from './ui/patchNotes'
-import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus } from './ui/format'
+import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 export function App() {
-  const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed, gameId } = useGame()
+  const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed, gameId, step } = useGame()
 
   // Patch-notes modal: greets every playtester on launch (standard for each prototype build) and is
   // reopenable from the top bar. Starts open, dismissed to play.
@@ -38,6 +39,9 @@ export function App() {
 
   // Enemy chips added to a Mission this transition (reinforcements) — used to animate them in.
   const reinforced = useReinforcements(state, gameId)
+
+  // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
+  const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
 
   const group = (t: Action['type']) => actions.filter((a) => a.type === t)
 
@@ -68,9 +72,13 @@ export function App() {
   ) : !state.result && turnActions.length > 0 ? (
     <ActionGroup title="Your turn" actions={turnActions} state={state} onClick={dispatch} />
   ) : null
+  // Live Attack Strength readout, shown all through ATTACK (it grows as Maquis are played, then
+  // shrinks with each strike) so the player always sees how much they have left to spend.
+  const attackMeter = state.phase === 'ATTACK' && !state.result ? <AttackMeter value={state.attackStrength} /> : null
   const sideContent =
-    error || playerChoice ? (
+    error || playerChoice || attackMeter ? (
       <>
+        {attackMeter}
         {error && <div className="error">{error}</div>}
         {playerChoice}
       </>
@@ -120,6 +128,14 @@ export function App() {
       {shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
       {shown?.outcome === 'win' && (
         <WinOverlay tier={shown.tier} points={shown.points} onPlayAgain={playAgain} />
+      )}
+
+      {flights.length > 0 && (
+        <div className="flights" aria-hidden="true">
+          {flights.map((f) => (
+            <FlyingCard key={f.id} flight={f} onDone={() => removeFlight(f.id)} />
+          ))}
+        </div>
       )}
 
       <PhaseGuide state={state} actions={actions} choices={sideContent} />
@@ -172,7 +188,7 @@ export function App() {
           Your hand
           <HandDrawNote state={state} />
         </h3>
-        <div className="cards">
+        <div className="cards" data-flight-hand>
           {state.hand.map((c) => (
             <Card
               key={c.uid}
@@ -345,27 +361,29 @@ interface PileInfo {
   n: number
   tone: string
   hint: string
+  /** Zone key matching useCardFlights' FLIGHT_ZONES, so cards can fly to/from this tile. */
+  flightKey?: string
 }
 
 function Piles({ state }: { state: GameState }) {
   const piles: PileInfo[] = [
-    { label: 'Hidden deck', n: state.hidden.deck.length, tone: 'hidden', hint: 'Hidden Maquis (and shuffled Spies) you draw your hand from.' },
-    { label: 'Hidden discard', n: state.hidden.discard.length, tone: 'hidden', hint: 'Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out.' },
-    { label: 'Recruit deck', n: state.recruit.deck.length, tone: 'revealed', hint: 'Inactive Maquis — only recovered by specific effects.' },
-    { label: 'Revealed pile', n: state.recruit.revealed.length, tone: 'revealed', hint: 'Maquis played revealed this game — set aside, out of the decks.' },
+    { label: 'Hidden deck', n: state.hidden.deck.length, tone: 'hidden', flightKey: 'hidden.deck', hint: 'Hidden Maquis (and shuffled Spies) you draw your hand from.' },
+    { label: 'Hidden discard', n: state.hidden.discard.length, tone: 'hidden', flightKey: 'hidden.discard', hint: 'Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out.' },
+    { label: 'Recruit deck', n: state.recruit.deck.length, tone: 'revealed', flightKey: 'recruit.deck', hint: 'Inactive Maquis — only recovered by specific effects.' },
+    { label: 'Revealed pile', n: state.recruit.revealed.length, tone: 'revealed', flightKey: 'recruit.revealed', hint: 'Maquis played revealed this game — set aside, out of the decks.' },
     { label: 'Enemy deck', n: state.enemyDeck.length, tone: 'enemy', hint: 'Face-down Enemies dealt to refilled Missions by their Garrison.' },
     { label: 'Enemy discard', n: state.enemyDiscard.length, tone: 'enemy', hint: 'Defeated/discarded Enemies; reshuffled into the Enemy deck when it runs out.' },
     { label: 'Mission deck', n: state.missionDeck.length, tone: 'mission', hint: 'Era-2 then Era-3 Missions that refill the row as you defeat Missions.' },
     { label: 'Defeated', n: state.defeatedMissions.length, tone: 'mission', hint: 'Missions you have defeated — these score their Victory Points.' },
     { label: 'Graveyard', n: state.graveyard.length, tone: 'civ', hint: 'Lost Civilians. Reach 5 civilians here and the resistance is crushed.' },
     { label: 'Spy supply', n: state.spiesAvailable, tone: 'spy', hint: 'Spies available to be added to your Hidden deck by enemy effects.' },
-    { label: 'Removed', n: state.removedFromGame.length, tone: 'removed', hint: 'Cards removed from the game entirely (back in the box).' },
+    { label: 'Removed', n: state.removedFromGame.length, tone: 'removed', flightKey: 'removed', hint: 'Cards removed from the game entirely (back in the box).' },
   ]
   return (
     <aside className="piles">
       <h3 className="piles-head">Card Piles</h3>
       {piles.map((p) => (
-        <div key={p.label} className={`pile ${p.n === 0 ? 'empty' : ''}`} title={`${p.label} — ${p.hint}`}>
+        <div key={p.label} data-pile-key={p.flightKey} className={`pile ${p.n === 0 ? 'empty' : ''}`} title={`${p.label} — ${p.hint}`}>
           <span className={`deck-ico tone-${p.tone}`}>
             <span className="deck-count">{p.n}</span>
           </span>
@@ -373,6 +391,78 @@ function Piles({ state }: { state: GameState }) {
         </div>
       ))}
     </aside>
+  )
+}
+
+/** A single card token in flight between the hand and a pile tile. Mounts at its source point, then
+ *  on the next frame transitions to the destination (CSS handles the ease), fading and shrinking as
+ *  it lands; removes itself when the motion completes. Purely a visual cue — no interaction. */
+function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void }) {
+  const [moved, setMoved] = useState(false)
+  useEffect(() => {
+    // Two rAFs guarantee the browser paints the start position before the transition target lands,
+    // so the transition actually runs instead of snapping.
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setMoved(true))
+    })
+    const t = setTimeout(onDone, 620 + flight.delay)
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+      clearTimeout(t)
+    }
+  }, [onDone, flight.delay])
+
+  const w = 66
+  const h = 92
+  const dx = flight.toX - flight.fromX
+  const dy = flight.toY - flight.fromY
+  const spy = flight.dataId === 'spy'
+  return (
+    <div
+      className={`flying-card ${spy ? 'spy' : 'maquis'}`}
+      style={{
+        left: flight.fromX - w / 2,
+        top: flight.fromY - h / 2,
+        width: w,
+        height: h,
+        transitionDelay: `${flight.delay}ms`,
+        transform: moved
+          ? `translate(${dx}px, ${dy}px) scale(0.5) rotate(8deg)`
+          : 'translate(0, 0) scale(1) rotate(-4deg)',
+        opacity: moved ? 0 : 1,
+      }}
+    >
+      <span className="fc-name">{nameOfMaquis(flight.dataId)}</span>
+    </div>
+  )
+}
+
+/** Prominent Attack Strength readout for the turn tile during ATTACK — the running pool the player
+ *  spends to defeat targets. Pulses when it changes so gains (playing Maquis, firing actions) and
+ *  spends (striking) both register. */
+function AttackMeter({ value }: { value: number }) {
+  const prev = useRef(value)
+  const [bump, setBump] = useState(0)
+  useEffect(() => {
+    if (value !== prev.current) {
+      prev.current = value
+      setBump((b) => b + 1)
+    }
+  }, [value])
+  return (
+    <div className="attack-meter" role="status" aria-label={`${value} Attack Strength remaining`}>
+      <span className="am-icon" aria-hidden="true">⚔</span>
+      <span key={bump} className="am-value">
+        {value}
+      </span>
+      <span className="am-label">
+        Attack Strength
+        <br />
+        left to spend
+      </span>
+    </div>
   )
 }
 

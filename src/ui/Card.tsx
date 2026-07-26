@@ -539,12 +539,32 @@ function EnemyChip({
 
   if (!enemy.faceUp) {
     const back = enemyBackArt()
-    return back ? (
-      <span className={`enemy facedown has-art${newCls}`}>
-        <img className="enemy-art" src={back} alt="Face-down Enemy" draggable={false} />
-      </span>
+    const inner = back ? (
+      <img className="enemy-art" src={back} alt="Face-down Enemy" draggable={false} />
     ) : (
-      <span className={`enemy facedown${newCls}`}>🂠</span>
+      '🂠'
+    )
+    // A pick candidate on its Mission: clickable, but the identity stays hidden (no name, no zoom) —
+    // the player is choosing which Mission's garrison to hit blind, as the physical game intends.
+    if (canPick && onPick) {
+      return (
+        <button
+          type="button"
+          className={`enemy facedown pickable${back ? ' has-art' : ''}${newCls}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onPick()
+          }}
+          title="Discard this Enemy — its identity stays hidden"
+        >
+          {inner}
+        </button>
+      )
+    }
+    return back ? (
+      <span className={`enemy facedown has-art${newCls}`}>{inner}</span>
+    ) : (
+      <span className={`enemy facedown${newCls}`}>{inner}</span>
     )
   }
 

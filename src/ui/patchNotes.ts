@@ -19,6 +19,8 @@ export const PATCH_NOTES: PatchNote[] = [
       'Right-click a card to see it up close.',
       'The top bar is sticky — your status and the Undo / New game controls stay in reach as you scroll.',
       'A new right-side rail summarizes the decks and piles at a glance.',
+      'Card moves now animate — when you discard or draw, the card flies between your hand and the matching pile, so effects like Antonio’s spy swap are easy to follow.',
+      'Discarding an Enemy “from another Mission” (e.g. Railroad Bridge) is now done by clicking the Enemy right on its Mission — and face-down Enemies keep their identity hidden, so you no longer accidentally see what they are.',
       'Fix: the reinforcement animation no longer misfires when you start a new game.',
     ],
   },

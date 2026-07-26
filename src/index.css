@@ -112,6 +112,23 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
   0% { box-shadow: 0 0 0 2px var(--accent-2); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+
+/* Live Attack Strength readout in the turn tile during ATTACK. */
+.attack-meter {
+  display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.6rem;
+  padding: 0.45rem 0.7rem; border-radius: 10px;
+  background: rgba(200, 69, 47, 0.14); border: 1px solid var(--accent);
+}
+.attack-meter .am-icon { font-size: 1.3rem; color: var(--accent-2); }
+.attack-meter .am-value {
+  font-size: 1.9rem; font-weight: 800; line-height: 1; color: #fff; min-width: 1.4ch; text-align: center;
+  display: inline-block; animation: am-bump 0.35s ease-out;
+}
+.attack-meter .am-label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2; }
+@keyframes am-bump {
+  0% { transform: scale(1.35); color: var(--accent-2); }
+  100% { transform: scale(1); color: #fff; }
+}
 .phase-goal { color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .phase-name { color: var(--accent-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }
 .phase-auto {
@@ -444,6 +461,21 @@ button.enemy.faceup.has-art { width: auto; }
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .enemy.facedown.has-art { padding: 0; border: none; background: transparent; }
+/* A face-down Enemy offered as a pick target (e.g. Railroad Bridge's "discard an Enemy from another
+ *  Mission"): click it right on its Mission. Ochre affordance, identity still concealed. */
+button.enemy.facedown.pickable {
+  font-family: inherit; cursor: pointer; color: var(--muted);
+  transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s;
+}
+button.enemy.facedown.pickable:hover,
+button.enemy.facedown.pickable:focus-visible {
+  border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
+}
+button.enemy.facedown.pickable.has-art { padding: 0; border: none; background: transparent; box-shadow: none; }
+button.enemy.facedown.pickable.has-art:hover .enemy-art,
+button.enemy.facedown.pickable.has-art:focus-visible .enemy-art {
+  box-shadow: 0 0 0 2px var(--accent-2); outline: none;
+}
 button.enemy.faceup.has-art.strikeable:hover .enemy-art,
 button.enemy.faceup.has-art.strikeable:focus-visible .enemy-art,
 button.enemy.faceup.has-art.pickable:hover .enemy-art,
@@ -472,7 +504,7 @@ button.enemy.faceup.has-art.pickable:focus-visible .enemy-art {
 
 /* Clickable (usable) action on a played Maquis */
 button.card-action {
-  width: 100%; text-align: left; font-family: inherit; cursor: pointer;
+  text-align: left; font-family: inherit; cursor: pointer;
   background: rgba(217, 154, 36, 0.09); border: 1px dashed var(--accent-2); border-radius: 6px;
   padding: 0.3rem 0.38rem;
 }
@@ -856,3 +888,33 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .whatsnew-cta:hover { transform: translateY(-1px); box-shadow: 0 9px 22px rgba(150, 40, 30, 0.5); }
 @keyframes whatsnew-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes whatsnew-rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Flying-card cues: a card token animated between the hand and a pile tile when a card is discarded
+ *  or drawn, so moves like Antonio's spy swap read visually. Overlay sits above the board and rail
+ *  but below the What's-New / game-over modals (z 90). Purely decorative, never interactive. */
+.flights { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.flying-card {
+  position: fixed;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.25rem; text-align: center;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.01em;
+  color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+  will-change: transform, opacity;
+  transition: transform 0.55s cubic-bezier(0.34, 0.1, 0.2, 1), opacity 0.55s ease-in;
+}
+.flying-card.maquis {
+  background: linear-gradient(150deg, #d5533b, #8f2c1a);
+  border: 1px solid #e77b64;
+}
+.flying-card.spy {
+  background: linear-gradient(150deg, #4aa2ac, #275a61);
+  border: 1px solid #6cc3cc;
+}
+.fc-name { line-height: 1.1; overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Skip the travel: show a brief static token so the cue still registers without motion. */
+  .flying-card { transition: opacity 0.2s ease; transform: none !important; }
+}

@@ -103,7 +103,10 @@ export function boardPickable(state: GameState, uid: string): boolean {
   if (state.hand.some((c) => c.uid === uid)) return true
   for (const slot of state.missionRow) {
     const e = slot.enemies.find((x) => x.uid === uid)
-    if (e) return e.faceUp
+    // Face-down Enemies are pickable on their Mission too: the player chooses which Mission to hit
+    // without seeing the Enemy's identity (faithful to the hidden garrison), instead of the panel
+    // leaking every face-down Enemy's name + Defense. Face-up (revealed) Enemies pick as before.
+    if (e) return true
   }
   return false
 }
