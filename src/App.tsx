@@ -7,11 +7,17 @@ import { useGame, useReinforcements } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
+import { WhatsNew } from './ui/WhatsNew'
+import { APP_VERSION } from './ui/patchNotes'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus } from './ui/format'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed, gameId } = useGame()
+
+  // Patch-notes modal: greets every playtester on launch (standard for each prototype build) and is
+  // reopenable from the top bar. Starts open, dismissed to play.
+  const [showWhatsNew, setShowWhatsNew] = useState(true)
 
   // Dev/preview aid: append `?preview=<state>` to the URL to see any end-of-game overlay without
   // reaching it in play — useful for iterating on the animations. Values: loss, draw, minor,
@@ -100,9 +106,16 @@ export function App() {
           <button className="ghost" onClick={() => newGame()}>
             New game
           </button>
+          <Tip below text="What’s new in this build">
+            <button className="ghost" onClick={() => setShowWhatsNew(true)} aria-label="What’s new">
+              v{APP_VERSION}
+            </button>
+          </Tip>
           <span className="muted seed">seed {seed}</span>
         </div>
       </header>
+
+      {showWhatsNew && <WhatsNew onClose={() => setShowWhatsNew(false)} />}
 
       {shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
       {shown?.outcome === 'win' && (
