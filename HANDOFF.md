@@ -50,7 +50,7 @@ Commands: `npm install`, `npm run dev`, `npm test`, `npm run build` (= `tsc --no
   - **Decision-UX polish (done)** — trivial decisions auto-resolve (`settle` in `ui/useGame.ts`: single-candidate `selectTarget`, forced `selectCards`, ≤1-card `orderCards`, single `chooseOption`); `DecisionPanel` has live count/select-all/clear for `selectCards`, click-to-unplace `orderCards`, and rich card tooltips.
   - **Feedback aids** — animated **"Defeated · +N VP" stamp** on a struck Mission; **Attack-Strength pill** that pulses `+N` when it rises (e.g. Consuelo); live **"⚔ +N now"** badge on count-based ATTACK actions (Abel/Soledad/Marcelino); CSS hover tooltips (`ui/Tip.tsx`, `describeUidTip`, `keywordTip`) on cards/icons/keywords.
   - **Next:** add the real card art (reshoot + slice), then minor polish (see §8).
-- ⬜ Phase 4 — polish + desktop packaging.
+- 🔨 Phase 4 — polish + desktop packaging. **A Windows portable `.exe` build is now wired up (Electron + electron-builder) for playtesting** — see §10. Tauri (smaller build) remains a later option.
 
 ## 5. Card data (`/data`, all validated — see `data/README.md`)
 
@@ -141,3 +141,21 @@ The clarity, direct-interaction, and decision-UX passes are done (see §4), and 
 ## 9. Working style notes
 
 The user is not a developer but is technically fluent and learning — explain choices in plain terms, no unexplained jargon. Prefers tight, concrete output; iterate in reviewable slices; confirm before starting a new slice. All commits/pushes happen on the user's side. Keep rules fidelity high (decisions 2 & 4).
+
+## 10. Desktop packaging — Windows portable `.exe` (for playtesting)
+
+The app is wrapped with **Electron** so it can be sent to playtesters as a single double-click `.exe` — no install, no dev tools on their end. Chosen over Tauri for now because it needs no extra toolchain (no Rust/C++ build tools); the trade-off is a larger file (~86 MB). A smaller Tauri build stays a later option.
+
+**Build it:**
+```
+npm run package
+```
+This runs `npm run build` then `electron-builder`, producing **`DEFY-Playtest-<version>.exe`** (a portable executable — the tester just runs it; it self-extracts to temp and launches).
+
+**Key facts / gotchas:**
+- **Output lands outside the repo:** `directories.output` is `../defy_release` → `C:\Users\stephen.levy\GHRepos\defy_release`. This is deliberate — electron-builder's file operations **fail with `EPERM` when the output path contains the `!`** in the `DEFY!` folder name. Don't move the output back inside the repo.
+- Files/config live in `package.json` (`main`, `build` field) + `electron/main.cjs` (main process: loads `dist/index.html`, opens external links in the real browser, hides the menu bar). `main` = `electron/main.cjs` (CommonJS, because `package.json` is `"type": "module"`).
+- **`vite.config.ts` sets `base: './'`** so built assets load over `file://` inside Electron. Do not remove this or the packaged app renders blank.
+- The packaged build uses the **default Electron icon** (no custom icon yet) and the current **themed card frames** (real card art not added yet) — both fine for playtest. Add `build.win.icon` (a `.ico`) later for a branded icon.
+- Distribute the `.exe` via Drive/Dropbox/etc. It's unsigned, so Windows SmartScreen may show a "more info → run anyway" prompt to testers — normal for unsigned apps.
+- `npm run electron:dev` runs the current `dist/` in Electron without packaging (build first).

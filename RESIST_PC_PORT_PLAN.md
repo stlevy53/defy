@@ -55,8 +55,10 @@ The tableau is built and a full game is clickable start to finish: play cards hi
 
 *Deliverable:* a full game of Resist! playable in the browser — **achieved.** Remaining: drop in the real card art (reshoot + slice; pipeline in `tools/`), then minor polish.
 
-### Phase 4 — Polish & packaging
-Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay. Then wrap in Tauri for a distributable desktop build if desired.
+### Phase 4 — Polish & packaging 🔨 IN PROGRESS
+Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay.
+
+**Desktop packaging (done for playtesting):** the app is wrapped with **Electron** and `npm run package` produces a **Windows portable `.exe`** (`DEFY-Playtest-<version>.exe`, ~86 MB) testers can double-click — no install, no dev tools. Electron was chosen over Tauri for the first playtest build because it needs no extra toolchain; a smaller **Tauri** build remains an option later. Details + gotchas in `HANDOFF.md` §10.
 
 *Deliverable:* shippable build.
 
@@ -70,7 +72,7 @@ Iteration pass: animations/transitions, undo (state-history stack, approved), sa
 | M1 — Data complete | All cards in JSON, counts reconciled to rulebook | ✅ |
 | M2 — Engine correct | Worked-example test passes headless | ✅ |
 | M3 — Playable prototype | A full game is completable in-browser | ✅ |
-| M4 — Shippable | Polished, packaged desktop/web build | ⬜ |
+| M4 — Shippable | Polished, packaged desktop/web build | 🔨 (Windows portable `.exe` builds; polish ongoing) |
 
 M2 was the most important gate — everything visual rested on it, and it passes. M3 (a full game is completable in-browser) is met; polish toward M4 continues.
 

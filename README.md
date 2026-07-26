@@ -13,6 +13,7 @@ npm install      # install dependencies
 npm run dev      # start the dev server
 npm test         # run the test suite (data integrity)
 npm run build    # typecheck + production build
+npm run package  # build a Windows portable .exe for playtesters (see HANDOFF.md §10)
 ```
 
 ## Layout
@@ -36,7 +37,7 @@ npm run build    # typecheck + production build
 2. ✅ **Phase 0** — project scaffold (Vite + React + TypeScript)
 3. ✅ **Phase 2** — headless rules engine, validated against the rulebook's worked example (M2 gate passes)
 4. 🔨 **Phase 3** — playable prototype UI (functional, polished, themed; real card art is the remaining piece)
-5. ⬜ **Phase 4** — polish & desktop packaging (Tauri)
+5. 🔨 **Phase 4** — polish & desktop packaging. A **Windows portable `.exe`** build is available for playtesting via `npm run package` (Electron); see [`HANDOFF.md`](./HANDOFF.md) §10. A smaller Tauri build remains a later option.
 
 ## Credits
 

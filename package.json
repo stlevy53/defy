@@ -1,8 +1,10 @@
 {
   "name": "defy",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "author": "DEFY!",
   "description": "Resist! PC port — single-player digital card game",
   "scripts": {
     "dev": "vite",
@@ -10,7 +12,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "electron:dev": "electron .",
+    "package": "npm run build && electron-builder"
   },
   "dependencies": {
     "immer": "^11.1.15",
@@ -22,8 +26,29 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",
     "vitest": "^2.0.5"
+  },
+  "build": {
+    "appId": "com.defy.game",
+    "productName": "DEFY",
+    "directories": {
+      "output": "../defy_release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "DEFY-Playtest-${version}.exe"
+    }
   }
 }
