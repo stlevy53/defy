@@ -30,21 +30,30 @@ function chosenSlot(state: Draft<GameState>): MissionSlot | undefined {
 const countRevealedInPlay = (state: Draft<GameState>): number =>
   state.inPlay.filter((m) => m.side === 'revealed').length
 
+/** Bank attack an action grants: add it to the shared pool AND attribute it to the acting Maquis so
+ *  its card can show its true contribution (printed value + this bonus). */
+const grantAttack = (s: Draft<GameState>, sourceUid: string, amount: number): void => {
+  s.attackStrength += amount
+  const mip = s.inPlay.find((m) => m.uid === sourceUid)
+  if (mip) mip.attackBonus = (mip.attackBonus ?? 0) + amount
+}
+
 /** +1 Attack for each revealed Maquis in play. (Soledad hidden, Abel hidden) */
-const plusPerRevealed: EffectHandler = ({ state }) => {
-  ;(state as Draft<GameState>).attackStrength += countRevealedInPlay(state as Draft<GameState>)
+const plusPerRevealed: EffectHandler = ({ state, sourceUid }) => {
+  const s = state as Draft<GameState>
+  grantAttack(s, sourceUid, countRevealedInPlay(s))
 }
 
 /** +1 Attack for each *other* Maquis in play, hidden or revealed. (Marcelino revealed) */
 const plusPerOther: EffectHandler = ({ state, sourceUid }) => {
   const s = state as Draft<GameState>
-  s.attackStrength += s.inPlay.filter((m) => m.uid !== sourceUid).length
+  grantAttack(s, sourceUid, s.inPlay.filter((m) => m.uid !== sourceUid).length)
 }
 
 /** +1 Attack for each civilian in the Graveyard (sum of the cards' civilian counts). (Abel revealed) */
-const plusPerCivilian: EffectHandler = ({ state }) => {
+const plusPerCivilian: EffectHandler = ({ state, sourceUid }) => {
   const s = state as Draft<GameState>
-  s.attackStrength += s.graveyard.reduce((n, c) => n + (civiliansById.get(c.dataId) ?? 0), 0)
+  grantAttack(s, sourceUid, s.graveyard.reduce((n, c) => n + (civiliansById.get(c.dataId) ?? 0), 0))
 }
 
 /** Reduce by 1 the Defense of each Enemy at the chosen Mission whose Defense is 2 or more. (Benigno revealed) */
@@ -100,7 +109,7 @@ const discardTwoEnemies: EffectHandler = ({ state, responses }): Decision | void
 }
 
 /** "Discard one Enemy from this Mission and gain attack value equal to its defense value." (Consuelo revealed) */
-const consueloDiscardGain: EffectHandler = ({ state, responses }): Decision | void => {
+const consueloDiscardGain: EffectHandler = ({ state, sourceUid, responses }): Decision | void => {
   const s = state as Draft<GameState>
   const slot = chosenSlot(s)
   if (!slot || slot.enemies.length === 0) return
@@ -110,7 +119,7 @@ const consueloDiscardGain: EffectHandler = ({ state, responses }): Decision | vo
   const i = slot.enemies.findIndex((e) => e.uid === responses[0][0])
   if (i === -1) return
   const enemy = slot.enemies.splice(i, 1)[0]
-  s.attackStrength += enemy.defense
+  grantAttack(s, sourceUid, enemy.defense)
   s.enemyDiscard.push(enemy)
 }
 

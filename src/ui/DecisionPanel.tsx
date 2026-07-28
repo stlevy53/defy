@@ -8,6 +8,9 @@ interface Props {
   decision: Decision
   state: GameState
   onRespond: (selection: string[]) => void
+  /** When present, a multi-select `selectCards` is answered by toggling cards on the board (App owns
+   *  the running selection); the panel shows only the count + confirm controls, not the chip list. */
+  boardSelection?: { picked: string[]; setPicked: (uids: string[]) => void }
 }
 
 /** A candidate card whose face explains its attributes on hover (name-only chips leave a new
@@ -32,7 +35,7 @@ function CardChip({
   )
 }
 
-export function DecisionPanel({ decision, state, onRespond }: Props) {
+export function DecisionPanel({ decision, state, onRespond, boardSelection }: Props) {
   const label = (uid: string) => describeUid(state, uid)
   const tip = (uid: string) => describeUidTip(state, uid)
 
@@ -60,6 +63,9 @@ export function DecisionPanel({ decision, state, onRespond }: Props) {
   if (decision.kind === 'selectCards') {
     if (decision.min === 1 && decision.max === 1) {
       return <SinglePick prompt={decision.prompt} candidates={decision.candidates} state={state} label={label} tip={tip} onRespond={onRespond} />
+    }
+    if (boardSelection) {
+      return <SelectCardsOnBoard decision={decision} selection={boardSelection} onRespond={onRespond} />
     }
     return <SelectCards decision={decision} label={label} tip={tip} onRespond={onRespond} />
   }
@@ -148,6 +154,52 @@ function SelectCards({
           </button>
         )}
         {max > 1 && picked.length > 0 && (
+          <button className="ghost" onClick={() => setPicked([])}>
+            Clear
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Confirm bar for a multi-select answered on the board: the cards are toggled on the board (App
+ *  owns the selection), so the panel only shows the live count and the confirm/select-all/clear
+ *  controls. Keeps every player choice in the turn tile while selection happens on the cards. */
+function SelectCardsOnBoard({
+  decision,
+  selection,
+  onRespond,
+}: {
+  decision: Extract<Decision, { kind: 'selectCards' }>
+  selection: { picked: string[]; setPicked: (uids: string[]) => void }
+  onRespond: (selection: string[]) => void
+}) {
+  const { min, max, candidates } = decision
+  const { picked, setPicked } = selection
+  const valid = picked.length >= min && picked.length <= max
+  const rangeLabel = min === max ? `${min}` : `${min}–${max}`
+  const canSelectAll = candidates.length > 1 && max >= candidates.length
+  // Name the thing to click so the instruction is concrete, not "cards on the board".
+  const noun = decision.from === 'mission.enemies' ? 'Enemies on the Mission card' : 'cards on the board'
+  const need = min === max ? `${min}` : `${min}–${max}`
+  return (
+    <div className="decision">
+      <p className="decision-prompt">
+        {decision.prompt} <span className="muted">(choose {rangeLabel})</span>
+      </p>
+      <p className="board-hint">Click {need} highlighted {noun} to select, then Confirm.</p>
+      <div className={`pick-count ${valid ? 'ok' : ''}`}>{picked.length}/{max} selected</div>
+      <div className="row">
+        <button className="confirm" disabled={!valid} onClick={() => onRespond(picked)}>
+          Confirm {picked.length > 0 ? `(${picked.length})` : min === 0 ? '(none)' : ''}
+        </button>
+        {canSelectAll && (
+          <button className="ghost" disabled={picked.length === candidates.length} onClick={() => setPicked([...candidates])}>
+            Select all
+          </button>
+        )}
+        {picked.length > 0 && (
           <button className="ghost" onClick={() => setPicked([])}>
             Clear
           </button>

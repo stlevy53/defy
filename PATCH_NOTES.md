@@ -12,6 +12,20 @@ _Work in progress toward the next version — add changes here as we make them, 
 
 ---
 
+## v0.1.3 — 2026-07-27
+
+Save & load, settings, and clearer choices.
+
+- **Settings menu** — a new ⚙ cog in the top bar (or the **Esc** key) opens a settings modal holding **New game**, **Save game**, and **Load game**. It's the future home for sound/volume options.
+- **Save & load** — the whole game (including a half-answered decision and the full undo history) serializes to `localStorage`, so you can stop mid-round and resume later; persists across sessions in both the browser and the packaged `.exe`. Saves are version-stamped, and a very long game that would exceed the storage quota falls back to saving just the current position (undo history trimmed) rather than failing.
+- **Board multi-select** — decisions that pick several on-board cards (Paquita's "discard 2 Enemies", Juana's "flip 1–2 face-down Enemies") are now answered by clicking the Enemies on the Mission; the turn tile shows a live count + Confirm / Select all / Clear instead of listing chips.
+- **Persistent pick highlight** — any card that's a valid decision target (Missions, Enemies, played and hand Maquis) now shows a persistent pulsing highlight (not just on hover), so "click a highlighted card" is literally true.
+- **Action-granted Attack shows on the card** — attack an action adds (Consuelo's "gain the Enemy's Defense", plus Marcelino/Soledad/Abel's count bonuses) is attributed to the acting Maquis and displayed on its card with a "+N", matching the Attack Strength total. The count-based preview badge now shows only before the action is used.
+- **Log toasts** — freshly-appended log lines surface as transient, self-dismissing toasts (bottom-right), so you can see what an action did without opening the Log.
+- **Seed-from-Settings** — the "start a game from a specific seed" entry moved into the Settings menu (under New game); the top bar keeps a single click-to-copy seed indicator.
+- **Top-bar cleanup** — removed the redundant PLAN/ATTACK phase tag (the phase breadcrumb already shows it) and the standalone New game button (now in Settings).
+- **Fix** — tooltips are no longer hidden behind the sticky top bar (raised above it in the stacking order).
+
 ## v0.1.2 — 2026-07-26
 
 End-game moments and table clarity.

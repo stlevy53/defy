@@ -4,7 +4,7 @@ A single-player digital port of the physical solitaire card game *Resist!* (Salt
 
 ## Status
 
-**Playable prototype.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. It has a wooden **tabletop** theme and a **real card-art rendering seam** (each card shows its real image when present, else a themed frame). **147/147 tests pass**; `tsc` + `build` are clean. Remaining work: add the real card art (reshoot + slice — see [`tools/card-art.md`](./tools/card-art.md)), minor polish, an optional draft-variant setup, and Phase 4 packaging. For the current working state and a session bootstrap, read [`HANDOFF.md`](./HANDOFF.md); for the phased roadmap see [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md).
+**Playable prototype.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. It has a wooden **tabletop** theme, a **real card-art rendering seam** (each card shows its real image when present, else a themed frame), and a **settings menu** (⚙ / Esc) with **save & load** so you can resume a game later. **147/147 tests pass**; `tsc` + `build` are clean. Remaining work: add the real card art (reshoot + slice — see [`tools/card-art.md`](./tools/card-art.md)), minor polish, an optional draft-variant setup, and Phase 4 packaging. For the current working state and a session bootstrap, read [`HANDOFF.md`](./HANDOFF.md); for the phased roadmap see [`RESIST_PC_PORT_PLAN.md`](./RESIST_PC_PORT_PLAN.md).
 
 ## Getting started
 
@@ -20,7 +20,7 @@ npm run package  # build a Windows portable .exe for playtesters (see HANDOFF.md
 
 | Path | Contents |
 |---|---|
-| `src/` | Application source. `data/` (typed loader), `types/` (shared interfaces), `engine/` (headless rules engine + effects), `ui/` (React view: `Card` rendering seam, `cardArt` manifest, `Tip`, `useGame`, `format`/guidance, `DecisionPanel`), `App.tsx` (board), `index.css`. |
+| `src/` | Application source. `data/` (typed loader), `types/` (shared interfaces), `engine/` (headless rules engine + effects), `ui/` (React view: `Card` rendering seam, `cardArt` manifest, `Tip`, `Zoom`, `useGame` (state + save/load), `format`/guidance, `DecisionPanel`, `SettingsMenu`, `WhatsNew`/`patchNotes`), `App.tsx` (board), `index.css`. |
 | `src/assets/cards/` | Per-card art images (`<category>/<id>.jpg`), auto-loaded by `ui/cardArt.ts`. Empty until art is added; cards fall back to a themed frame. |
 | `data/` | Structured card data (Maquis, Missions, Enemies, Civilians, Spies) + `rules.json`. See [`data/README.md`](./data/README.md). |
 | `docs/ENGINE_DESIGN.md` | Full rules-engine architecture spec. |

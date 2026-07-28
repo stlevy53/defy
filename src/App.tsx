@@ -3,22 +3,50 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useGame, useReinforcements, useCardFlights } from './ui/useGame'
-import type { CardFlight } from './ui/useGame'
+import { useGame, useReinforcements, useCardFlights, useLogToasts } from './ui/useGame'
+import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
+import { SettingsMenu } from './ui/SettingsMenu'
 import { APP_VERSION } from './ui/patchNotes'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
+/** Stable empty array so a "no board selection" render doesn't churn child props. */
+const EMPTY: string[] = []
+
 export function App() {
-  const { state, actions, dispatch, respond, undo, newGame, canUndo, error, seed, gameId, step } = useGame()
+  const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
+    useGame()
 
   // Patch-notes modal: greets every playtester on launch (standard for each prototype build) and is
   // reopenable from the top bar. Starts open, dismissed to play.
   const [showWhatsNew, setShowWhatsNew] = useState(true)
+
+  // Settings modal (New/Save/Load; sound options later). Opened by the cog or Escape.
+  const [showSettings, setShowSettings] = useState(false)
+
+  // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew and the
+  // card zoom bind their own Escape handlers, so we don't also pop Settings while one of them is up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (showSettings) {
+        setShowSettings(false)
+        return
+      }
+      // Don't hijack Escape out of a text field (e.g. the seed box), and yield to other overlays.
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return
+      if (showWhatsNew) return
+      if (typeof document !== 'undefined' && document.querySelector('.zoom-overlay')) return
+      setShowSettings(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showSettings, showWhatsNew])
 
   // Dev/preview aid: append `?preview=<state>` to the URL to see any end-of-game overlay without
   // reaching it in play — useful for iterating on the animations. Values: loss, draw, minor,
@@ -43,6 +71,10 @@ export function App() {
   // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
   const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
 
+  // Fresh log lines from the latest move, surfaced as transient toasts (so the player sees what an
+  // action did without opening the Log).
+  const { toasts, dismiss: dismissToast } = useLogToasts(state, gameId, step)
+
   const group = (t: Action['type']) => actions.filter((a) => a.type === t)
 
   const canPlay = (acts: Action[], uid: string, side: 'hidden' | 'revealed') =>
@@ -55,11 +87,36 @@ export function App() {
   // make them directly clickable instead of listing them as buttons.
   const strikeTargets = actions.flatMap((a) => (a.type === 'SpendAttackOn' ? [a.targetUid] : []))
 
+  // Board-multi decision: a "choose N" (N>1) selectCards whose candidates all live on the board
+  // (e.g. Paquita's "discard 2 Enemies from this Mission", or Juana's flip-1-or-2). Answered by
+  // toggling the cards on the board — more intuitive than picking chips off the turn tile — with
+  // the confirm bar remaining in the tile. Single-picks and off-board peeks are unchanged.
+  const decision = state.pendingDecision
+  const selectCards = decision?.kind === 'selectCards' ? decision : null
+  const boardMulti =
+    !!selectCards &&
+    selectCards.max > 1 &&
+    selectCards.candidates.length > 0 &&
+    selectCards.candidates.every((uid) => boardPickable(state, uid))
+  const [multiPicked, setMultiPicked] = useState<string[]>([])
+  // Reset the running selection whenever the decision (or its candidates) changes, so a fresh or
+  // next-stage prompt starts empty.
+  const multiKey = boardMulti ? `${selectCards!.prompt}|${selectCards!.candidates.join(',')}` : ''
+  useEffect(() => {
+    setMultiPicked([])
+  }, [multiKey])
+
   // A "pick exactly one" pending decision can be answered by clicking the candidate on the board
   // (same idiom as striking). Candidates without a board representation stay in the DecisionPanel.
-  const pickTargets = singlePickCandidates(state.pendingDecision)
-    .filter((uid) => boardPickable(state, uid))
-  const onPick = (uid: string) => respond([uid])
+  const singlePicks = singlePickCandidates(state.pendingDecision).filter((uid) => boardPickable(state, uid))
+  const pickTargets = boardMulti ? selectCards!.candidates : singlePicks
+  const pickedTargets = boardMulti ? multiPicked : EMPTY
+  const onPick = boardMulti
+    ? (uid: string) =>
+        setMultiPicked((p) =>
+          p.includes(uid) ? p.filter((x) => x !== uid) : p.length < selectCards!.max ? [...p, uid] : p,
+        )
+    : (uid: string) => respond([uid])
 
   // Every player choice — a pending decision, the phase-level Turn buttons, or an error — lives in
   // one place: the right half of the guidance tile (see PhaseGuide), so the player never hunts for it.
@@ -67,7 +124,12 @@ export function App() {
   const playerChoice = state.pendingDecision ? (
     // Keyed on the prompt so each step of a multi-stage decision re-mounts and flashes.
     <div className="phase-decision" key={state.pendingDecision.prompt}>
-      <DecisionPanel decision={state.pendingDecision} state={state} onRespond={respond} />
+      <DecisionPanel
+        decision={state.pendingDecision}
+        state={state}
+        onRespond={respond}
+        boardSelection={boardMulti ? { picked: multiPicked, setPicked: setMultiPicked } : undefined}
+      />
     </div>
   ) : !state.result && turnActions.length > 0 ? (
     <ActionGroup title="Your turn" actions={turnActions} state={state} onClick={dispatch} />
@@ -92,9 +154,6 @@ export function App() {
         </div>
         <div className="status">
           <span className="pill">Round {state.round}</span>
-          <Tip below text="The current phase of the round.">
-            <span className={`pill phase-${state.phase}`}>{state.phase}</span>
-          </Tip>
           {(state.phase === 'ATTACK' || state.attackStrength > 0) && (
             <AttackStrengthPill value={state.attackStrength} />
           )}
@@ -111,19 +170,33 @@ export function App() {
           <button className="ghost" onClick={undo} disabled={!canUndo}>
             Undo
           </button>
-          <button className="ghost" onClick={() => newGame()}>
-            New game
-          </button>
           <Tip below text="What’s new in this build">
             <button className="ghost" onClick={() => setShowWhatsNew(true)} aria-label="What’s new">
               v{APP_VERSION}
             </button>
           </Tip>
-          <span className="muted seed">seed {seed}</span>
+          <Tip below text="Settings — new / save / load game (or press Esc)">
+            <button className="ghost cog" onClick={() => setShowSettings(true)} aria-label="Settings">
+              ⚙
+            </button>
+          </Tip>
+          <SeedControl seed={seed} />
         </div>
       </header>
 
       {showWhatsNew && <WhatsNew onClose={() => setShowWhatsNew(false)} />}
+
+      {showSettings && (
+        <SettingsMenu
+          onClose={() => setShowSettings(false)}
+          onNewGame={() => newGame()}
+          onPlaySeed={(s) => newGame(s)}
+          onSave={saveGame}
+          onLoad={loadGame}
+          savedMeta={savedMeta}
+          appVersion={APP_VERSION}
+        />
+      )}
 
       {shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
       {shown?.outcome === 'win' && (
@@ -134,6 +207,14 @@ export function App() {
         <div className="flights" aria-hidden="true">
           {flights.map((f) => (
             <FlyingCard key={f.id} flight={f} onDone={() => removeFlight(f.id)} />
+          ))}
+        </div>
+      )}
+
+      {toasts.length > 0 && (
+        <div className="toasts" role="status" aria-live="polite">
+          {toasts.map((t) => (
+            <Toast key={t.id} toast={t} onDone={() => dismissToast(t.id)} />
           ))}
         </div>
       )}
@@ -154,6 +235,7 @@ export function App() {
             strikeTargets={strikeTargets}
             onStrike={(uid) => dispatch({ type: 'SpendAttackOn', targetUid: uid })}
             pickTargets={pickTargets}
+            pickedTargets={pickedTargets}
             onPick={onPick}
             newEnemyUids={reinforced[slot.uid]}
           />
@@ -327,20 +409,26 @@ function Zone({
     <div className="zone">
       <h4>{title}</h4>
       <div className="cards">
-        {cards.map((m) => (
-          <Card
-            key={m.uid}
-            kind="maquisPlayed"
-            dataId={m.dataId}
-            uid={m.uid}
-            side={side}
-            canUse={actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)}
-            onUse={() => onUse(m.uid)}
-            pickable={pickTargets.includes(m.uid)}
-            onPick={onPick}
-            liveBonus={countActionBonus(state, m.dataId, side, m.uid)}
-          />
-        ))}
+        {cards.map((m) => {
+          const canUse = actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)
+          return (
+            <Card
+              key={m.uid}
+              kind="maquisPlayed"
+              dataId={m.dataId}
+              uid={m.uid}
+              side={side}
+              canUse={canUse}
+              onUse={() => onUse(m.uid)}
+              pickable={pickTargets.includes(m.uid)}
+              onPick={onPick}
+              attackBonus={m.attackBonus}
+              // A count-based action's preview ("⚔ +N now") only makes sense before it fires; once
+              // used, the gained attack is baked into the card's value, so drop the stale preview.
+              liveBonus={canUse ? countActionBonus(state, m.dataId, side, m.uid) : null}
+            />
+          )
+        })}
         {cards.length === 0 && <span className="muted">—</span>}
       </div>
     </div>
@@ -439,6 +527,20 @@ function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void
   )
 }
 
+/** A single transient log toast: fades/slides in, sits for a few seconds, then dismisses itself.
+ *  Click to dismiss early. Purely informational — mirrors a line the engine already logged. */
+function Toast({ toast, onDone }: { toast: LogToast; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3600)
+    return () => clearTimeout(t)
+  }, [onDone])
+  return (
+    <button type="button" className="toast" onClick={onDone} title="Dismiss">
+      {toast.text}
+    </button>
+  )
+}
+
 /** Prominent Attack Strength readout for the turn tile during ATTACK — the running pool the player
  *  spends to defeat targets. Pulses when it changes so gains (playing Maquis, firing actions) and
  *  spends (striking) both register. */
@@ -487,6 +589,32 @@ function AttackStrengthPill({ value }: { value: number }) {
         ⚔ {value}
         {gain > 0 && <span className="atk-delta">+{gain}</span>}
       </span>
+    </Tip>
+  )
+}
+
+/** Topbar seed indicator: shows the current game's seed; click to copy it (playtesters paste it
+ *  into bug reports to reproduce a deal). Starting a game *from* a seed lives in the Settings menu. */
+function SeedControl({ seed }: { seed: number }) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = () => {
+    const done = () => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(String(seed)).then(done, done)
+    } else {
+      done()
+    }
+  }
+
+  return (
+    <Tip below text="Seed for this game — click to copy. Share it to reproduce this exact deal (great for bug reports).">
+      <button className="seed-pill" onClick={copy} aria-label={`Copy seed ${seed}`}>
+        {copied ? 'copied ✓' : `seed ${seed}`}
+      </button>
     </Tip>
   )
 }

@@ -27,6 +27,11 @@ export interface MaquisInPlay {
   side: Side
   /** Card actions fire at most once per round; set when UseAction resolves. */
   actionUsed: boolean
+  /** Attack this Maquis's own action granted on top of its printed value (e.g. Consuelo revealed
+   *  gains an Enemy's Defense; Marcelino/Soledad/Abel add per-count bonuses). Banked into
+   *  state.attackStrength as usual — this field just lets the card show its true contribution.
+   *  Optional so existing state/fixtures without it read as 0. */
+  attackBonus?: number
 }
 
 /** An available-mission slot. A failed mission stays in its slot flipped face-down. */

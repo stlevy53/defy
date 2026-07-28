@@ -197,6 +197,8 @@ function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void
   }
 
   draft.hand.splice(idx, 1)
+  // `attackBonus` is intentionally left unset here (reads as 0); it's assigned lazily only if the
+  // card's own action grants attack, keeping the common played-card shape minimal.
   draft.inPlay.push({ uid: card.uid, dataId: card.dataId, side, actionUsed: false })
   if (side === 'revealed' && draft.phase === 'ATTACK') draft.revealedInAttack += 1
 

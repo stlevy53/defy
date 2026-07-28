@@ -36,6 +36,9 @@ export type CardFace =
       onPick?: (uid: string) => void
       /** Live value of a count-based ATTACK action (e.g. Abel hidden's +1/revealed Maquis), or null. */
       liveBonus?: number | null
+      /** Attack this card's own action has already granted (Consuelo/Marcelino/etc.), added to its
+       *  printed value on the face so the card reflects its true contribution. */
+      attackBonus?: number
     }
   | {
       kind: 'mission'
@@ -48,6 +51,8 @@ export type CardFace =
       onStrike?: (uid: string) => void
       /** UIDs (the Mission and/or its Enemies) that are pending-decision candidates — click to pick. */
       pickTargets?: string[]
+      /** UIDs already selected in a multi-pick (board-multi selectCards) — shown highlighted. */
+      pickedTargets?: string[]
       onPick?: (uid: string) => void
       /** Enemy uids just added to this Mission (a reinforcement) — animated in when present. */
       newEnemyUids?: string[]
@@ -79,6 +84,7 @@ export function Card(face: CardFace) {
           pickable={face.pickable}
           onPick={face.onPick}
           liveBonus={face.liveBonus}
+          attackBonus={face.attackBonus}
         />
       )
     case 'mission':
@@ -91,6 +97,7 @@ export function Card(face: CardFace) {
           strikeTargets={face.strikeTargets}
           onStrike={face.onStrike}
           pickTargets={face.pickTargets}
+          pickedTargets={face.pickedTargets}
           onPick={face.onPick}
           newEnemyUids={face.newEnemyUids}
         />
@@ -146,7 +153,7 @@ function MaquisHandFace({
   if (art) {
     return (
       <div
-        className={`card hand-card has-art ${pick ? 'pickable' : ''}`}
+        className={`card hand-card has-art ${pick ? 'pickable pick-target' : ''}`}
         onClick={pick ?? undefined}
         onContextMenu={zoom}
         role={pick ? 'button' : undefined}
@@ -182,7 +189,7 @@ function MaquisHandFace({
 
   return (
     <div
-      className={`card hand-card mcard ${pick ? 'pickable' : ''}`}
+      className={`card hand-card mcard ${pick ? 'pickable pick-target' : ''}`}
       onClick={pick ?? undefined}
       onContextMenu={zoom}
       role={pick ? 'button' : undefined}
@@ -257,6 +264,7 @@ function MaquisPlayedFace({
   pickable,
   onPick,
   liveBonus,
+  attackBonus,
 }: {
   dataId: string
   uid: string
@@ -266,6 +274,7 @@ function MaquisPlayedFace({
   pickable?: boolean
   onPick?: (uid: string) => void
   liveBonus?: number | null
+  attackBonus?: number
 }) {
   const action = maquisSideAction(dataId, side)
   const name = nameOfMaquis(dataId)
@@ -273,6 +282,11 @@ function MaquisPlayedFace({
   const pick = pickable && onPick ? () => onPick(uid) : null
   const art = maquisArt(dataId)
   const zoom = useMaquisZoom(dataId)
+  // The card's true contribution this round: its printed Attack plus whatever its own action added
+  // (e.g. Consuelo gains a discarded Enemy's Defense). The "+N" cue makes the boost unmistakable.
+  const baseAttack = maquisAttack(dataId, side)
+  const bonus = attackBonus ?? 0
+  const totalAttack = baseAttack + bonus
 
   // Real card art: show the whole card and dim the half that isn't in play, so the active side reads
   // clearly. The action fires from an overlaid "Use" ribbon; the live count-bonus sits in the corner.
@@ -280,7 +294,7 @@ function MaquisPlayedFace({
     const dimSide = side === 'hidden' ? 'right' : 'left'
     return (
       <div
-        className={`card played has-art ${side} ${pick ? 'pickable' : ''}`}
+        className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''}`}
         onClick={pick ?? undefined}
         onContextMenu={zoom}
         role={pick ? 'button' : undefined}
@@ -292,6 +306,11 @@ function MaquisPlayedFace({
         <img className="card-art" src={art} alt={`${name} — ${side}`} draggable={false} />
         <div className={`side-dim ${dimSide}`} aria-hidden="true" />
         <span className={`side-badge ${side}`}>{side}</span>
+        {bonus > 0 && (
+          <Tip text={`Attack ${baseAttack} +${bonus} from this card's action = ${totalAttack}.`}>
+            <span className="attack-gain-badge">⚔ {totalAttack} (+{bonus})</span>
+          </Tip>
+        )}
         {action && canUse && onUse && (
           <button type="button" className="use-ribbon" onClick={onUse} title={`Use ${name}'s action`}>
             {action.type} ▸ use
@@ -308,7 +327,7 @@ function MaquisPlayedFace({
 
   return (
     <div
-      className={`card played mcard ${side} ${pick ? 'pickable' : ''}`}
+      className={`card played mcard ${side} ${pick ? 'pickable pick-target' : ''}`}
       onClick={pick ?? undefined}
       onContextMenu={zoom}
       role={pick ? 'button' : undefined}
@@ -322,8 +341,17 @@ function MaquisPlayedFace({
         <span className="banner-side">{side}</span>
       </div>
       <div className={`portrait ${side}`}>
-        <Tip text="Attack value — the Attack Strength this Maquis contributes on this side.">
-          <span className="atk-burst">{maquisAttack(dataId, side)}</span>
+        <Tip
+          text={
+            bonus > 0
+              ? `Attack value — ${baseAttack} printed +${bonus} from this card's action = ${totalAttack}.`
+              : 'Attack value — the Attack Strength this Maquis contributes on this side.'
+          }
+        >
+          <span className={`atk-burst ${bonus > 0 ? 'boosted' : ''}`}>
+            {totalAttack}
+            {bonus > 0 && <span className="atk-gain">+{bonus}</span>}
+          </span>
         </Tip>
         <span className="portrait-monogram">{monogram}</span>
       </div>
@@ -361,6 +389,7 @@ function MissionFace({
   strikeTargets,
   onStrike,
   pickTargets,
+  pickedTargets,
   onPick,
   newEnemyUids,
 }: {
@@ -371,6 +400,7 @@ function MissionFace({
   strikeTargets?: string[]
   onStrike?: (uid: string) => void
   pickTargets?: string[]
+  pickedTargets?: string[]
   onPick?: (uid: string) => void
   newEnemyUids?: string[]
 }) {
@@ -409,6 +439,7 @@ function MissionFace({
     slot.faceDown ? 'failed' : '',
     slot.defeated ? 'defeated' : '',
     act ? 'actionable' : '',
+    canPickMission ? 'pick-target' : '',
     reinforcedCount > 0 ? 'reinforced' : '',
   ]
     .filter(Boolean)
@@ -440,6 +471,7 @@ function MissionFace({
           canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
           onStrike={onStrike ? () => onStrike(e.uid) : undefined}
           canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
+          picked={pickedTargets?.includes(e.uid) ?? false}
           onPick={onPick ? () => onPick(e.uid) : undefined}
           isNew={newEnemyUids?.includes(e.uid) ?? false}
         />
@@ -521,6 +553,7 @@ function EnemyChip({
   canStrike,
   onStrike,
   canPick,
+  picked,
   onPick,
   isNew,
 }: {
@@ -528,6 +561,8 @@ function EnemyChip({
   canStrike?: boolean
   onStrike?: () => void
   canPick?: boolean
+  /** True when this Enemy is already toggled on in a multi-pick — shown highlighted. */
+  picked?: boolean
   onPick?: () => void
   /** True when this Enemy was just added to the Mission (reinforcement) — plays an enter animation. */
   isNew?: boolean
@@ -550,12 +585,13 @@ function EnemyChip({
       return (
         <button
           type="button"
-          className={`enemy facedown pickable${back ? ' has-art' : ''}${newCls}`}
+          aria-pressed={picked || undefined}
+          className={`enemy facedown pickable${picked ? ' picked' : ''}${back ? ' has-art' : ''}${newCls}`}
           onClick={(e) => {
             e.stopPropagation()
             onPick()
           }}
-          title="Discard this Enemy — its identity stays hidden"
+          title="Select this Enemy — its identity stays hidden"
         >
           {inner}
         </button>
@@ -622,7 +658,8 @@ function EnemyChip({
     return (
       <button
         type="button"
-        className={`enemy faceup pickable kw-${type?.keyword}${artCls}${newCls}`}
+        aria-pressed={picked || undefined}
+        className={`enemy faceup pickable kw-${type?.keyword}${picked ? ' picked' : ''}${artCls}${newCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onPick()

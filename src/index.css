@@ -40,6 +40,19 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .muted { color: var(--muted); }
 .seed { font-size: 0.72rem; }
 
+/* Seed indicator: the current seed as a click-to-copy pill. */
+.seed-pill {
+  font: inherit; font-size: 0.72rem; color: var(--muted); cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.55rem;
+  white-space: nowrap; transition: color 0.1s, border-color 0.1s;
+}
+.seed-pill:hover, .seed-pill:focus-visible { color: var(--ink); border-color: var(--accent-2); outline: none; }
+.seed-input {
+  width: 9ch; font: inherit; font-size: 0.8rem; color: var(--ink);
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 0.25rem 0.45rem;
+}
+.seed-input:focus-visible { border-color: var(--accent-2); outline: none; }
+
 /* Top bar — sticky so critical controls (Undo, New game, status) stay reachable while scrolling. */
 .topbar {
   position: sticky; top: 0; z-index: 50;
@@ -282,6 +295,13 @@ button.enemy.faceup.strikeable:focus-visible {
   border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
 }
 .card.pickable:hover .click-hint, .card.pickable:focus-visible .click-hint { opacity: 1; }
+/* Persistent highlight on cards that are decision pick-candidates, so "click a highlighted card"
+   is literally true without hovering. Outline (not box-shadow) preserves the card's drop shadow;
+   the "Click to select" label is shown too, and hover still adds the stronger inset ring. */
+.card.pick-target { outline: 2px solid rgba(217, 154, 36, 0.55); outline-offset: 2px; animation: pick-outline 1.7s ease-in-out infinite; }
+.card.pick-target .click-hint { opacity: 1; }
+@keyframes pick-outline { 0%, 100% { outline-color: rgba(217, 154, 36, 0.4); } 50% { outline-color: rgba(217, 154, 36, 0.92); } }
+@media (prefers-reduced-motion: reduce) { .card.pick-target { animation: none; } }
 /* When a hand card is a pick target, let clicks anywhere on it answer (its play-sides are disabled). */
 .card.hand-card.pickable .sides { pointer-events: none; }
 button.enemy.faceup.pickable {
@@ -290,6 +310,32 @@ button.enemy.faceup.pickable {
 }
 button.enemy.faceup.pickable:hover, button.enemy.faceup.pickable:focus-visible {
   border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none;
+}
+/* Persistent "you can click me" affordance on Enemies that are decision candidates — a soft gold
+   ring with a gentle pulse, so the player sees the targets without having to hover-hunt. Hover
+   intensifies (inset ring, above) and a picked Enemy switches to the red selected ring (below). */
+button.enemy.pickable:not(.picked) { box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.5); animation: pick-pulse 1.7s ease-in-out infinite; }
+button.enemy.pickable.has-art:not(.picked) { box-shadow: none; }
+button.enemy.pickable.has-art:not(.picked) .enemy-art { box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.6); animation: pick-pulse 1.7s ease-in-out infinite; }
+@keyframes pick-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.42); }
+  50% { box-shadow: 0 0 0 3px rgba(217, 154, 36, 0.85); }
+}
+/* Let the (stronger) hover/focus ring take over — a running animation would otherwise mask it. */
+button.enemy.pickable:not(.picked):hover, button.enemy.pickable:not(.picked):focus-visible,
+button.enemy.pickable.has-art:not(.picked):hover .enemy-art,
+button.enemy.pickable.has-art:not(.picked):focus-visible .enemy-art { animation: none; }
+@media (prefers-reduced-motion: reduce) { button.enemy.pickable:not(.picked), button.enemy.pickable.has-art:not(.picked) .enemy-art { animation: none; } }
+
+/* A toggled-on Enemy in a multi-pick: a persistent red ring + check badge (distinct from the gold
+   hover) so the player sees exactly which cards are selected before confirming. */
+button.enemy.pickable.picked { position: relative; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+button.enemy.pickable.picked.has-art { border-color: transparent; box-shadow: none; }
+button.enemy.pickable.picked.has-art .enemy-art { box-shadow: 0 0 0 2px var(--accent); }
+button.enemy.pickable.picked::after {
+  content: '✓'; position: absolute; top: -6px; right: -6px; z-index: 2;
+  width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: #fff;
+  font-size: 0.7rem; line-height: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .board-hint {
   margin: 0 0 0.4rem; padding-left: 0.9rem; position: relative; color: var(--accent-2); font-weight: 600; font-size: 0.86rem;
@@ -363,6 +409,30 @@ button.enemy.faceup.pickable:hover, button.enemy.faceup.pickable:focus-visible {
   -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px);
           mask: radial-gradient(circle, transparent 12px, #000 13px);
 }
+/* Attack boosted by the card's own action (e.g. Consuelo): greener burst + a floating "+N" tag,
+   plus a one-shot pop so the increase is noticed the moment it happens. */
+.atk-burst.boosted {
+  color: #10240f;
+  background: radial-gradient(circle at 40% 34%, #d3f7a6 0%, #6ea84f 60%, #3f7a2e 100%);
+  box-shadow: 0 0 0 2px #2f5f22, 0 0 10px rgba(110, 168, 79, 0.7), 0 1px 3px rgba(0, 0, 0, 0.5);
+  animation: atk-pop 0.5s ease-out;
+}
+.atk-burst.boosted::before { background: repeating-conic-gradient(#6ea84f 0deg 11deg, transparent 11deg 22deg); }
+.atk-gain {
+  position: absolute; top: -8px; right: -12px; z-index: 2;
+  background: #6ea84f; color: #0d1f0b; border-radius: 999px;
+  padding: 0 0.28rem; font-size: 0.62rem; font-weight: 900; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+@keyframes atk-pop {
+  0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); }
+}
+/* Boost badge for arted played cards (which carry their attack in the image, not the gear burst). */
+.attack-gain-badge {
+  position: absolute; top: 6px; left: 6px; z-index: 2;
+  background: #6ea84f; color: #0d1f0b; border-radius: 6px;
+  padding: 0.08rem 0.4rem; font-size: 0.72rem; font-weight: 800; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-reduced-motion: reduce) { .atk-burst.boosted { animation: none; } }
 
 /* Hand card: two clickable sides (Hidden left / Revealed right). */
 .hand-card .sides { display: flex; }
@@ -558,12 +628,12 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
   padding: 0.4rem 0.55rem; border-radius: 7px;
   font-size: 0.72rem; font-weight: 400; line-height: 1.35; letter-spacing: normal; text-transform: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; pointer-events: none; z-index: 30;
+  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; pointer-events: none; z-index: 80;
 }
 .tip::before {
   content: ''; position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%);
   border: 5px solid transparent; border-top-color: var(--line);
-  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; z-index: 30;
+  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; z-index: 80;
 }
 .tip.below::after { top: calc(100% + 7px); bottom: auto; }
 .tip.below::before { top: calc(100% + 2px); bottom: auto; border-top-color: transparent; border-bottom-color: var(--line); }
@@ -889,6 +959,49 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 @keyframes whatsnew-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes whatsnew-rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
+/* Settings cog + modal (New / Save / Load; sound options later). Mirrors the What's New look. */
+.ghost.cog { font-size: 1rem; line-height: 1; padding: 0.28rem 0.5rem; }
+.settings-overlay {
+  position: fixed; inset: 0; z-index: 96;
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  animation: whatsnew-fade 0.25s ease both;
+}
+.settings-backdrop {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(20, 15, 10, 0.72), rgba(6, 4, 3, 0.9));
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.settings-panel {
+  position: relative; z-index: 1; width: min(440px, 100%);
+  background: linear-gradient(180deg, #241d16, var(--panel));
+  border: 1px solid rgba(122, 98, 62, 0.55); border-radius: 14px;
+  padding: 1.3rem 1.5rem 1.5rem; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: whatsnew-rise 0.25s ease both;
+}
+.settings-title { margin: 0 0 1rem; color: var(--ink); font-size: 1.3rem; text-transform: none; letter-spacing: 0.02em; }
+.settings-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+.settings-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; text-align: left;
+  padding: 0.7rem 0.9rem; border-radius: 10px; cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+  transition: border-color 0.1s, transform 0.1s, box-shadow 0.1s;
+}
+.settings-item:hover:not(:disabled) { border-color: var(--accent-2); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+.settings-item:disabled { opacity: 0.45; cursor: not-allowed; }
+.si-title { font-weight: 700; font-size: 0.98rem; }
+.si-sub { font-size: 0.78rem; color: var(--muted); }
+.settings-seed { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.2rem 0.3rem 0.1rem; }
+.settings-seed-row { display: flex; gap: 0.5rem; align-items: center; }
+.settings-seed-row .seed-input { flex: 1; }
+.settings-status {
+  margin: 0.9rem 0 0; padding: 0.5rem 0.7rem; border-radius: 8px; font-size: 0.84rem;
+  border: 1px solid var(--line); background: var(--panel-2);
+}
+.settings-status.ok { color: #14110e; background: var(--win); border-color: var(--win); }
+.settings-status.warn { color: #241503; background: var(--accent-2); border-color: var(--accent-2); }
+.settings-status.err { color: #fff; background: var(--warn); border-color: var(--warn); }
+.settings-foot { margin: 1rem 0 0; color: var(--muted); font-size: 0.74rem; text-align: center; }
+
 /* Flying-card cues: a card token animated between the hand and a pile tile when a card is discarded
  *  or drawn, so moves like Antonio's spy swap read visually. Overlay sits above the board and rail
  *  but below the What's-New / game-over modals (z 90). Purely decorative, never interactive. */
@@ -917,4 +1030,27 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   /* Skip the travel: show a brief static token so the cue still registers without motion. */
   .flying-card { transition: opacity 0.2s ease; transform: none !important; }
+}
+
+/* Transient log toasts — a bottom-right stack mirroring fresh log lines. Non-blocking; click to
+   dismiss early, else they expire on a timer. */
+.toasts {
+  position: fixed; right: 0.9rem; bottom: 0.9rem; z-index: 70;
+  display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;
+  max-width: min(360px, 80vw); pointer-events: none;
+}
+.toast {
+  pointer-events: auto; cursor: pointer; text-align: left; font: inherit; font-size: 0.82rem;
+  color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2); border-radius: 8px; padding: 0.4rem 0.6rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); max-width: 100%;
+  animation: toast-in 0.22s ease-out;
+}
+.toast:hover { border-color: var(--accent-2); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
 }

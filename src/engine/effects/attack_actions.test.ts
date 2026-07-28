@@ -90,6 +90,8 @@ describe('Consuelo revealed: discard one Enemy, gain its Defense as Attack', () 
     g = resolve(g, [target.uid])
     expect(g.attackStrength).toBe(before + target.defense)
     expect(g.enemyDiscard.map((e) => e.uid)).toContain(target.uid)
+    // The gain is also attributed to Consuelo's card so the UI can show her true contribution.
+    expect(g.inPlay.find((m) => m.uid === 'consuelo')?.attackBonus).toBe(target.defense)
   })
 })
 

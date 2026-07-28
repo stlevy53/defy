@@ -1,0 +1,132 @@
+// Settings modal: opened by the cog in the top bar or the Escape key. For now it holds the three
+// game-management actions — New game, Save game, Load game — and is the natural future home for
+// sound/volume options. Save/load are thin wrappers over useGame's localStorage helpers.
+
+import { useState } from 'react'
+import type { SaveMeta, SaveResult, LoadResult } from './useGame'
+
+interface Props {
+  onClose: () => void
+  onNewGame: () => void
+  /** Start a new game from a specific seed (reproduce a deal). */
+  onPlaySeed: (seed: number) => void
+  onSave: () => SaveResult
+  onLoad: () => LoadResult
+  savedMeta: SaveMeta | null
+  appVersion: string
+}
+
+/** Compact local date+time for the save's timestamp (e.g. "Jul 27, 2:14 PM"). */
+function formatWhen(ts: number): string {
+  try {
+    return new Date(ts).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  } catch {
+    return 'saved'
+  }
+}
+
+type Status = { tone: 'ok' | 'warn' | 'err'; text: string }
+
+export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion }: Props) {
+  const [status, setStatus] = useState<Status | null>(null)
+  // Track the save locally so the Load button + description update the moment a save is written.
+  const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
+  const [seedEntry, setSeedEntry] = useState('')
+
+  const handleNew = () => {
+    onNewGame()
+    onClose()
+  }
+
+  const handlePlaySeed = () => {
+    const n = Number.parseInt(seedEntry.trim(), 10)
+    if (Number.isFinite(n)) {
+      onPlaySeed(n)
+      onClose()
+    }
+  }
+
+  const handleSave = () => {
+    const r = onSave()
+    if (r.ok) {
+      setMeta({ version: appVersion, savedAt: Date.now() })
+      setStatus(
+        r.truncated
+          ? { tone: 'warn', text: 'Saved — the game was long, so undo history was trimmed to fit.' }
+          : { tone: 'ok', text: 'Game saved. You can close and resume it later.' },
+      )
+    } else {
+      setStatus({ tone: 'err', text: r.reason })
+    }
+  }
+
+  const handleLoad = () => {
+    const r = onLoad()
+    if (r.ok) {
+      onClose() // reveal the restored board
+    } else {
+      setStatus({ tone: 'err', text: r.reason })
+    }
+  }
+
+  const loadSub = meta
+    ? `Resume your saved game (v${meta.version}, ${formatWhen(meta.savedAt)}).${
+        meta.version !== appVersion ? ' From a different build — should still load.' : ''
+      }`
+    : 'No saved game yet.'
+
+  return (
+    <div className="settings-overlay" role="dialog" aria-modal="true" aria-label="Settings">
+      <div className="settings-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="settings-panel">
+        <button className="whatsnew-x" onClick={onClose} aria-label="Close settings">
+          ✕
+        </button>
+        <h2 className="settings-title">Settings</h2>
+
+        <div className="settings-actions">
+          <button className="settings-item" onClick={handleNew}>
+            <span className="si-title">New game</span>
+            <span className="si-sub">Start a fresh game. Discards the current one.</span>
+          </button>
+          <div className="settings-seed">
+            <span className="si-sub">Or start from a specific seed (reproduce a deal):</span>
+            <div className="settings-seed-row">
+              <input
+                className="seed-input"
+                type="text"
+                inputMode="numeric"
+                value={seedEntry}
+                placeholder="seed…"
+                onChange={(e) => setSeedEntry(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handlePlaySeed()
+                }}
+                aria-label="Seed to start a new game from"
+              />
+              <button className="ghost" onClick={handlePlaySeed} disabled={seedEntry.trim() === ''}>
+                Start
+              </button>
+            </div>
+          </div>
+          <button className="settings-item" onClick={handleSave}>
+            <span className="si-title">Save game</span>
+            <span className="si-sub">Store this game so you can pick it up later.</span>
+          </button>
+          <button className="settings-item" onClick={handleLoad} disabled={!meta}>
+            <span className="si-title">Load game</span>
+            <span className="si-sub">{loadSub}</span>
+          </button>
+        </div>
+
+        {status && <p className={`settings-status ${status.tone}`}>{status.text}</p>}
+        <p className="settings-foot">Sound &amp; volume options coming in a later build.</p>
+      </div>
+    </div>
+  )
+}

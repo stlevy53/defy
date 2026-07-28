@@ -11,6 +11,22 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.3',
+    date: '2026-07-27',
+    title: 'Save & load, settings, and clearer choices',
+    changes: [
+      'Settings menu — open it with the ⚙ cog (top-right) or the Esc key. It holds New game, Save game, and Load game (and is where sound options will live later).',
+      'Save & load your game — stop mid-round and pick up exactly where you left off, decisions and all. Saves persist between sessions.',
+      'Pick multiple Enemies right on the Mission — actions like Paquita’s “discard two Enemies” and Juana’s “flip one or two” are now done by clicking the Enemies on the Mission card; the tile just shows the count and a Confirm.',
+      'Cards you can click are now clearly highlighted — whenever a choice asks you to pick a card, the valid targets (Missions, Enemies, played and hand cards) glow so you can see exactly what to click.',
+      'Attack gained from an action now shows on the card — e.g. Consuelo’s “gain the Enemy’s Defense” bumps her Attack value with a “+N”, matching the total up top.',
+      'Log pop-ups — the latest game-log lines briefly appear on screen so you can see what just happened without opening the Log.',
+      'Reproduce a specific deal — enter a seed under New game in Settings to start that exact game (great for sharing a tricky board).',
+      'Tidier top bar — dropped the redundant phase tag and the extra New game button (both live elsewhere now), leaving a single click-to-copy seed indicator.',
+      'Fix — tooltips near the top of the screen are no longer hidden behind the top bar.',
+    ],
+  },
+  {
     version: '0.1.2',
     date: '2026-07-26',
     changes: [

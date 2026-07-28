@@ -5,8 +5,47 @@ import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } fr
 import { createGame, applyAction, legalActions, resolveDecision } from '../engine'
 import type { Action, Decision, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
+import { APP_VERSION } from './patchNotes'
 
 ensureEffectsRegistered()
+
+// --- Save / load ---------------------------------------------------------------------------------
+// The engine state is a plain-JSON snapshot with the RNG position inside it, so a save is just the
+// history stack serialized to localStorage — persists across sessions in the browser and the
+// packaged Electron app. Version-stamped so a stale save can be flagged rather than silently
+// loaded into an incompatible build.
+
+const SAVE_KEY = 'defy.save.v1'
+
+/** What a save records: the app version + timestamp (for display) and the full undo history. */
+interface SavePayload {
+  version: string
+  savedAt: number
+  seed: number
+  history: GameState[]
+}
+
+/** Lightweight save descriptor exposed to the UI (does the save exist, when, which build). */
+export interface SaveMeta {
+  version: string
+  savedAt: number
+}
+
+export type SaveResult = { ok: true; truncated: boolean } | { ok: false; reason: string }
+export type LoadResult = { ok: true; version: string } | { ok: false; reason: string }
+
+function readSave(): SavePayload | null {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (!raw) return null
+    const p = JSON.parse(raw) as SavePayload
+    if (!p || !Array.isArray(p.history) || p.history.length === 0) return null
+    return p
+  } catch {
+    return null
+  }
+}
 
 const randomSeed = () => Math.floor(Math.random() * 0x7fffffff)
 
@@ -57,6 +96,12 @@ export interface UseGame {
   respond: (selection: string[]) => void
   undo: () => void
   newGame: (seed?: number) => void
+  /** Persist the current game (full undo history) to localStorage; returns whether it fit. */
+  saveGame: () => SaveResult
+  /** Restore the saved game, replacing the current one; treats it as a fresh animation context. */
+  loadGame: () => LoadResult
+  /** Metadata for the current save if one exists, else null (drives the Load button's enabled state). */
+  savedMeta: SaveMeta | null
   canUndo: boolean
   error: string | null
 }
@@ -109,7 +154,59 @@ export function useGame(initialSeed?: number): UseGame {
     setHistory([settle(createGame({ seed: next }))])
   }, [])
 
-  return { state, actions, seed, gameId, step: history.length, dispatch, respond, undo, newGame, canUndo: history.length > 1, error }
+  const [savedMeta, setSavedMeta] = useState<SaveMeta | null>(() => {
+    const p = readSave()
+    return p ? { version: p.version, savedAt: p.savedAt } : null
+  })
+
+  const saveGame = useCallback((): SaveResult => {
+    if (typeof localStorage === 'undefined') return { ok: false, reason: 'Storage is unavailable here.' }
+    const write = (hist: GameState[]) => {
+      const payload: SavePayload = { version: APP_VERSION, savedAt: Date.now(), seed, history: hist }
+      localStorage.setItem(SAVE_KEY, JSON.stringify(payload))
+      setSavedMeta({ version: payload.version, savedAt: payload.savedAt })
+    }
+    try {
+      write(history)
+      return { ok: true, truncated: false }
+    } catch {
+      // A very long game can exceed the storage quota — fall back to just the current position so
+      // the round is still resumable, at the cost of the undo stack.
+      try {
+        write(history.slice(-1))
+        return { ok: true, truncated: true }
+      } catch (e) {
+        return { ok: false, reason: e instanceof Error ? e.message : 'Save failed.' }
+      }
+    }
+  }, [seed, history])
+
+  const loadGame = useCallback((): LoadResult => {
+    const p = readSave()
+    if (!p) return { ok: false, reason: 'No saved game found.' }
+    setSeed(p.seed)
+    setGameId((n) => n + 1) // fresh animation context so diff-hooks don't fire against the old board
+    setError(null)
+    setHistory(p.history)
+    return { ok: true, version: p.version }
+  }, [])
+
+  return {
+    state,
+    actions,
+    seed,
+    gameId,
+    step: history.length,
+    dispatch,
+    respond,
+    undo,
+    newGame,
+    saveGame,
+    loadGame,
+    savedMeta,
+    canUndo: history.length > 1,
+    error,
+  }
 }
 
 /**
@@ -268,4 +365,43 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
 
   const remove = useCallback((id: string) => setFlights((f) => f.filter((x) => x.id !== id)), [])
   return { flights, remove }
+}
+
+/** A transient on-screen message mirroring a freshly-appended engine log line. */
+export interface LogToast {
+  id: string
+  text: string
+}
+
+/**
+ * Surfaces log lines appended by the latest forward move as short-lived toasts, so the player sees
+ * what an action did without opening the Log. Uses the same guards as the other diff hooks: a new
+ * game or an undo (non-forward `step`) is adopted silently. Only the last few new lines are shown so
+ * a chatty multi-step action can't bury the screen; each toast auto-expires on a timer.
+ */
+export function useLogToasts(state: GameState, gameId: number, step: number, max = 4) {
+  const lenRef = useRef(state.log.length)
+  const gameRef = useRef(gameId)
+  const stepRef = useRef(step)
+  const seqRef = useRef(0)
+  const [toasts, setToasts] = useState<LogToast[]>([])
+
+  useEffect(() => {
+    // New game or undo/no-op: resync the baseline to the current log without emitting toasts.
+    if (gameRef.current !== gameId || step <= stepRef.current) {
+      gameRef.current = gameId
+      stepRef.current = step
+      lenRef.current = state.log.length
+      return
+    }
+    stepRef.current = step
+    const added = state.log.slice(lenRef.current)
+    lenRef.current = state.log.length
+    if (added.length === 0) return
+    const fresh = added.slice(-max).map((text) => ({ id: `t${seqRef.current++}`, text }))
+    setToasts((cur) => [...cur, ...fresh].slice(-max))
+  }, [state, gameId, step, max])
+
+  const dismiss = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), [])
+  return { toasts, dismiss }
 }
