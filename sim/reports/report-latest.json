@@ -1,0 +1,92 @@
+{
+  "version": "0.1.3",
+  "startedAt": "2026-07-30T00:14:02.279Z",
+  "durationMs": 21800,
+  "config": {
+    "seeds": 5000,
+    "start": 1,
+    "policies": [
+      "random",
+      "greedy"
+    ],
+    "stepCap": 2000,
+    "salt": 0
+  },
+  "totals": {
+    "runs": 10000,
+    "finished": 10000,
+    "failing": 0,
+    "crashes": 0,
+    "softlocks": 0,
+    "invariants": 0,
+    "nontermination": 0,
+    "stubEffects": 0
+  },
+  "findings": {
+    "crashes": [],
+    "softlocks": [],
+    "invariants": [],
+    "nontermination": [],
+    "stubEffects": []
+  },
+  "balanceByPolicy": [
+    {
+      "policy": "random",
+      "outcomes": [
+        [
+          "win:Draw",
+          2762
+        ],
+        [
+          "loss:missions",
+          1942
+        ],
+        [
+          "loss:civilians",
+          296
+        ]
+      ],
+      "rounds": {
+        "count": 5000,
+        "min": 1,
+        "max": 4,
+        "mean": 1.57
+      },
+      "steps": {
+        "count": 5000,
+        "min": 5,
+        "max": 58,
+        "mean": 17.25
+      }
+    },
+    {
+      "policy": "greedy",
+      "outcomes": [
+        [
+          "loss:spies",
+          2255
+        ],
+        [
+          "loss:missions",
+          2102
+        ],
+        [
+          "loss:civilians",
+          643
+        ]
+      ],
+      "rounds": {
+        "count": 5000,
+        "min": 1,
+        "max": 6,
+        "mean": 3.37
+      },
+      "steps": {
+        "count": 5000,
+        "min": 6,
+        "max": 83,
+        "mean": 49.92
+      }
+    }
+  ]
+}

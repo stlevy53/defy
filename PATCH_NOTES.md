@@ -12,6 +12,18 @@ _Work in progress toward the next version — add changes here as we make them, 
 
 ---
 
+## v0.1.4 — 2026-07-30
+
+A card window for choices, plus UI polish.
+
+- **Decision window** — a choice that pulls cards from a pile (pick from the Revealed pile, peek at the top of a deck, reorder cards) now opens a modal that shows the real cards full-size, with a Maquis's Hidden and Revealed sides side by side (matching the physical card and the eventual art), instead of a list of names. The card grid is a responsive 2–3-per-row layout with a pinned prompt and Confirm bar, so a large pile scrolls the cards without burying the button. Board-anchored picks (Missions, on-board Enemies, played/hand Maquis) are unchanged — still clicked in place. See `docs/DECISION_MODAL_SPEC.md`. UI only; the engine is unchanged (regression corpus shows no behavioral change).
+- **Reorder keeps the current order by default** — the cards open already in the deck's current order, so "Keep this order" confirms in one click; you only re-sequence if you want to.
+- **"What's New" shows once per build**, not on every launch — the last-seen version is remembered in `localStorage`; reopen it any time from the version button.
+- **Log toasts moved to the bottom-left** and made fully non-blocking, so they no longer cover the deck/pile rail on the right or sit over a clickable card.
+- **Failed-Missions indicator** now shows the threshold — e.g. `✗ 1 / 2 failed` — so you can see how close the resistance is to collapse.
+
+---
+
 ## v0.1.3 — 2026-07-27
 
 Save & load, settings, and clearer choices.

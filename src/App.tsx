@@ -1,11 +1,12 @@
 // Resist! — playable prototype UI (Phase 3). A thin view over the headless engine: it renders
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useGame, useReinforcements, useCardFlights, useLogToasts } from './ui/useGame'
 import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
+import { DecisionModal } from './ui/DecisionModal'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
@@ -17,13 +18,31 @@ import type { Action, Decision, GameResult, GameState } from './engine'
 /** Stable empty array so a "no board selection" render doesn't churn child props. */
 const EMPTY: string[] = []
 
+/** localStorage key remembering the build version whose What's New was last dismissed. */
+const WHATS_NEW_SEEN_KEY = 'defy.whatsNewSeen'
+
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
     useGame()
 
-  // Patch-notes modal: greets every playtester on launch (standard for each prototype build) and is
-  // reopenable from the top bar. Starts open, dismissed to play.
-  const [showWhatsNew, setShowWhatsNew] = useState(true)
+  // Patch-notes modal: greets a playtester once per build (not every launch), and is reopenable from
+  // the top bar. We remember the last version whose notes were dismissed, so a returning player on
+  // the same build isn't shown it again.
+  const [showWhatsNew, setShowWhatsNew] = useState(() => {
+    try {
+      return localStorage.getItem(WHATS_NEW_SEEN_KEY) !== APP_VERSION
+    } catch {
+      return true
+    }
+  })
+  const closeWhatsNew = useCallback(() => {
+    setShowWhatsNew(false)
+    try {
+      localStorage.setItem(WHATS_NEW_SEEN_KEY, APP_VERSION)
+    } catch {
+      /* storage unavailable — just close for this session */
+    }
+  }, [])
 
   // Settings modal (New/Save/Load; sound options later). Opened by the cog or Escape.
   const [showSettings, setShowSettings] = useState(false)
@@ -118,10 +137,14 @@ export function App() {
         )
     : (uid: string) => respond([uid])
 
+  // Off-board decisions (Revealed-pile pick, deck peeks, reorder, option choices) open a full-card
+  // modal instead of the inline chip list; board-anchored picks stay in the tile/on the board.
+  const modalDecision = decisionUsesModal(state, state.pendingDecision) ? state.pendingDecision : null
+
   // Every player choice — a pending decision, the phase-level Turn buttons, or an error — lives in
   // one place: the right half of the guidance tile (see PhaseGuide), so the player never hunts for it.
   const turnActions = [...group('AdvancePhase'), ...group('EndResistance'), ...group('Continue')]
-  const playerChoice = state.pendingDecision ? (
+  const playerChoice = state.pendingDecision && !modalDecision ? (
     // Keyed on the prompt so each step of a multi-stage decision re-mounts and flashes.
     <div className="phase-decision" key={state.pendingDecision.prompt}>
       <DecisionPanel
@@ -162,7 +185,7 @@ export function App() {
           </Tip>
           {state.failedMissions > 0 && (
             <Tip below text="Failed Missions — fail two and the resistance is crushed.">
-              <span className="pill warn">✗ {state.failedMissions} failed</span>
+              <span className="pill warn">✗ {state.failedMissions} / 2 failed</span>
             </Tip>
           )}
         </div>
@@ -184,7 +207,9 @@ export function App() {
         </div>
       </header>
 
-      {showWhatsNew && <WhatsNew onClose={() => setShowWhatsNew(false)} />}
+      {modalDecision && <DecisionModal decision={modalDecision} state={state} onRespond={respond} />}
+
+      {showWhatsNew && <WhatsNew onClose={closeWhatsNew} />}
 
       {showSettings && (
         <SettingsMenu
@@ -442,6 +467,18 @@ function singlePickCandidates(decision: Decision | null): string[] {
   if (decision.kind === 'selectTarget') return decision.candidates
   if (decision.kind === 'selectCards' && decision.min === 1 && decision.max === 1) return decision.candidates
   return []
+}
+
+/** A decision opens the full-card modal when its candidates aren't on the table: reorder and option
+ *  choices always, and any card selection whose every candidate is off-board (deck peeks, the
+ *  Revealed pile). Board-anchored picks (Missions, on-board Enemies, played/hand Maquis) and the
+ *  rare mixed-candidate case stay in the inline panel / on the board. See DECISION_MODAL_SPEC.md. */
+function decisionUsesModal(state: GameState, decision: Decision | null): boolean {
+  if (!decision) return false
+  if (decision.kind === 'orderCards' || decision.kind === 'chooseOption') return true
+  const candidates = decision.candidates
+  if (candidates.length === 0) return false
+  return candidates.every((uid) => !boardPickable(state, uid))
 }
 
 interface PileInfo {

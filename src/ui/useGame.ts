@@ -6,6 +6,7 @@ import { createGame, applyAction, legalActions, resolveDecision } from '../engin
 import type { Action, Decision, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
 import { APP_VERSION } from './patchNotes'
+import { useDebugHook } from './debugHook'
 
 ensureEffectsRegistered()
 
@@ -190,6 +191,18 @@ export function useGame(initialSeed?: number): UseGame {
     setHistory(p.history)
     return { ok: true, version: p.version }
   }, [])
+
+  // Dev-only: publish the live game on window.__defy for the Tier-2 test harness. No-op in release.
+  useDebugHook({
+    getState: () => state,
+    legalActions: () => actions,
+    getSeed: () => seed,
+    getStep: () => history.length,
+    getError: () => error,
+    dispatch,
+    resolve: respond,
+    newGame,
+  })
 
   return {
     state,

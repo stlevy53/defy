@@ -11,6 +11,18 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.4',
+    date: '2026-07-30',
+    title: 'A card window for choices, and UI polish',
+    changes: [
+      'Choices that pull cards from a pile now open in a window — pick from the Revealed pile, peek at the top of a deck, or reorder cards with them shown full-size, Hidden and Revealed side by side, instead of a list of names. Choices you make on the board (Missions, Enemies, your played cards) are unchanged.',
+      'Reordering keeps the current order by default — if you’re happy with it, one click on “Keep this order”; only re-sequence if you actually want to.',
+      'This “What’s New” now shows once per build instead of every time you launch (reopen it any time from the version button up top).',
+      'Log pop-ups moved to the bottom-left so they no longer cover the deck and pile counts on the right.',
+      'The failed-Missions indicator now shows how close you are to defeat — e.g. “✗ 1 / 2 failed”.',
+    ],
+  },
+  {
     version: '0.1.3',
     date: '2026-07-27',
     title: 'Save & load, settings, and clearer choices',

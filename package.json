@@ -1,7 +1,7 @@
 {
   "name": "defy",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "DEFY!",
@@ -13,6 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "fuzz": "vite-node sim/fuzz.ts",
+    "regress": "vite-node sim/regression.ts",
+    "tier2": "vite-node sim/live/harness.ts",
     "electron:dev": "electron .",
     "package": "npm run build && electron-builder"
   },
@@ -26,6 +29,7 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "chrome-remote-interface": "^0.33.3",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "typescript": "^5.5.4",

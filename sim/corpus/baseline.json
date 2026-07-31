@@ -1,0 +1,4008 @@
+{
+  "version": "0.1.3",
+  "createdAt": "2026-07-30T00:14:24.615Z",
+  "policy": "greedy",
+  "stepCap": 2000,
+  "seeds": {
+    "1": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "2": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "3": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "4": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "5": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "6": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "7": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 69,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "8": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "9": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "10": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "11": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "12": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "13": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "14": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "15": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "16": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "17": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 10,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "18": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "19": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 68,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "20": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "21": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "22": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "23": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "24": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "25": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "26": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "27": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "28": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "29": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "30": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "31": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "32": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "33": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "34": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "35": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "36": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "37": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "38": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "39": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "40": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 68,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "41": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "42": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "43": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "44": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "45": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "46": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "47": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "48": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "49": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "50": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "51": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "52": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "53": {
+      "outcome": "loss:civilians",
+      "rounds": 5,
+      "steps": 65,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "54": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "55": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "56": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 66,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "57": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "58": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "59": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "60": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "61": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "62": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "63": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "64": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "65": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "66": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "67": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "68": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "69": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "70": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "71": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "72": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "73": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "74": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "75": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "76": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "77": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "78": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "79": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "80": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "81": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "82": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "83": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "84": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "85": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "86": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "87": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "88": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "89": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "90": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "91": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "92": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "93": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "94": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "95": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "96": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "97": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "98": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "99": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "100": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "101": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "102": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "103": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "104": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "105": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "106": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "107": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "108": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "109": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 37,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "110": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "111": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "112": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "113": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "114": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "115": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 11,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "116": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "117": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "118": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "119": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "120": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "121": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "122": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "123": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "124": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "125": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "126": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "127": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "128": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "129": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "130": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "131": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "132": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "133": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "134": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "135": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "136": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "137": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "138": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "139": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "140": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "141": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "142": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "143": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "144": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "145": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "146": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "147": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "148": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "149": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "150": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "151": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "152": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "153": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "154": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "155": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "156": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "157": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "158": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "159": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "160": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "161": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "162": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "163": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "164": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "165": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "166": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 30,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "167": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "168": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 65,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "169": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "170": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "171": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "172": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "173": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "174": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "175": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "176": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "177": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "178": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 68,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "179": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "180": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "181": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "182": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "183": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "184": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "185": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "186": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "187": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "188": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 66,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "189": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "190": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "191": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "192": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "193": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "194": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "195": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 38,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "196": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "197": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "198": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "199": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "200": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "201": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "202": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 64,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "203": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "204": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "205": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 68,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "206": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "207": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "208": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "209": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 64,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "210": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "211": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "212": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "213": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "214": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "215": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "216": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 13,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "217": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "218": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 32,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "219": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "220": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "221": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "222": {
+      "outcome": "loss:civilians",
+      "rounds": 5,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "223": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "224": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "225": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "226": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "227": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 31,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "228": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "229": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "230": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 69,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "231": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "232": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "233": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "234": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "235": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "236": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "237": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "238": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 11,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "239": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "240": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "241": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "242": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "243": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "244": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "245": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "246": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "247": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "248": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "249": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "250": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "251": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "252": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "253": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "254": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "255": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "256": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "257": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "258": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "259": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "260": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "261": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "262": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "263": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "264": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "265": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "266": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 31,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "267": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "268": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "269": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "270": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "271": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "272": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "273": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "274": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "275": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 36,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "276": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "277": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "278": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "279": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "280": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "281": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "282": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "283": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "284": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "285": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "286": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "287": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "288": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 36,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "289": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "290": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "291": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 18,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "292": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "293": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "294": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "295": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 9,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "296": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "297": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "298": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "299": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "300": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "301": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "302": {
+      "outcome": "loss:missions",
+      "rounds": 2,
+      "steps": 30,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "303": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "304": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "305": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "306": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "307": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "308": {
+      "outcome": "loss:civilians",
+      "rounds": 1,
+      "steps": 20,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "309": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "310": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "311": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "312": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "313": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "314": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "315": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "316": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "317": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 64,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "318": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "319": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "320": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "321": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "322": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "323": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "324": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "325": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 33,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "326": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "327": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "328": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 35,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "329": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "330": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 33,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "331": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "332": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "333": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "334": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "335": {
+      "outcome": "loss:civilians",
+      "rounds": 5,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "336": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "337": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "338": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "339": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "340": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "341": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "342": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "343": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "344": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "345": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "346": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "347": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "348": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "349": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "350": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "351": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "352": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "353": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "354": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "355": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "356": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "357": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "358": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "359": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "360": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "361": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "362": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "363": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "364": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "365": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "366": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "367": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 67,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "368": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "369": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "370": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "371": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "372": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "373": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "374": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "375": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "376": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "377": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "378": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "379": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "380": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "381": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "382": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "383": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "384": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "385": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "386": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "387": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 66,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "388": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "389": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 60,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "390": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "391": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "392": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "393": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "394": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "395": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "396": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "397": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "398": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "399": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "400": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "401": {
+      "outcome": "loss:missions",
+      "rounds": 2,
+      "steps": 27,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "402": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "403": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 38,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "404": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "405": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "406": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 38,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "407": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "408": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "409": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "410": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "411": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 37,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "412": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "413": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "414": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "415": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "416": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "417": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "418": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "419": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 64,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "420": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "421": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "422": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "423": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "424": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "425": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "426": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 57,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "427": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "428": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "429": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "430": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "431": {
+      "outcome": "loss:missions",
+      "rounds": 5,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "432": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "433": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "434": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "435": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 39,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "436": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "437": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "438": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "439": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 61,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "440": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 32,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "441": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 66,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "442": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "443": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "444": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "445": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "446": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "447": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 59,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "448": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "449": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "450": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "451": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 65,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "452": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "453": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "454": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "455": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "456": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "457": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "458": {
+      "outcome": "loss:civilians",
+      "rounds": 2,
+      "steps": 35,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "459": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "460": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "461": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "462": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "463": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "464": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "465": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "466": {
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 62,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "467": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 63,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "468": {
+      "outcome": "loss:civilians",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "469": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "470": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "471": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "472": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 42,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "473": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "474": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "475": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 43,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "476": {
+      "outcome": "loss:spies",
+      "rounds": 2,
+      "steps": 38,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "477": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "478": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "479": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "480": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 53,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "481": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "482": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 48,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "483": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 46,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "484": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "485": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "486": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "487": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 45,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "488": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 52,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "489": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "490": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 47,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "491": {
+      "outcome": "loss:missions",
+      "rounds": 3,
+      "steps": 40,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "492": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 54,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "493": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "494": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 44,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "495": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 56,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "496": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 58,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "497": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 50,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "498": {
+      "outcome": "loss:spies",
+      "rounds": 3,
+      "steps": 41,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "499": {
+      "outcome": "loss:spies",
+      "rounds": 4,
+      "steps": 70,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    },
+    "500": {
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 55,
+      "finalPhase": "GAME_OVER",
+      "stub": [],
+      "failed": false
+    }
+  }
+}

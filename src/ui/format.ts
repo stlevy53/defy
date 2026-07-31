@@ -3,7 +3,7 @@
 
 import { maquis, missions, enemyTypes, civilians } from '../data'
 import type { ActionType } from '../types'
-import type { Action, EnemyInstance, GameState } from '../engine'
+import type { Action, EnemyInstance, GameState, MissionSlot } from '../engine'
 
 const maquisName = new Map(maquis.map((m) => [m.id, m.name]))
 const maquisCard = new Map(maquis.map((m) => [m.id, m]))
@@ -109,6 +109,26 @@ export function boardPickable(state: GameState, uid: string): boolean {
     if (e) return true
   }
   return false
+}
+
+/** A decision candidate resolved to what kind of card it is, for full-card rendering in the modal. */
+export type Candidate =
+  | { kind: 'enemy'; uid: string; enemy: EnemyInstance }
+  | { kind: 'mission'; uid: string; slot: MissionSlot }
+  | { kind: 'maquis'; uid: string; dataId: string }
+  | { kind: 'spy'; uid: string }
+  | { kind: 'unknown'; uid: string; label: string }
+
+/** Classify a candidate uid so the decision modal can draw its real card face. */
+export function classifyCandidate(state: GameState, uid: string): Candidate {
+  const enemy = findEnemy(state, uid)
+  if (enemy) return { kind: 'enemy', uid, enemy }
+  const slot = state.missionRow.find((s) => s.uid === uid)
+  if (slot) return { kind: 'mission', uid, slot }
+  const dataId = findCardDataId(state, uid)
+  if (dataId === 'spy') return { kind: 'spy', uid }
+  if (dataId && maquisCard.has(dataId)) return { kind: 'maquis', uid, dataId }
+  return { kind: 'unknown', uid, label: describeUid(state, uid) }
 }
 
 /** Human label for a candidate uid appearing in a decision (enemy / mission / Maquis / Spy). */
