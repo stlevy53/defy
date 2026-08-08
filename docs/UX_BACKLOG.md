@@ -8,6 +8,47 @@ here under **Resolved**, so the screenshot and the reasoning remain findable.
 
 ## Open
 
+### Board renders small and text is hard to read — needs a UI scale setting, not fullscreen
+
+**Deferred to the card-art pass**, since art is rendered at whatever size the tile is, so scale and
+art should be judged together. Found in the packaged `.exe` at v0.1.4.
+
+**Fullscreen / a bigger window is NOT the fix — measured, not assumed.** The board is capped
+independently of the window by `#root { max-width: 1260px }` (`src/index.css`). The Electron window
+opens at 1440×900 (`electron/main.cjs`), so ~180px is already wasted; maximized on a 1920 monitor the
+board still renders 1260px with the surplus spent on empty tabletop, and the text is no larger.
+See [`ux-backlog/board-scale-as-shipped.jpg`](./ux-backlog/board-scale-as-shipped.jpg).
+
+**Removing the cap alone makes it slightly worse.** The mission row and hand use
+`repeat(auto-fill, minmax(210px, 1fr))`, and `auto-fill` spends surplus width on *more columns*
+rather than wider cards. Measured at a 1920 window: mission tile went from 249px (capped) to **230px**
+(uncapped), with the cards bunched at the left and a large empty gap.
+See [`ux-backlog/board-scale-cap-removed.jpg`](./ux-backlog/board-scale-cap-removed.jpg).
+
+**What works is UI zoom**, which scales text, cards, padding and the rail together and keeps the
+layout proportions identical. At 1.4× on the same 1920 window the mission tile measured 305px and
+everything was comfortably readable: [`ux-backlog/board-scale-zoom-140.jpg`](./ux-backlog/board-scale-zoom-140.jpg).
+Zoom (rather than bumping font sizes) is the right mechanism because every font size is already in
+`rem` while the layout widths are in `px` (the 1260px cap, the 178px rail, the 210px grid minimum) —
+scaling text alone would overflow containers that stayed put.
+
+**Suggested implementation, in order of payoff.**
+1. **UI scale setting** — a row in `ui/SettingsMenu.tsx` (already the intended home for options like
+   this) applying `document.documentElement.style.zoom` and persisting to `localStorage` alongside
+   the save data, plus Ctrl+= / Ctrl+− accelerators. Renderer-only: no preload or IPC, and it behaves
+   identically in the browser and the packaged `.exe`. Verify the fixed-position overlays (decision
+   modal, zoom overlay, toasts, flying cards) still position correctly under a non-1 zoom.
+2. **Let a big window pay off** — raise the `#root` cap and change those grids so extra width makes
+   cards bigger instead of adding empty columns. Compounds with zoom on a 2560-wide monitor.
+3. **Window behaviour** — `electron/main.cjs` has no maximize, no fullscreen, and doesn't remember
+   size or position, so every launch is 1440×900. Open maximized + persist window state; fullscreen
+   is then a nice-to-have rather than the fix.
+
+**Tradeoff to expect.** Higher zoom means more vertical scrolling (at 1.4× on 1920 the hand row
+starts to clip), which is why this should be a user-chosen scale rather than a fixed bump.
+
+---
+
 ### Mission Eras are invisible in the UI — evaluate after real card art lands
 
 **Deferred on purpose.** Blocked on the card-art reshoot: how (or whether) to surface the Era
