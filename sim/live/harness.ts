@@ -146,9 +146,11 @@ async function main() {
   // Preflight: the dev hook must be present.
   // Dismiss any launch overlay (the "What's New" modal shows on every open) so it doesn't obscure
   // the board in screenshots.
+  // Expressions here run in the page as plain JavaScript — no TypeScript syntax (a cast compiles
+  // fine inside this template string, then throws a SyntaxError at runtime).
   const dismissModals = async () => {
     await evaluate(
-      `Array.from(document.querySelectorAll('[aria-label="Dismiss"]')).forEach((b) => (b as HTMLElement).click())`,
+      `Array.from(document.querySelectorAll('[aria-label="Dismiss"]')).forEach((b) => b.click())`,
     )
   }
 
