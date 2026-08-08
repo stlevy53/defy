@@ -10,6 +10,8 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 _Work in progress toward the next version — add changes here as we make them, then stamp a version + date when we cut a release._
 
+- **Fix** — in the decision window, the order-position badges ("1", "2", …) on the top row of cards are no longer clipped at their corner.
+
 ---
 
 ## v0.1.4 — 2026-07-30

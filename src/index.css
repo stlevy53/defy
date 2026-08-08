@@ -1082,8 +1082,9 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .dm-count.ok { color: var(--win); }
 
 /* Responsive grid: as many ~300px columns as fit, cards stretch to fill. At the modal's width this
- * is 2–3 per row (never 1), which keeps scrolling down for large piles. */
-.dm-cards { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; gap: 0.7rem; padding: 0.1rem 0.3rem 0.2rem 0.1rem; }
+ * is 2–3 per row (never 1), which keeps scrolling down for large piles. Top/left padding must clear
+ * `.dm-order`'s 8px corner overhang, or scrolling clips the first row's badges. */
+.dm-cards { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; gap: 0.7rem; padding: 0.65rem 0.3rem 0.2rem 0.65rem; }
 .dm-card {
   position: relative; text-align: left; cursor: pointer;
   display: flex; flex-direction: column;
