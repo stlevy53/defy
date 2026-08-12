@@ -705,7 +705,7 @@ const useEnemyZoom = (enemy: EnemyInstance) =>
 
 function ZoomMaquisCard({ dataId }: { dataId: string }) {
   const name = nameOfMaquis(dataId)
-  const art = maquisArt(dataId)
+  const art = dataId === 'spy' ? spyArt() : maquisArt(dataId)
   if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
   if (dataId === 'spy') {
     return (

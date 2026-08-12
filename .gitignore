@@ -24,3 +24,7 @@ npm-debug.log*
 # Generated Tier-2 live-run artifacts (screenshots + findings). The regression baseline
 # (sim/corpus/) and the Tier-1 reports (sim/reports/) are kept; this ephemeral output is not.
 sim/live/out/
+
+# Card-art slicing scratch (crops, debug overlays). The placed art under src/assets/cards/ is
+# what ships; these are regenerable from Card Assets/ via tools/slice_cards.py.
+.slice_out/

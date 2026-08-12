@@ -6,21 +6,27 @@ without an image keeps the themed text frame as a fallback, so you can add art i
 
 Accepted extensions: `.jpg`, `.jpeg`, `.png`, `.webp`.
 
+**The full set is already in** — 61 images (24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians, the
+Spy), sliced from the playmat photos in `Card Assets/`. What follows is how to redo or extend it. The
+only image still missing is the optional face-down Enemy back (`enemy/back.jpg`); no photo of a card
+back exists yet, so face-down Enemies still draw as plain chips.
+
 ---
 
 ## 1. Photograph the cards for reliable auto-slicing
 
-The auto-slicer segments cards by color-contrast against the background, so the background is what
-matters most:
+The slicer segments cards by **texture**: a playmat or poster board is featureless while every part of
+a card carries art, text or a border. Dark art on a black mat is therefore fine — what matters is
+that the background is smooth and unpatterned.
 
-- **Plain, matte, contrasting background.** A solid sheet of black or dark-gray poster board is
-  ideal (the cards are light/colorful). Avoid the fur blanket, wood grain, patterned tablecloths —
-  any texture defeats detection.
-- **Leave gaps.** ~1/2 inch of clear background between cards and from the frame edge. Cards must not
-  touch or overlap.
+- **Plain, matte background.** A solid playmat or poster board is ideal. Avoid the fur blanket, wood
+  grain, patterned tablecloths — any texture reads as card.
+- **Gaps help but are not required.** Cards may sit nearly edge-to-edge; a blob holding several
+  touching cards is cut back into single cards by measuring it against the sheet's separated ones.
 - **Shoot straight down**, camera parallel to the table (a phone directly overhead). Mild rotation is
   fine — the slicer deskews it — but avoid steep angles.
-- **Even, glare-free light.** Diffuse daylight or two side lights; no hard shadows or hotspot glare.
+- **Even light.** Some shade is tolerated (the texture threshold is local, not global), but avoid hard
+  shadows and hotspot glare.
 - **One category per photo**, all cards the same way up. A loose grid is easiest to map afterward.
 
 You can do one photo per category, or a few photos each — whatever keeps cards big and well-separated.
@@ -28,25 +34,37 @@ You can do one photo per category, or a few photos each — whatever keeps cards
 ## 2. Slice a photo into straightened crops
 
 ```
-python tools/slice_cards.py <photo> <orientation> <out_dir>
+python tools/slice_cards.py <photo> <orientation> <out_dir> [--rotate 90|180|270]
 ```
 
-- `<orientation>`: `landscape` for **maquis** and **missions**; `portrait` for **enemies**,
-  **civilians**, and the **spy**.
+- `<orientation>`: `landscape` for **maquis** and **missions**; `portrait` for **enemies** and
+  **civilians**; `auto` gives each card the orientation it was photographed in, which is what a mixed
+  sheet needs — the Spy is printed portrait and was laid among the landscape Maquis.
+- `--rotate` turns the photo before detecting, for cards laid sideways or upside down to the camera.
+  Slice once, open a crop, and pick the value that makes the card text upright. It also changes the
+  row/column order, so read your crop-to-card mapping off the rotated `_debug.jpg`.
 - Writes `crop_<row>_<col>.jpg` (top-left first, row-major) plus `_debug.jpg` (detections outlined
   and numbered) and `_mask.jpg` (what it segmented). **Always check `_debug.jpg`** — every card
   should have a tight box and nothing spurious.
 
 If detection is off, tune (values are fractions of the whole photo):
 
-- missing cards / merged blobs → raise `--min-area`, lower `--max-area`
-- background picked up as cards → check the background is plain; raise `--min-area`
+- a card in deep shade is skipped → `--seal 0.01` forces heavier gap-closing, at the cost of possibly
+  inventing a cell out of background clutter (discard those when mapping crops to IDs)
 - non-card rectangles slipping in → tighten `--ar-lo/--ar-hi` (poker cards ≈ 1.4)
+- something far too small or large is accepted → raise `--min-area`, lower `--max-area`
 
-Example:
+The art now in the game came from these commands, run from the repo root:
 
 ```
-python tools/slice_cards.py photos/maquis.jpg landscape .slice_out/maquis --min-area 0.01
+python tools/slice_cards.py "Card Assets/Maquis.jpg"        auto .slice_out/maquis1 --rotate 270
+python tools/slice_cards.py "Card Assets/Maquis 2.jpg"      auto .slice_out/maquis2 --rotate 180
+python tools/slice_cards.py "Card Assets/Missions.jpg"      auto .slice_out/miss1
+python tools/slice_cards.py "Card Assets/Missions 2.jpg"    auto .slice_out/miss2
+python tools/slice_cards.py "Card Assets/Missions 3.jpg"    auto .slice_out/miss3
+python tools/slice_cards.py "Card Assets/Enemy Cards.jpg"   auto .slice_out/enemy1 --rotate 270
+python tools/slice_cards.py "Card Assets/Enemy Cards 2.jpg" auto .slice_out/enemy2
+python tools/slice_cards.py "Card Assets/Civilians.jpg"     auto .slice_out/civ
 ```
 
 ## 3. Rename crops to card IDs and drop them in
@@ -72,7 +90,9 @@ ricardo, juana`
 `civ_0, civ_1a, civ_1b, civ_1c, civ_2a, civ_2b, civ_2c, civ_3`
 
 ### spy/ (1)
-`spy`
+`spy` — landscape like the Maquis, but its name banner sits top-left rather than centred, so it is easy
+to mistake for a portrait card when it comes off the slicer sideways. Turn the crop until the figure
+stands upright and "SPY" reads left-to-right.
 
 ## 4. Verify
 
