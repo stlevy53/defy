@@ -8,52 +8,31 @@ here under **Resolved**, so the screenshot and the reasoning remain findable.
 
 ## Open
 
-### Board renders small and text is hard to read — needs a UI scale setting, not fullscreen
+### A big window still doesn't pay off — the board is capped at 1260px
 
-**Deferred to the card-art pass**, since art is rendered at whatever size the tile is, so scale and
-art should be judged together. Found in the packaged `.exe` at v0.1.4.
+The last piece of the board-scale work (see **Resolved** below for the measurements, and note that the
+window-behaviour half of this item shipped in v0.1.5: the app now opens maximized and remembers its
+size and position).
 
-**Fullscreen / a bigger window is NOT the fix — measured, not assumed.** The board is capped
-independently of the window by `#root { max-width: 1260px }` (`src/index.css`). The Electron window
-opens at 1440×900 (`electron/main.cjs`), so ~180px is already wasted; maximized on a 1920 monitor the
-board still renders 1260px with the surplus spent on empty tabletop, and the text is no larger.
-See [`ux-backlog/board-scale-as-shipped.jpg`](./ux-backlog/board-scale-as-shipped.jpg).
+**Raise the `#root { max-width: 1260px }` cap and change the mission and hand grids so extra width
+makes cards *bigger* instead of adding empty columns.** They use `repeat(auto-fill, minmax(210px, 1fr))`,
+and `auto-fill` spends surplus width on more columns: measured at a 1920 window, removing the cap alone
+*shrank* the mission tile from 249px to 230px. Likely `auto-fit` plus a max on the track, or a fixed
+column count per breakpoint.
 
-**Removing the cap alone makes it slightly worse.** The mission row and hand use
-`repeat(auto-fill, minmax(210px, 1fr))`, and `auto-fill` spends surplus width on *more columns*
-rather than wider cards. Measured at a 1920 window: mission tile went from 249px (capped) to **230px**
-(uncapped), with the cards bunched at the left and a large empty gap.
-See [`ux-backlog/board-scale-cap-removed.jpg`](./ux-backlog/board-scale-cap-removed.jpg).
-
-**What works is UI zoom**, which scales text, cards, padding and the rail together and keeps the
-layout proportions identical. At 1.4× on the same 1920 window the mission tile measured 305px and
-everything was comfortably readable: [`ux-backlog/board-scale-zoom-140.jpg`](./ux-backlog/board-scale-zoom-140.jpg).
-Zoom (rather than bumping font sizes) is the right mechanism because every font size is already in
-`rem` while the layout widths are in `px` (the 1260px cap, the 178px rail, the 210px grid minimum) —
-scaling text alone would overflow containers that stayed put.
-
-**Suggested implementation, in order of payoff.**
-1. **UI scale setting** — a row in `ui/SettingsMenu.tsx` (already the intended home for options like
-   this) applying `document.documentElement.style.zoom` and persisting to `localStorage` alongside
-   the save data, plus Ctrl+= / Ctrl+− accelerators. Renderer-only: no preload or IPC, and it behaves
-   identically in the browser and the packaged `.exe`. Verify the fixed-position overlays (decision
-   modal, zoom overlay, toasts, flying cards) still position correctly under a non-1 zoom.
-2. **Let a big window pay off** — raise the `#root` cap and change those grids so extra width makes
-   cards bigger instead of adding empty columns. Compounds with zoom on a 2560-wide monitor.
-3. **Window behaviour** — `electron/main.cjs` has no maximize, no fullscreen, and doesn't remember
-   size or position, so every launch is 1440×900. Open maximized + persist window state; fullscreen
-   is then a nice-to-have rather than the fix.
-
-**Tradeoff to expect.** Higher zoom means more vertical scrolling (at 1.4× on 1920 the hand row
-starts to clip), which is why this should be a user-chosen scale rather than a fixed bump.
+Re-measure at 125% scale rather than 100%, since that is where players are likely to sit now, and on a
+maximized window rather than 1440×900. Worth judging after playtest feedback on the scale setting —
+whether players reach for a bigger window at all tells you how much this is worth.
 
 ---
 
-### Mission Eras are invisible in the UI — evaluate after real card art lands
+### Mission Eras are invisible in the UI — evaluate now that real card art has landed
 
-**Deferred on purpose.** Blocked on the card-art reshoot: how (or whether) to surface the Era
-depends on how the real card reads on screen at board size, which we can't judge from the themed
-frames. Do not implement before art is in.
+**Largely answered by the Board size setting** (see **Resolved**). The printed era subtitle ("Era 1:
+Re-invasion of Spain") is on every Mission image, and at 125–140% it reads at board size — so
+"**Nothing**" is now a real option and the cheapest one. What is left to decide is whether the era
+should be legible at 100% too, which is the only case an overlay chip would serve; a badge in the
+themed-frame branch is moot either way, since every Mission has art.
 
 **The rules are correct — this is presentation only.** Eras are not a mechanic. The rulebook
 mentions "Era" in exactly two places: the Mission card anatomy diagram, and setup step 3 ("Sort the
@@ -96,6 +75,64 @@ art lands than it does now — worth a look at the same time.
 ---
 
 ## Resolved
+
+### Board renders small and text is hard to read — needs a UI scale setting, not fullscreen
+
+**Found:** the packaged `.exe` at v0.1.4, and confirmed rather than relieved by the real card art that
+followed — an arted Mission tile is a photograph of a card at ~250px, so its printed era subtitle and
+effect text were a few pixels tall and unreadable without right-click zoom.
+
+**Fixed:** a **Board size** row in Settings — 100 / 110 / 125 / 140 / 160% — applying CSS `zoom` to
+the root element, persisted in `localStorage` under `defy.uiScale`, with Ctrl +, Ctrl − and Ctrl 0
+accelerators that work whether or not Settings is open (`src/ui/useUiScale.ts`). At 140% the printed
+mission title, era line and effect text all read at board size.
+
+**Fullscreen / a bigger window was NOT the fix — measured, not assumed.** The board is capped
+independently of the window by `#root { max-width: 1260px }` (`src/index.css`). The Electron window
+opens at 1440×900 (`electron/main.cjs`), so ~180px was already wasted; maximized on a 1920 monitor the
+board still rendered 1260px with the surplus spent on empty tabletop, and the text was no larger.
+See [`ux-backlog/board-scale-as-shipped.jpg`](./ux-backlog/board-scale-as-shipped.jpg).
+
+**Removing the cap alone made it slightly worse** — measured at a 1920 window, the mission tile went
+from 249px (capped) to 230px (uncapped), because `auto-fill` spends surplus width on more columns.
+See [`ux-backlog/board-scale-cap-removed.jpg`](./ux-backlog/board-scale-cap-removed.jpg), and the
+still-open entry above for the follow-up.
+
+**Why zoom rather than larger fonts.** Every font size is already in `rem` while the layout widths are
+in `px` (the 1260px cap, the 178px rail, the 210px grid minimum), so scaling text alone would overflow
+containers that stayed put. Zoom scales cards, type, padding and the rail together and keeps the
+proportions identical: [`ux-backlog/board-scale-zoom-140.jpg`](./ux-backlog/board-scale-zoom-140.jpg).
+
+**Three things worth knowing if you touch this.**
+- **The overlays needed no changes.** Under CSS `zoom`, `getBoundingClientRect()` returns *unzoomed*
+  layout pixels — the same coordinate space a `position: fixed` child is placed in — so the decision
+  modal, zoom overlay, toasts and flying cards all land correctly. Verified by placing a fixed probe
+  from a measured rect at 100/140/160%: zero offset at every scale. Do not "correct" flight
+  coordinates by the zoom factor; that breaks them.
+- **Hit-testing is the exception**, and uses *visual* coordinates (rect × zoom). Real mouse input is
+  unaffected, but any automation that clicks at rect-derived coordinates will miss at a non-100%
+  scale. The Tier-2 harness is safe because it clicks through the DOM (`el.click()`).
+- **Electron's application menu is now removed** (`electron/main.cjs`). It was hidden but still live,
+  and its default Ctrl +/−/0 accelerators would have driven Electron's own zoom on top of ours,
+  scaling the board twice per keypress. In a *browser* the accelerators still double up with the
+  browser's page zoom — dev-only, since the shipping target is the `.exe`.
+
+**Tradeoff, as predicted.** Higher scale means more vertical scrolling: measured on a 1497-wide window,
+the page grew 144px taller than the viewport at 100% and 897px at 140%. That is why this is a
+user-chosen scale rather than a fixed bump.
+
+**Right-click zoom was resized in the same pass**, since it is the fallback whenever a player wants the
+exact printed text: `.zoom-art` was a fixed `max-width: 560px`, and is now `min(96vw, 1050px)` by
+`min(90vh, 1050px)` — it grows with the window and stops at the 1050px source resolution, past which
+there is no more detail to show. Measured: 882×630 at the 1024×700 minimum window, 968×691 at 1366×768,
+and 1050×750 from ~1500px wide upward, against the old 560×400 everywhere. The dismiss hint is now
+absolutely positioned so it doesn't compete for the height a portrait card needs.
+
+**Also fixed here, because scale exposed it:** hover tooltips (`.tip::after/::before`) were laid out
+while hidden, so a 260px bubble on a chip near the window edge stretched the page's scrollable width —
+a horizontal scrollbar appeared at 125% and above. They are now `display: none` until hover (with
+`transition-behavior: allow-discrete` and `@starting-style` preserving the fade), which removes the
+horizontal overflow at every scale. The same latent bug would have appeared in any narrow window.
 
 ### Decision modal — order-number badge is clipped at the card corner
 

@@ -10,6 +10,18 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 _Work in progress toward the next version — add changes here as we make them, then stamp a version + date when we cut a release._
 
+---
+
+## v0.1.5 — 2026-08-12
+
+The real cards, at a size you can read.
+
+- **Real card art is in.** Every card now shows its actual printed face — all 24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians and the Spy — on the board, in your hand, in the choice window and in right-click zoom. The themed text frames it replaces remain as the fallback for any card without an image. The one thing still drawn as a plain chip is a face-down Enemy, since there's no photo of a card back yet.
+- **Board size** — a new setting under ⚙ Settings scales the whole table: 100%, 110%, 125%, 140% or 160%. At the larger sizes the printed card text — mission titles, era lines, effect text — reads without right-click zoom. **Ctrl +** and **Ctrl −** adjust it any time, **Ctrl 0** returns to 100%, and your choice is remembered between sessions. Bigger cards mean more scrolling, so pick what suits your screen.
+- **Right-click zoom is much bigger** — the enlarged card now grows to fit your window (up to the full resolution of the card photo) instead of a fixed size, so the printed text is far easier to read: roughly double the area on a 1080p screen, and still noticeably larger on a small laptop.
+- **The window remembers itself** — the app now opens maximized on first run and reopens at whatever size and position you left it, instead of a fixed 1440×900 every launch. Pairs with Board size: a larger board needs the extra room.
+- **Fix** — the Spy card is no longer sideways: it sits in your hand in landscape, matching the Maquis cards.
+- **Fix** — the board no longer scrolls sideways (a hidden tooltip was stretching the page).
 - **Fix** — in the decision window, the order-position badges ("1", "2", …) on the top row of cards are no longer clipped at their corner.
 
 ---

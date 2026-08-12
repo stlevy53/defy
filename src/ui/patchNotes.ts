@@ -11,6 +11,20 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.5',
+    date: '2026-08-12',
+    title: 'The real cards, at a size you can read',
+    changes: [
+      'Real card art is in — every card now shows its actual printed face: all 24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians and the Spy, on the board, in your hand, in the choice window and in right-click zoom. (A face-down Enemy is still a plain token; there’s no photo of a card back yet.)',
+      'Board size — under ⚙ Settings, scale the whole table to 100%, 110%, 125%, 140% or 160%. At the larger sizes the printed card text reads without right-click zoom. Ctrl + and Ctrl − adjust it any time, Ctrl 0 returns to 100%, and your choice is remembered.',
+      'Right-click zoom is much bigger — the enlarged card now grows to fit your window (up to the full resolution of the card photo) instead of a fixed size, so the printed text is far easier to read: roughly double the area on a 1080p screen.',
+      'The window now opens maximized and remembers its size and position, so a bigger board doesn’t mean more scrolling than it has to.',
+      'Fix — the Spy card is no longer sideways: it sits in your hand in landscape, matching the Maquis.',
+      'Fix — the board no longer scrolls sideways (a hidden tooltip was stretching the page).',
+      'Fix — in the choice window, the order badges (“1”, “2”, …) on the top row of cards are no longer clipped at the corner.',
+    ],
+  },
+  {
     version: '0.1.4',
     date: '2026-07-30',
     title: 'A card window for choices, and UI polish',
