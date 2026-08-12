@@ -620,43 +620,62 @@ button.order-item:hover { border-color: var(--accent); color: var(--ink); }
 .tip { position: relative; cursor: help; }
 /* Clickable candidate chips are still tooltip hosts, but should read as clickable, not "help". */
 button.chip.tip, button.order-item.tip { cursor: pointer; }
+/* Bubbles are taken out of layout while hidden, not merely made invisible: a 260px bubble hanging off
+   a chip near the window edge stretches the page's scrollable width, which shows up as a horizontal
+   scrollbar once a larger board size shrinks the layout viewport. `allow-discrete` plus
+   `@starting-style` keep the fade the visibility-based version had. */
 .tip::after {
   content: attr(data-tip);
+  display: none;
   position: absolute; left: 50%; bottom: calc(100% + 7px); transform: translateX(-50%);
   width: max-content; max-width: 260px; text-align: left; white-space: pre-line;
   background: #0e0b08; color: var(--ink); border: 1px solid var(--line);
   padding: 0.4rem 0.55rem; border-radius: 7px;
   font-size: 0.72rem; font-weight: 400; line-height: 1.35; letter-spacing: normal; text-transform: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; pointer-events: none; z-index: 80;
+  opacity: 0; transition: opacity 0.12s ease, display 0.12s allow-discrete; pointer-events: none; z-index: 80;
 }
 .tip::before {
-  content: ''; position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%);
+  content: ''; display: none;
+  position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%);
   border: 5px solid transparent; border-top-color: var(--line);
-  opacity: 0; visibility: hidden; transition: opacity 0.12s ease; z-index: 80;
+  opacity: 0; transition: opacity 0.12s ease, display 0.12s allow-discrete; z-index: 80;
 }
 .tip.below::after { top: calc(100% + 7px); bottom: auto; }
 .tip.below::before { top: calc(100% + 2px); bottom: auto; border-top-color: transparent; border-bottom-color: var(--line); }
-.tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
+.tip:hover::after, .tip:hover::before { display: block; opacity: 1; }
+@starting-style {
+  .tip:hover::after, .tip:hover::before { opacity: 0; }
+}
 
 /* Card zoom (right-click a card to read it enlarged) */
 .zoom-overlay {
   position: fixed; inset: 0; z-index: 100;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem;
-  padding: 2rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.25rem;
   background: rgba(8, 6, 4, 0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   cursor: zoom-out;
   animation: zoom-fade 0.12s ease;
 }
 @keyframes zoom-fade { from { opacity: 0; } to { opacity: 1; } }
-.zoom-inner { display: flex; align-items: center; justify-content: center; max-width: 92vw; max-height: 82vh; }
-.zoom-hint { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.02em; }
+.zoom-inner { display: flex; align-items: center; justify-content: center; max-width: 96vw; max-height: 90vh; }
+/* Floated over the backdrop rather than stacked under the card, so the card gets the full height —
+   which is the only room a portrait card (Enemies, Civilians) has left to grow into. */
+.zoom-hint {
+  position: absolute; bottom: 0.7rem; left: 0; right: 0; text-align: center;
+  color: var(--muted); font-size: 0.8rem; letter-spacing: 0.02em; pointer-events: none;
+}
+/* Sized off the window rather than a fixed width, so a bigger monitor shows a bigger card: the art
+   grows until it runs out of window (96vw / 90vh — whichever binds depends on the card's orientation,
+   landscape for Maquis/Mission/Spy and portrait for Enemies/Civilians) or reaches the 1050px source
+   resolution, past which there is no more detail to show and it would only go soft. On a 1080p window
+   that lands a landscape card at its native 1050×750, nearly double the old 560×400. */
 .zoom-art {
-  max-width: min(560px, 92vw); max-height: 82vh; width: auto; height: auto;
+  max-width: min(96vw, 1050px); max-height: min(90vh, 1050px); width: auto; height: auto;
   border-radius: 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
 }
 .zoom-card {
-  width: min(460px, 92vw); max-height: 82vh; overflow: auto;
+  width: min(598px, 96vw); max-height: 90vh; overflow: auto;
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px;
   padding: 1.2rem 1.4rem; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
 }
@@ -993,6 +1012,19 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .settings-seed { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.2rem 0.3rem 0.1rem; }
 .settings-seed-row { display: flex; gap: 0.5rem; align-items: center; }
 .settings-seed-row .seed-input { flex: 1; }
+/* Board size: preset steps, current one lit. Sits in the same column as the New/Save/Load items but
+   is a group rather than a single action, so it borrows their padding without their button chrome. */
+.settings-scale { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.2rem 0.3rem 0.1rem; }
+.scale-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.15rem 0; }
+.scale-opt {
+  flex: 1 1 auto; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  padding: 0.35rem 0.5rem; border-radius: 8px; color: var(--ink);
+  background: rgba(20, 15, 10, 0.5); border: 1px solid var(--line);
+  transition: border-color 0.1s, background 0.1s, transform 0.1s;
+}
+.scale-opt:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+.scale-opt.active { background: var(--accent-2); border-color: var(--accent-2); color: #241503; }
+
 .settings-status {
   margin: 0.9rem 0 0; padding: 0.5rem 0.7rem; border-radius: 8px; font-size: 0.84rem;
   border: 1px solid var(--line); background: var(--panel-2);

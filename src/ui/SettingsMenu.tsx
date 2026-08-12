@@ -1,9 +1,12 @@
-// Settings modal: opened by the cog in the top bar or the Escape key. For now it holds the three
-// game-management actions — New game, Save game, Load game — and is the natural future home for
-// sound/volume options. Save/load are thin wrappers over useGame's localStorage helpers.
+// Settings modal: opened by the cog in the top bar or the Escape key. Holds the three game-management
+// actions — New game, Save game, Load game — plus the board-size control, and is the natural future
+// home for sound/volume options. Save/load are thin wrappers over useGame's localStorage helpers;
+// board size is a thin wrapper over useUiScale.
 
 import { useState } from 'react'
 import type { SaveMeta, SaveResult, LoadResult } from './useGame'
+import { UI_SCALES } from './useUiScale'
+import type { UiScale } from './useUiScale'
 
 interface Props {
   onClose: () => void
@@ -14,6 +17,7 @@ interface Props {
   onLoad: () => LoadResult
   savedMeta: SaveMeta | null
   appVersion: string
+  ui: UiScale
 }
 
 /** Compact local date+time for the save's timestamp (e.g. "Jul 27, 2:14 PM"). */
@@ -32,7 +36,7 @@ function formatWhen(ts: number): string {
 
 type Status = { tone: 'ok' | 'warn' | 'err'; text: string }
 
-export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion }: Props) {
+export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion, ui }: Props) {
   const [status, setStatus] = useState<Status | null>(null)
   // Track the save locally so the Load button + description update the moment a save is written.
   const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
@@ -122,6 +126,26 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
             <span className="si-title">Load game</span>
             <span className="si-sub">{loadSub}</span>
           </button>
+          <div className="settings-scale">
+            <span className="si-title">Board size</span>
+            <span className="si-sub">
+              Scales the whole table — cards, text and the deck rail together. Ctrl&nbsp;+ and
+              Ctrl&nbsp;− adjust it any time; Ctrl&nbsp;0 returns to 100%.
+            </span>
+            <div className="scale-row" role="group" aria-label="Board size">
+              {UI_SCALES.map((s) => (
+                <button
+                  key={s}
+                  className={`scale-opt ${s === ui.scale ? 'active' : ''}`}
+                  onClick={() => ui.setScale(s)}
+                  aria-pressed={s === ui.scale}
+                >
+                  {Math.round(s * 100)}%
+                </button>
+              ))}
+            </div>
+            <span className="si-sub">Bigger cards mean more scrolling — pick what reads best.</span>
+          </div>
         </div>
 
         {status && <p className={`settings-status ${status.tone}`}>{status.text}</p>}

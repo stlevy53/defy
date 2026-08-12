@@ -304,6 +304,9 @@ function zoneOfUid(s: GameState, uid: string): string | null {
   return null
 }
 
+/** Measured coordinates need no correction for the board-size setting: CSS `zoom` on the root scales
+ *  the rendering, not the layout, so these rects and the flight overlay's fixed positioning are in
+ *  the same (unzoomed) CSS pixels. */
 function centerOf(el: Element | null): { x: number; y: number } | null {
   if (!el) return null
   const r = el.getBoundingClientRect()

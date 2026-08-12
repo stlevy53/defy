@@ -11,6 +11,7 @@ import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
 import { SettingsMenu } from './ui/SettingsMenu'
+import { useUiScale } from './ui/useUiScale'
 import { APP_VERSION } from './ui/patchNotes'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
 import type { Action, Decision, GameResult, GameState } from './engine'
@@ -44,8 +45,12 @@ export function App() {
     }
   }, [])
 
-  // Settings modal (New/Save/Load; sound options later). Opened by the cog or Escape.
+  // Settings modal (New/Save/Load, board size; sound options later). Opened by the cog or Escape.
   const [showSettings, setShowSettings] = useState(false)
+
+  // Player-chosen board size. Owned here (not in the modal) so the Ctrl +/-/0 accelerators work
+  // whether or not Settings is open, and so the scale survives closing it.
+  const ui = useUiScale()
 
   // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew and the
   // card zoom bind their own Escape handlers, so we don't also pop Settings while one of them is up.
@@ -220,6 +225,7 @@ export function App() {
           onLoad={loadGame}
           savedMeta={savedMeta}
           appVersion={APP_VERSION}
+          ui={ui}
         />
       )}
 
