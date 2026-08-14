@@ -277,6 +277,10 @@ const scoutFlipDiscard: EffectHandler = ({ state, responses }): Decision | void 
   }
 
   const flipped = responses[1]
+  // Commit the flip before asking which to discard so the board shows the faces.
+  // Idempotent: a later resume just sets faceUp again.
+  for (const e of slot.enemies) if (flipped.includes(e.uid)) e.faceUp = true
+
   if (responses.length === 2) {
     return {
       kind: 'selectCards',
@@ -288,8 +292,6 @@ const scoutFlipDiscard: EffectHandler = ({ state, responses }): Decision | void 
     }
   }
 
-  // terminal
-  for (const e of slot.enemies) if (flipped.includes(e.uid)) e.faceUp = true
   const di = slot.enemies.findIndex((e) => e.uid === responses[2][0])
   if (di !== -1) s.enemyDiscard.push(slot.enemies.splice(di, 1)[0])
 }

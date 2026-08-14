@@ -1,28 +1,19 @@
-# v0.1.6 — First-run coach (playtest drop)
+# Next — 2026-08-14 playtest feedback
 
-Spec: `docs/COACH_SPEC.md`. Audio plan (held): `docs/AUDIO_SPEC.md`.
+Logged in `docs/UX_BACKLOG.md`. Draft setup is in.
 
-## Plan
+## This session
 
-- [x] Review the six coach beats
-- [x] Confirm auto-show: first-ever only; v0.1.5 testers get What's New, not a forced tour
-- [x] Hold sound — document in `docs/AUDIO_SPEC.md`, do not build
+- [x] **Blocker:** Defeated-stamp overlay eats clicks on remaining Enemies
+- [x] **Bug:** Domingo/Pilar scout — flip Enemies before the discard prompt
+- [x] **UX:** Undo hover tip + coach copy + What's New note
+- [x] **Drag to play / rearrange:** grab a Maquis and drop it on Hidden or Revealed (clicks still work)
+- [x] **Feature:** optional draft-variant setup (offer at new game; Settings can turn it off)
 
-## Build
+## Out of this queue
 
-- [x] Coach overlay, launch helpers, Settings replay, scroll lock / re-measure
-- [x] Stamp v0.1.6 in `package.json`, `PATCH_NOTES.md`, `src/ui/patchNotes.ts`
-
-## Verify
-
-- [x] `tsc --noEmit`, `npm test` (153/153), `npm run build`, `npm run regress` unchanged (pre-stamp)
-- [x] Re-run tests after version stamp
-- [x] `npm run package` → `C:\Users\stephen.levy\GHRepos\defy_release\DEFY-Playtest-0.1.6.exe`
-
-## Out of this version
-
-Sound (see `docs/AUDIO_SPEC.md`), big-window board cap, era chips, face-down Enemy back, draft setup.
+Sound (`docs/AUDIO_SPEC.md`), big-window board cap, era chips, face-down Enemy back.
 
 ## Review
 
-Coach ships to the people already on v0.1.5. Version ticks to 0.1.6 so they see What's New pointing at Settings → How to play this table. First-ever launches get the tour. Sound stays on paper.
+Draft is the rulebook pair-split: twelve picks into Hidden vs Recruit, then spies and the starting hand. The leftover card flies to the Recruit pile. 165 tests pass.

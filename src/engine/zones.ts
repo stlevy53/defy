@@ -21,6 +21,7 @@ export function countCards(state: GameState): CardCounts {
     ...state.hidden.discard,
     ...state.recruit.deck,
     ...state.recruit.revealed,
+    ...(state.draftPool ?? []),
     ...removed,
   ]
   const spiesInZones = personCards.filter((c) => c.dataId === 'spy').length
@@ -54,6 +55,7 @@ export function assertConservation(state: GameState): void {
     ...state.hidden.discard.map((c) => c.uid),
     ...state.recruit.deck.map((c) => c.uid),
     ...state.recruit.revealed.map((c) => c.uid),
+    ...(state.draftPool ?? []).map((c) => c.uid),
     ...(state.removedFromGame ?? []).map((c) => c.uid),
     ...state.inPlay.map((c) => c.uid),
     ...state.missionRow.map((s) => s.uid),

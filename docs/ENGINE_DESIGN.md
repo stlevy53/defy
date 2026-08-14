@@ -72,15 +72,14 @@ Card conservation is an invariant: every instance created at setup lives in exac
 
 ```ts
 createGame(options: { seed: number; draft?: boolean }): GameState
-// NOTE: `draft` is not yet implemented (setup.ts is standard setup only). Drafting is
-// interactive (choose 1 of 2, twelve times), so it depends on the pendingDecision system —
-// scheduled as its own Phase 2 slice after the decision loop exists.
+// `draft: true` leaves 24 Maquis in draftPool and raises a selectCards pair (from: 'draft.pool')
+// until twelve picks; then shuffles each deck, mixes 3 Spies into Hidden, and draws 5.
 legalActions(state: GameState): Action[]              // what the UI may offer now
 applyAction(state: GameState, action: Action): GameState   // may set pendingDecision
 resolveDecision(state: GameState, response: DecisionResponse): GameState
 ```
 
-`Action` = player intents, e.g. `PlayMaquis{uid, side}`, `UseAction{uid}`, `ChooseMission{uid}`, `SpendAttackOn{targetUid}`, `AdvancePhase`, `EndResistance`, `Continue`. Every mutation goes through `applyAction`/`resolveDecision`; both return a fresh state (structural sharing via Immer — see decisions).
+`Action` = player intents, e.g. `PlayMaquis{uid, side}`, `MoveMaquis{uid, side}` (PLAN rearrange Hidden ↔ Revealed until a card action is used), `UseAction{uid}`, `ChooseMission{uid}`, `SpendAttackOn{targetUid}`, `AdvancePhase`, `EndResistance`, `Continue`. Every mutation goes through `applyAction`/`resolveDecision`; both return a fresh state (structural sharing via Immer — see decisions).
 
 ## 4. Effect system — the crux
 

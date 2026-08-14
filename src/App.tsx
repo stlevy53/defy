@@ -2,7 +2,7 @@
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { useGame, useReinforcements, useCardFlights, useLogToasts } from './ui/useGame'
 import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
@@ -10,9 +10,13 @@ import { DecisionModal } from './ui/DecisionModal'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
+import { DraftOffer } from './ui/DraftOffer'
 import { SettingsMenu } from './ui/SettingsMenu'
 import { Coach } from './ui/Coach'
 import { useUiScale } from './ui/useUiScale'
+import { useCardSlide } from './ui/useCardSlide'
+import type { CardSlide } from './ui/useCardSlide'
+import { maquisArt } from './ui/cardArt'
 import { APP_VERSION } from './ui/patchNotes'
 import {
   WHATS_NEW_SEEN_KEY,
@@ -21,7 +25,9 @@ import {
   shouldAutoShowWhatsNew,
   markCoachFinished,
 } from './ui/coachLaunch'
+import { isDraftPromptEnabled } from './ui/draftPref'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
+import { isDraftDecision, isDrafting } from './engine'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 /** Stable empty array so a "no board selection" render doesn't churn child props. */
@@ -31,17 +37,20 @@ export function App() {
   const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
     useGame()
 
-  // First launch of a build: What's New. When it closes, the coach starts if it has never been
-  // finished. Coach on launch only when What's New is not in the way (e.g. they dismissed notes
-  // last time but never finished the tour).
-  const [showCoach, setShowCoach] = useState(() => shouldAutoShowCoach(APP_VERSION))
+  // First launch of a build: What's New. When it closes, the draft offer (if enabled), then the
+  // coach if it has never been finished. Coach on launch only when nothing else is in the way.
+  const [showCoach, setShowCoach] = useState(() =>
+    isDraftPromptEnabled() ? false : shouldAutoShowCoach(APP_VERSION),
+  )
   const closeCoach = useCallback(() => {
     setShowCoach(false)
     markCoachFinished(APP_VERSION)
   }, [])
 
   // Patch-notes modal: greets a playtester once per build (not every launch), including a first-ever
-  // launch. Reopenable from the version button. Closing it starts the coach when the tour is still due.
+  // launch. Reopenable from the version button. Closing the auto-shown one continues the launch
+  // sequence (draft offer, then coach). Reopening from the version button just closes.
+  const autoWhatsNew = useRef(shouldAutoShowWhatsNew(APP_VERSION))
   const [showWhatsNew, setShowWhatsNew] = useState(() => shouldAutoShowWhatsNew(APP_VERSION))
   const closeWhatsNew = useCallback(() => {
     setShowWhatsNew(false)
@@ -50,8 +59,44 @@ export function App() {
     } catch {
       /* storage unavailable — just close for this session */
     }
+    if (!autoWhatsNew.current) return
+    autoWhatsNew.current = false
+    if (isDraftPromptEnabled()) setShowDraftOffer(true)
+    else if (!hasCompletedCoach()) setShowCoach(true)
+  }, [])
+
+  const [showDraftOffer, setShowDraftOffer] = useState(
+    () => isDraftPromptEnabled() && !shouldAutoShowWhatsNew(APP_VERSION),
+  )
+  const pendingStartSeed = useRef<number | undefined>(undefined)
+  const pendingCoachAfterDraft = useRef(false)
+
+  const maybeCoach = useCallback(() => {
     if (!hasCompletedCoach()) setShowCoach(true)
   }, [])
+
+  const startGame = useCallback(
+    (draft: boolean) => {
+      setShowDraftOffer(false)
+      pendingCoachAfterDraft.current = draft
+      newGame(pendingStartSeed.current, draft)
+      pendingStartSeed.current = undefined
+      if (!draft) maybeCoach()
+    },
+    [newGame, maybeCoach],
+  )
+
+  const requestNewGame = useCallback(
+    (seed?: number) => {
+      pendingStartSeed.current = seed
+      if (isDraftPromptEnabled()) setShowDraftOffer(true)
+      else {
+        pendingCoachAfterDraft.current = false
+        newGame(seed)
+      }
+    },
+    [newGame],
+  )
 
   // Settings modal (New/Save/Load, board size; sound options later). Opened by the cog or Escape.
   const [showSettings, setShowSettings] = useState(false)
@@ -73,13 +118,15 @@ export function App() {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return
       if (showWhatsNew) return
+      if (showDraftOffer) return
       if (showCoach) return
       if (typeof document !== 'undefined' && document.querySelector('.zoom-overlay')) return
+      if (typeof document !== 'undefined' && document.body.classList.contains('sliding-card')) return
       setShowSettings(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [showSettings, showWhatsNew, showCoach])
+  }, [showSettings, showWhatsNew, showDraftOffer, showCoach])
 
   // Dev/preview aid: append `?preview=<state>` to the URL to see any end-of-game overlay without
   // reaching it in play — useful for iterating on the animations. Values: loss, draw, minor,
@@ -92,7 +139,7 @@ export function App() {
       url.searchParams.delete('preview')
       window.history.replaceState({}, '', url)
     }
-    newGame()
+    requestNewGame()
   }
 
   // What end-of-game overlay to show: a preview override wins, else the real game result.
@@ -104,6 +151,16 @@ export function App() {
   // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
   const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
 
+  useEffect(() => {
+    if (isDrafting(state)) pendingCoachAfterDraft.current = true
+  }, [state])
+  useEffect(() => {
+    if (!pendingCoachAfterDraft.current) return
+    if (isDrafting(state) || flights.length > 0) return
+    pendingCoachAfterDraft.current = false
+    maybeCoach()
+  }, [state, flights.length, maybeCoach])
+
   // Fresh log lines from the latest move, surfaced as transient toasts (so the player sees what an
   // action did without opening the Log).
   const { toasts, dismiss: dismissToast } = useLogToasts(state, gameId, step)
@@ -112,6 +169,23 @@ export function App() {
 
   const canPlay = (acts: Action[], uid: string, side: 'hidden' | 'revealed') =>
     acts.some((a) => a.type === 'PlayMaquis' && a.uid === uid && a.side === side)
+
+  const canMoveTo = (uid: string, side: 'hidden' | 'revealed') =>
+    actions.some((a) => a.type === 'MoveMaquis' && a.uid === uid && a.side === side)
+
+  const { slide, beginPlay, beginMove } = useCardSlide({
+    scale: ui.scale,
+    canPlay: (uid, side) => canPlay(actions, uid, side),
+    canMove: canMoveTo,
+    onPlay: (uid, side) => dispatch({ type: 'PlayMaquis', uid, side }),
+    onMove: (uid, side) => dispatch({ type: 'MoveMaquis', uid, side }),
+  })
+
+  const dropOk = (side: 'hidden' | 'revealed') => {
+    if (!slide || slide.over !== side) return false
+    if (slide.kind === 'play') return canPlay(actions, slide.uid, side)
+    return slide.from !== side && canMoveTo(slide.uid, side)
+  }
 
   const canChoose = (acts: Action[], uid: string) =>
     acts.some((a) => a.type === 'ChooseMission' && a.uid === uid)
@@ -153,7 +227,11 @@ export function App() {
 
   // Off-board decisions (Revealed-pile pick, deck peeks, reorder, option choices) open a full-card
   // modal instead of the inline chip list; board-anchored picks stay in the tile/on the board.
-  const modalDecision = decisionUsesModal(state, state.pendingDecision) ? state.pendingDecision : null
+  const modalDecision =
+    decisionUsesModal(state, state.pendingDecision) &&
+    !(isDraftDecision(state.pendingDecision) && flights.length > 0)
+      ? state.pendingDecision
+      : null
 
   // Every player choice — a pending decision, the phase-level Turn buttons, or an error — lives in
   // one place: the right half of the guidance tile (see PhaseGuide), so the player never hunts for it.
@@ -204,9 +282,11 @@ export function App() {
           )}
         </div>
         <div className="controls" data-coach="controls">
-          <button className="ghost" onClick={undo} disabled={!canUndo}>
-            Undo
-          </button>
+          <Tip below text="Takes back the last move. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
+            <button className="ghost" onClick={undo} disabled={!canUndo}>
+              Undo
+            </button>
+          </Tip>
           <Tip below text="What’s new in this build">
             <button className="ghost" onClick={() => setShowWhatsNew(true)} aria-label="What’s new">
               v{APP_VERSION}
@@ -225,13 +305,17 @@ export function App() {
 
       {showWhatsNew && <WhatsNew onClose={closeWhatsNew} />}
 
-      {showCoach && <Coach scale={ui.scale} onClose={closeCoach} />}
+      {showDraftOffer && !showWhatsNew && (
+        <DraftOffer onDraft={() => startGame(true)} onSkip={() => startGame(false)} />
+      )}
+
+      {showCoach && !showWhatsNew && !showDraftOffer && <Coach scale={ui.scale} onClose={closeCoach} />}
 
       {showSettings && (
         <SettingsMenu
           onClose={() => setShowSettings(false)}
-          onNewGame={() => newGame()}
-          onPlaySeed={(s) => newGame(s)}
+          onNewGame={() => requestNewGame()}
+          onPlaySeed={(s) => requestNewGame(s)}
           onSave={saveGame}
           onLoad={loadGame}
           savedMeta={savedMeta}
@@ -244,10 +328,14 @@ export function App() {
         />
       )}
 
-      {!showCoach && shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
-      {!showCoach && shown?.outcome === 'win' && (
+      {!showCoach && !showDraftOffer && shown?.outcome === 'loss' && (
+        <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />
+      )}
+      {!showCoach && !showDraftOffer && shown?.outcome === 'win' && (
         <WinOverlay tier={shown.tier} points={shown.points} onPlayAgain={playAgain} />
       )}
+
+      {slide && <SlidingCard slide={slide} />}
 
       {flights.length > 0 && (
         <div className="flights" aria-hidden="true">
@@ -297,6 +385,10 @@ export function App() {
           state={state}
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+          onMove={(uid, dest) => dispatch({ type: 'MoveMaquis', uid, side: dest })}
+          onSlideStart={(e, uid, dataId, from) => beginMove(e, uid, dataId, from)}
+          slidingUid={slide?.uid}
+          dropOk={dropOk('hidden')}
           pickTargets={pickTargets}
           onPick={onPick}
         />
@@ -307,6 +399,10 @@ export function App() {
           state={state}
           actions={actions}
           onUse={(uid) => dispatch({ type: 'UseAction', uid })}
+          onMove={(uid, dest) => dispatch({ type: 'MoveMaquis', uid, side: dest })}
+          onSlideStart={(e, uid, dataId, from) => beginMove(e, uid, dataId, from)}
+          slidingUid={slide?.uid}
+          dropOk={dropOk('revealed')}
           pickTargets={pickTargets}
           onPick={onPick}
         />
@@ -327,6 +423,8 @@ export function App() {
               canPlayHidden={canPlay(actions, c.uid, 'hidden')}
               canPlayRevealed={canPlay(actions, c.uid, 'revealed')}
               onPlay={(uid, side) => dispatch({ type: 'PlayMaquis', uid, side })}
+              onSlideStart={(e) => beginPlay(e, c.uid, c.dataId)}
+              sliding={slide?.uid === c.uid}
               pickable={pickTargets.includes(c.uid)}
               onPick={onPick}
             />
@@ -440,6 +538,10 @@ function Zone({
   state,
   actions,
   onUse,
+  onMove,
+  onSlideStart,
+  slidingUid,
+  dropOk,
   pickTargets,
   onPick,
 }: {
@@ -449,15 +551,20 @@ function Zone({
   state: GameState
   actions: Action[]
   onUse: (uid: string) => void
+  onMove: (uid: string, side: 'hidden' | 'revealed') => void
+  onSlideStart: (e: ReactPointerEvent, uid: string, dataId: string, from: 'hidden' | 'revealed') => void
+  slidingUid?: string
+  dropOk?: boolean
   pickTargets: string[]
   onPick: (uid: string) => void
 }) {
   return (
-    <div className="zone">
+    <div className={`zone${dropOk ? ' drop-ok' : ''}`} data-drop-side={side}>
       <h4>{title}</h4>
       <div className="cards">
         {cards.map((m) => {
           const canUse = actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)
+          const moveTo = actions.find((a) => a.type === 'MoveMaquis' && a.uid === m.uid)
           return (
             <Card
               key={m.uid}
@@ -467,6 +574,10 @@ function Zone({
               side={side}
               canUse={canUse}
               onUse={() => onUse(m.uid)}
+              canMove={!!moveTo}
+              onMove={moveTo && moveTo.type === 'MoveMaquis' ? () => onMove(m.uid, moveTo.side) : undefined}
+              onSlideStart={(e) => onSlideStart(e, m.uid, m.dataId, side)}
+              sliding={slidingUid === m.uid}
               pickable={pickTargets.includes(m.uid)}
               onPick={onPick}
               attackBonus={m.attackBonus}
@@ -538,6 +649,29 @@ function Piles({ state }: { state: GameState }) {
         </div>
       ))}
     </aside>
+  )
+}
+
+/** A card token that follows the pointer while the player slides a Maquis onto Hidden or Revealed. */
+function SlidingCard({ slide }: { slide: CardSlide }) {
+  const art = maquisArt(slide.dataId)
+  return (
+    <div
+      className="sliding-ghost"
+      style={{
+        left: slide.x - slide.width / 2,
+        top: slide.y - slide.height / 2,
+        width: slide.width,
+        height: slide.height,
+      }}
+      aria-hidden="true"
+    >
+      {art ? (
+        <img src={art} alt="" draggable={false} />
+      ) : (
+        <span>{nameOfMaquis(slide.dataId)}</span>
+      )}
+    </div>
   )
 }
 

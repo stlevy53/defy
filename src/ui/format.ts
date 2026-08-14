@@ -4,6 +4,7 @@
 import { maquis, missions, enemyTypes, civilians } from '../data'
 import type { ActionType } from '../types'
 import type { Action, EnemyInstance, GameState, MissionSlot } from '../engine'
+import { isDrafting } from '../engine'
 
 const maquisName = new Map(maquis.map((m) => [m.id, m.name]))
 const maquisCard = new Map(maquis.map((m) => [m.id, m]))
@@ -85,6 +86,7 @@ function findCardDataId(state: GameState, uid: string): string | undefined {
     ...state.hidden.discard,
     ...state.recruit.deck,
     ...state.recruit.revealed,
+    ...(state.draftPool ?? []),
     ...state.defeatedMissions,
     ...state.removedFromGame,
     ...state.missionDeck,
@@ -177,6 +179,10 @@ export function actionLabel(state: GameState, action: Action): string {
       const name = nameOfMaquis(findCardDataId(state, action.uid) ?? action.uid)
       return `Play ${name} — ${action.side}`
     }
+    case 'MoveMaquis': {
+      const name = nameOfMaquis(state.inPlay.find((m) => m.uid === action.uid)?.dataId ?? action.uid)
+      return `Move ${name} — ${action.side}`
+    }
     case 'UseAction': {
       const name = nameOfMaquis(state.inPlay.find((m) => m.uid === action.uid)?.dataId ?? action.uid)
       return `Use ${name}'s action`
@@ -237,20 +243,41 @@ const canDo = (actions: Action[], t: Action['type']): boolean => actions.some((a
  * once the mandatory play-out is complete, which distinguishes the play-out from the spend step.
  */
 export function guidanceFor(state: GameState, actions: Action[]): Guidance | null {
+  if (isDrafting(state)) {
+    const pick = state.hidden.deck.length + 1
+    return {
+      phase: 'PLAN',
+      goal: 'Draft your Maquis.',
+      now: `Click the Maquis you want in your Hidden deck (${pick} of 12). The other goes to Recruit.`,
+      steps: [
+        { text: 'Click one of the two cards for Hidden.', active: true },
+        { text: 'The other card is added to Recruit.' },
+      ],
+    }
+  }
   switch (state.phase) {
     case 'PLAN': {
       const played = state.inPlay.length > 0
       const canUseAction = canDo(actions, 'UseAction')
+      const canMove = canDo(actions, 'MoveMaquis')
       return {
         phase: 'PLAN',
         goal: 'Set up your attack.',
         now: !played
-          ? 'Play Maquis from your hand by clicking a side — Hidden (left) or Revealed (right).'
-          : canUseAction
-            ? "Use a card's action by clicking its highlighted action, or choose a Mission to attack."
-            : 'Play or use more cards, or click a Mission to attack — choosing ends PLAN.',
+          ? 'Play Maquis from your hand — click a side, or drag the card onto Hidden or Revealed.'
+          : canMove
+            ? canUseAction
+              ? 'Drag a played Maquis to the other section (or click its dimmed half) until you use an action, use a PLAN action, or click a Mission to attack.'
+              : 'Drag a played Maquis to the other section (or click its dimmed half), play more, or click a Mission to attack.'
+            : canUseAction
+              ? "Use a card's action by clicking its highlighted action, or choose a Mission to attack."
+              : 'Play or use more cards, or click a Mission to attack — choosing ends PLAN.',
         steps: [
-          { text: 'Play Maquis — click the Hidden (left) or Revealed (right) side.', active: canDo(actions, 'PlayMaquis') },
+          { text: 'Play Maquis — click Hidden/Revealed, or drag the card onto that section.', active: canDo(actions, 'PlayMaquis') },
+          {
+            text: 'Switch a played Maquis — drag it to the other section, or click the dimmed half. Locks after you use an action.',
+            active: canMove,
+          },
           { text: 'Optionally use PLAN card actions — click the action on a played Maquis.', active: true },
           { text: 'Choose one Mission — click the Mission card to attack it. (Ends PLAN)', active: canDo(actions, 'ChooseMission') },
         ],

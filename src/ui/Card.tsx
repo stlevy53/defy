@@ -4,7 +4,7 @@
 // file to change: swap the text bodies below for <img> faces (keeping the same outer wrappers +
 // state classes for selection/defeat/face-down overlays) and the rest of the UI is untouched.
 
-import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
+import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
 import { maquisArt, enemyArt, enemyBackArt, missionArt, spyArt } from './cardArt'
@@ -24,6 +24,9 @@ export type CardFace =
       /** True when this card is a candidate for the pending decision — click it to answer. */
       pickable?: boolean
       onPick?: (uid: string) => void
+      /** Grab-to-slide onto Hidden / Revealed. Omitted for Spies and decision picks. */
+      onSlideStart?: (e: PointerEvent) => void
+      sliding?: boolean
     }
   | {
       kind: 'maquisPlayed'
@@ -32,6 +35,13 @@ export type CardFace =
       side: Side
       canUse?: boolean
       onUse?: () => void
+      /** PLAN rearrange: click the dimmed half to move this card to the other play area. */
+      canMove?: boolean
+      onMove?: () => void
+      /** Grab-to-slide onto the other play area. */
+      onSlideStart?: (e: PointerEvent) => void
+      /** Dim the source card while it is being slid. */
+      sliding?: boolean
       pickable?: boolean
       onPick?: (uid: string) => void
       /** Live value of a count-based ATTACK action (e.g. Abel hidden's +1/revealed Maquis), or null. */
@@ -73,6 +83,8 @@ export function Card(face: CardFace) {
           onPlay={face.onPlay}
           pickable={face.pickable}
           onPick={face.onPick}
+          onSlideStart={face.onSlideStart}
+          sliding={face.sliding}
         />
       )
     case 'maquisPlayed':
@@ -83,6 +95,10 @@ export function Card(face: CardFace) {
           side={face.side}
           canUse={face.canUse}
           onUse={face.onUse}
+          canMove={face.canMove}
+          onMove={face.onMove}
+          onSlideStart={face.onSlideStart}
+          sliding={face.sliding}
           pickable={face.pickable}
           onPick={face.onPick}
           liveBonus={face.liveBonus}
@@ -118,6 +134,8 @@ function MaquisHandFace({
   onPlay,
   pickable,
   onPick,
+  onSlideStart,
+  sliding,
 }: {
   dataId: string
   uid: string
@@ -126,6 +144,8 @@ function MaquisHandFace({
   onPlay: (uid: string, side: Side) => void
   pickable?: boolean
   onPick?: (uid: string) => void
+  onSlideStart?: (e: PointerEvent) => void
+  sliding?: boolean
 }) {
   const zoom = useMaquisZoom(dataId)
   if (dataId === 'spy') {
@@ -150,15 +170,18 @@ function MaquisHandFace({
   const name = nameOfMaquis(dataId)
   const pick = pickable && onPick ? () => onPick(uid) : null
   const art = maquisArt(dataId)
+  const canSlide = !pick && !!onSlideStart && (canPlayHidden || canPlayRevealed)
 
   // Real card art: the image already carries the name + both Hidden/Revealed halves, so we just
   // overlay two invisible "play this side" hotspots over the left (Hidden) and right (Revealed) halves.
   if (art) {
     return (
       <div
-        className={`card hand-card has-art ${pick ? 'pickable pick-target' : ''}`}
+        className={`card hand-card has-art ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`}
         onClick={pick ?? undefined}
         onContextMenu={zoom}
+        onPointerDown={canSlide ? onSlideStart : undefined}
+        onDragStart={(e) => e.preventDefault()}
         role={pick ? 'button' : undefined}
         tabIndex={pick ? 0 : undefined}
         title={pick ? `Select ${name}` : undefined}
@@ -192,9 +215,11 @@ function MaquisHandFace({
 
   return (
     <div
-      className={`card hand-card mcard ${pick ? 'pickable pick-target' : ''}`}
+      className={`card hand-card mcard ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`}
       onClick={pick ?? undefined}
       onContextMenu={zoom}
+      onPointerDown={canSlide ? onSlideStart : undefined}
+      onDragStart={(e) => e.preventDefault()}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
       title={pick ? `Select ${name}` : undefined}
@@ -264,6 +289,10 @@ function MaquisPlayedFace({
   side,
   canUse,
   onUse,
+  canMove,
+  onMove,
+  onSlideStart,
+  sliding,
   pickable,
   onPick,
   liveBonus,
@@ -274,6 +303,10 @@ function MaquisPlayedFace({
   side: Side
   canUse?: boolean
   onUse?: () => void
+  canMove?: boolean
+  onMove?: () => void
+  onSlideStart?: (e: PointerEvent) => void
+  sliding?: boolean
   pickable?: boolean
   onPick?: (uid: string) => void
   liveBonus?: number | null
@@ -290,59 +323,92 @@ function MaquisPlayedFace({
   const baseAttack = maquisAttack(dataId, side)
   const bonus = attackBonus ?? 0
   const totalAttack = baseAttack + bonus
+  const otherSide: Side = side === 'hidden' ? 'revealed' : 'hidden'
+  const dimSide = side === 'hidden' ? 'right' : 'left'
+  const move = canMove && onMove && !pick ? onMove : null
+  const otherLabel = otherSide === 'hidden' ? 'Hidden' : 'Revealed'
+  const canSlide = !pick && !!onSlideStart && !!canMove
+  const slideCls = `${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`
 
-  // Real card art: show the whole card and dim the half that isn't in play, so the active side reads
-  // clearly. The action fires from an overlaid "Use" ribbon; the live count-bonus sits in the corner.
-  if (art) {
-    const dimSide = side === 'hidden' ? 'right' : 'left'
-    return (
-      <div
-        className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''}`}
-        onClick={pick ?? undefined}
-        onContextMenu={zoom}
-        role={pick ? 'button' : undefined}
-        tabIndex={pick ? 0 : undefined}
-        title={pick ? `Select ${name}` : undefined}
-        onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+  const dim =
+    move ? (
+      <button
+        type="button"
+        className={`side-dim ${dimSide} moveable`}
+        onClick={(e) => {
+          e.stopPropagation()
+          move()
+        }}
+        title={`Move ${name} to ${otherLabel}`}
       >
-        {pick && <div className="click-hint">Click to select</div>}
-        <img className="card-art" src={art} alt={`${name} — ${side}`} draggable={false} />
-        <div className={`side-dim ${dimSide}`} aria-hidden="true" />
-        <span className={`side-badge ${side}`}>{side}</span>
-        {bonus > 0 && (
-          <Tip text={`Attack ${baseAttack} +${bonus} from this card's action = ${totalAttack}.`}>
-            <span className="attack-gain-badge">⚔ {totalAttack} (+{bonus})</span>
-          </Tip>
-        )}
-        {action && canUse && onUse && (
-          <button type="button" className="use-ribbon" onClick={onUse} title={`Use ${name}'s action`}>
-            {action.type} ▸ use
-          </button>
-        )}
-        {liveBonus != null && (
-          <Tip text="This action's current value — it locks in the moment you use it, so fire it after playing your other Maquis.">
-            <span className="action-live art">⚔ +{liveBonus}</span>
-          </Tip>
-        )}
+        <span className="move-label">Move {otherLabel}</span>
+      </button>
+    ) : (
+      <div className={`side-dim ${dimSide}`} aria-hidden="true" />
+    )
+
+  // Real card art: show the whole card and dim the half that isn't in play. Use sits *under* the
+  // card so the printed name and action text stay readable. The zone title already says Hidden /
+  // Revealed, so there is no side badge on the face.
+  if (art) {
+    const useBtn =
+      action && canUse && onUse ? (
+        <button
+          type="button"
+          className="use-under"
+          onClick={onUse}
+          onPointerDown={(e) => e.stopPropagation()}
+          title={`Use ${name}'s ${action.type} action`}
+        >
+          Use · {action.type}
+        </button>
+      ) : null
+    return (
+      <div className={`played-wrap ${sliding ? 'is-sliding' : ''}`}>
+        <div
+          className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''}`}
+          onClick={pick ?? undefined}
+          onContextMenu={zoom}
+          onPointerDown={canSlide ? onSlideStart : undefined}
+          onDragStart={(e) => e.preventDefault()}
+          role={pick ? 'button' : undefined}
+          tabIndex={pick ? 0 : undefined}
+          title={pick ? `Select ${name}` : undefined}
+          onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
+        >
+          {pick && <div className="click-hint">Click to select</div>}
+          <img className="card-art" src={art} alt={`${name} — ${side}`} draggable={false} />
+          {dim}
+          {bonus > 0 && (
+            <Tip text={`Attack ${baseAttack} +${bonus} from this card's action = ${totalAttack}.`}>
+              <span className="attack-gain-badge">⚔ {totalAttack} (+{bonus})</span>
+            </Tip>
+          )}
+          {liveBonus != null && (
+            <Tip text="This action's current value — it locks in the moment you use it, so fire it after playing your other Maquis.">
+              <span className="action-live art">⚔ +{liveBonus}</span>
+            </Tip>
+          )}
+        </div>
+        {useBtn}
       </div>
     )
   }
 
   return (
     <div
-      className={`card played mcard ${side} ${pick ? 'pickable pick-target' : ''}`}
+      className={`card played mcard ${side} ${pick ? 'pickable pick-target' : ''} ${slideCls}`}
       onClick={pick ?? undefined}
       onContextMenu={zoom}
+      onPointerDown={canSlide ? onSlideStart : undefined}
+      onDragStart={(e) => e.preventDefault()}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
       title={pick ? `Select ${name}` : undefined}
       onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
     >
       {pick && <div className="click-hint">Click to select</div>}
-      <div className="mcard-banner">
-        {name}
-        <span className="banner-side">{side}</span>
-      </div>
+      <div className="mcard-banner">{name}</div>
       <div className={`portrait ${side}`}>
         <Tip
           text={
@@ -358,12 +424,18 @@ function MaquisPlayedFace({
         </Tip>
         <span className="portrait-monogram">{monogram}</span>
       </div>
+      {move && (
+        <button type="button" className="move-side" onClick={move} title={`Move ${name} to ${otherLabel}`}>
+          Move to {otherLabel}
+        </button>
+      )}
       {action &&
         (canUse && onUse ? (
           <button
             type="button"
             className="card-action usable"
             onClick={onUse}
+            onPointerDown={(e) => e.stopPropagation()}
             title={`Use ${nameOfMaquis(dataId)}'s action`}
           >
             <span className="action-type">{action.type} ▸ use</span>

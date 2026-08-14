@@ -9,6 +9,7 @@ import {
   markCoachFinished,
 } from './coachLaunch'
 import type { StorageLike } from './coachLaunch'
+import { isDraftPromptEnabled, setDraftPromptEnabled } from './draftPref'
 
 function mem(init: Record<string, string> = {}): StorageLike {
   const m = new Map(Object.entries(init))
@@ -59,5 +60,19 @@ describe('coach launch states', () => {
     expect(s.getItem(WHATS_NEW_SEEN_KEY)).toBe('0.1.6')
     expect(shouldAutoShowCoach('0.1.6', s)).toBe(false)
     expect(shouldAutoShowWhatsNew('0.1.6', s)).toBe(false)
+  })
+})
+
+describe('draft prompt preference', () => {
+  it('defaults to on', () => {
+    expect(isDraftPromptEnabled(mem())).toBe(true)
+  })
+
+  it('can be turned off and back on', () => {
+    const s = mem()
+    setDraftPromptEnabled(false, s)
+    expect(isDraftPromptEnabled(s)).toBe(false)
+    setDraftPromptEnabled(true, s)
+    expect(isDraftPromptEnabled(s)).toBe(true)
   })
 })

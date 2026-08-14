@@ -8,9 +8,22 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## Unreleased
 
-- **Fix** — a first-time launch now shows What’s New, then starts the table tour automatically when that window closes. (v0.1.6 showed What’s New and then dropped you on the board.)
-
 _Work in progress toward the next version — add changes here as we make them, then stamp a version + date when we cut a release._
+
+---
+
+## v0.1.7 — 2026-08-14
+
+Draft your Maquis, and a clearer table.
+
+- **Draft setup** — a new game asks whether to draft your Maquis (the rulebook’s recommended start) or skip into a random deal. Draft shows two cards at a time: click the one for Hidden; the other flies to Recruit. Twelve picks, then you play. The prompt stays on later games; turn it off under ⚙ Settings → Draft setup. A first-time player still gets What’s New, then this prompt, then the table tour if they skip (or after the draft if they don’t).
+- **Played Maquis** — Hidden / Revealed pills on the card face are gone (the section titles already say that). The Use control sits under the card as a small button, so it no longer covers the printed name or action text.
+- **Fix** — a first-time launch now shows What’s New, then starts the table tour automatically when that window closes. (v0.1.6 showed What’s New and then dropped you on the board.)
+- **Fix** — after you defeat a Mission, you can still click the Enemies left on it (Anastasio’s discard, leftover Attack Strength, and the rest). The Defeated stamp no longer sits on top of those clicks.
+- **Fix** — Domingo and Pilar’s PLAN scout now flips the Enemies face-up *before* asking which one to discard, so you can see what you’re choosing.
+- **PLAN rearrange** — drag a played Maquis onto Hidden or Revealed to move it, or click the dimmed half. You can do this to any card you’ve already played, without undoing later plays. It locks as soon as anyone uses a card action.
+- **Drag to play** — grab a card from your hand and slide it onto Hidden or Revealed. Clicking a half still works if you prefer.
+- **Undo** — the Undo button in the top bar takes back the last play. Hover it for a reminder. (It was always there; returning players who skipped the table tour often missed it.)
 
 ---
 

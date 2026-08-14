@@ -26,6 +26,8 @@ function answer(state: GameState): string[] {
 
 /** Pick an action that drives toward an ending (prefer to end the resistance when possible). */
 function choose(actions: Action[]): Action {
+  const pool = actions.filter((a) => a.type !== 'MoveMaquis')
+  const from = pool.length ? pool : actions
   const priority: Action['type'][] = [
     'EndResistance',
     'AdvancePhase',
@@ -36,10 +38,10 @@ function choose(actions: Action[]): Action {
     'Continue',
   ]
   for (const t of priority) {
-    const a = actions.find((x) => x.type === t)
+    const a = from.find((x) => x.type === t)
     if (a) return a
   }
-  return actions[0]
+  return from[0]
 }
 
 describe('full-game playthrough (UI path)', () => {
@@ -53,6 +55,25 @@ describe('full-game playthrough (UI path)', () => {
         } else {
           const acts = legalActions(state)
           expect(acts.length).toBeGreaterThan(0) // never a dead end before GAME_OVER
+          state = applyAction(state, choose(acts))
+        }
+        assertConservation(state)
+      }
+      expect(state.result).not.toBeNull()
+      expect(state.phase).toBe('GAME_OVER')
+    }
+  })
+
+  it('draft setup then a full game still reaches a result', () => {
+    for (let seed = 1; seed <= 8; seed++) {
+      let state = createGame({ seed, draft: true })
+      let steps = 0
+      while (state.result === null && steps++ < 400) {
+        if (state.pendingDecision) {
+          state = resolveDecision(state, { selection: answer(state) })
+        } else {
+          const acts = legalActions(state)
+          expect(acts.length).toBeGreaterThan(0)
           state = applyAction(state, choose(acts))
         }
         assertConservation(state)

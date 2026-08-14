@@ -1,6 +1,6 @@
 // First-run coach: launch-state helpers and beat copy. Persistence lives in localStorage
 // alongside What's New (`defy.whatsNewSeen`). First launch of a build: What's New, then the
-// coach if it has never been finished. See docs/COACH_SPEC.md.
+// draft offer (if enabled), then the coach if it has never been finished. See docs/COACH_SPEC.md.
 //
 // Named coachLaunch (not coach.ts) so it does not collide with Coach.tsx on Windows.
 
@@ -84,7 +84,7 @@ export const COACH_BEATS: CoachBeat[] = [
     kicker: 'Welcome to Resist. Six short tips, then you play.',
     title: 'Your hand — Hidden and Revealed',
     body: [
-      'Each Maquis is two sides of one card. Left half is Hidden, right half is Revealed. Hover a half to see Play Hidden / Play Revealed, then click to play that side.',
+      'Each Maquis is two sides of one card. Left half is Hidden, right half is Revealed. Hover a half to see Play Hidden / Play Revealed, then click to play that side — or drag the card onto Hidden or Revealed on the table.',
       'Hidden cards can come back through the deck. Revealed cards leave the Hidden deck for good — they sit in the Revealed pile.',
       'A Spy has no halves to click. It stays in your hand until Recover. An all-Spy hand is a loss.',
     ],
@@ -106,7 +106,8 @@ export const COACH_BEATS: CoachBeat[] = [
     body: [
       'These four Missions are what you can attack. In PLAN, click a Mission to choose it — that ends PLAN and reveals its Enemies.',
       'In ATTACK, click a glowing Enemy or the Mission to strike it. The glow means this is a legal click.',
-      'After a Maquis is on the table, a Use ribbon appears on it when its action can fire. Click the ribbon, not a list of buttons.',
+      'After a Maquis is on the table, a small Use button appears under it when its action can fire. Click that, not a list of buttons.',
+      'During PLAN, drag a played Maquis onto the other section to move it Hidden ↔ Revealed — or click the dimmed half. That locks as soon as anyone uses an action.',
     ],
   },
   {
@@ -134,7 +135,7 @@ export const COACH_BEATS: CoachBeat[] = [
     marker: 'controls',
     title: 'Undo and Settings',
     body: [
-      'Undo takes back the last move, including a bad play or a mis-click.',
+      'Undo takes back the last move. During PLAN you can also drag a played Maquis to the other section (or click its dimmed half) — until anyone uses an action.',
       'The ⚙ cog (or Esc) is Settings: New game, Save, Load, and Board size if the table is hard to read. Ctrl + and Ctrl − scale it any time; Ctrl 0 returns to 100%.',
       'This tour lives under Settings as How to play this table if you want it again.',
     ],

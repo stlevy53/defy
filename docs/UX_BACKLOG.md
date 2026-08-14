@@ -76,6 +76,44 @@ art lands than it does now — worth a look at the same time.
 
 ## Resolved
 
+### Draft setup is in — offer at new game, Settings can turn it off
+
+**Found:** v0.1.6 tester. "Draft doesn't seem to work — it just jumps into the game."
+
+**Fixed:** `createGame({ seed, draft: true })` raises twelve Hidden/Recruit pair picks
+(`draftPool` + `pendingDecision` from `draft.pool`). The leftover card flies to the
+Recruit pile. A new game asks draft vs skip (after What’s New on a first/new-build
+launch); ⚙ Settings → Draft setup turns the prompt off. First-run coach waits until
+skip, or until the draft finishes.
+
+### Defeated-stamp overlay blocked clicks on remaining Enemies
+
+**Found:** v0.1.6 playtest. Tester defeated a Mission while Enemies were still standing,
+then fired Anastasio. The chips glowed; clicks did nothing.
+**Screenshot:** [`ux-backlog/anastasio-defeated-mission-unclickable.png`](./ux-backlog/anastasio-defeated-mission-unclickable.png)
+**Fixed:** `.defeated-stamp` is `pointer-events: none`; `.enemies` sits above it
+(`z-index: 4`) so leftover Enemies stay clickable for Anastasio, leftover Attack, Paquita,
+Consuelo, Adela, etc. Engine was already correct.
+
+### Domingo/Pilar scout kept flipped Enemies face-down until the discard pick
+
+**Found:** v0.1.6 playtest. Domingo's PLAN action highlighted two chips to discard among,
+still showing generic backs.
+**Screenshot:** [`ux-backlog/domingo-flipped-enemies-still-facedown.png`](./ux-backlog/domingo-flipped-enemies-still-facedown.png)
+**Fixed:** `scoutFlipDiscard` (`src/engine/effects/plan.ts`) now sets `faceUp` when the
+flip selection resolves, *then* raises the discard decision. Regression in
+`effects/plan.test.ts` (Pilar hidden; Domingo shares the handler).
+
+### Undo existed; testers still asked for it during PLAN
+
+**Found:** v0.1.6 playtest. Wanted to rearrange Hidden vs Revealed before activating a
+card. Undo already did that — returning v0.1.5 testers skip the coach beat that points
+at the button.
+**Fixed:** hover tip on the Undo button (`App.tsx`); coach beat 6 copy spells out Hidden
+vs Revealed; next What's New mentions it (`PATCH_NOTES.md` Unreleased). PLAN rearrange is
+now a first-class move (`MoveMaquis`): click the dimmed half of a played Maquis to switch
+Hidden ↔ Revealed without undoing later plays; sides lock after any card action is used.
+
 ### Board renders small and text is hard to read — needs a UI scale setting, not fullscreen
 
 **Found:** the packaged `.exe` at v0.1.4, and confirmed rather than relieved by the real card art that

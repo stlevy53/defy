@@ -73,6 +73,7 @@ export interface EffectTask {
 
 export type Action =
   | { type: 'PlayMaquis'; uid: string; side: Side }
+  | { type: 'MoveMaquis'; uid: string; side: Side }
   | { type: 'UseAction'; uid: string }
   | { type: 'ChooseMission'; uid: string }
   | { type: 'SpendAttackOn'; targetUid: string }
@@ -88,6 +89,9 @@ export interface GameState {
   hidden: { deck: CardInstance[]; discard: CardInstance[] }
   recruit: { deck: CardInstance[]; revealed: CardInstance[] }
   hand: CardInstance[]
+
+  /** Remaining Maquis to pair during the optional draft setup. Empty (or omitted) when not drafting. */
+  draftPool?: CardInstance[]
 
   inPlay: MaquisInPlay[]
 

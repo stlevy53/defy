@@ -11,6 +11,21 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.7',
+    date: '2026-08-14',
+    title: 'Draft your Maquis, and a clearer table',
+    changes: [
+      'Draft setup — a new game asks whether to draft your Maquis (the rulebook’s recommended start) or skip into a random deal. Click the one you want in Hidden; the other flies to Recruit. Twelve picks, then you play. Turn the prompt off under ⚙ Settings → Draft setup.',
+      'Played Maquis no longer wear Hidden / Revealed pills on the face, and the Use control sits under the card so the printed name and action text stay readable.',
+      'Fix — a first-time launch now shows What’s New, then the draft prompt, then the table tour. (v0.1.6 dropped you on the board after What’s New.)',
+      'Fix — after you defeat a Mission, you can still click the Enemies left on it. The Defeated stamp no longer sits on top of those clicks.',
+      'Fix — Domingo and Pilar’s PLAN scout now flips the Enemies face-up before asking which one to discard.',
+      'PLAN rearrange — drag a played Maquis onto Hidden or Revealed, or click the dimmed half, without undoing later plays. It locks as soon as anyone uses a card action.',
+      'Drag to play — grab a card from your hand and slide it onto Hidden or Revealed. Clicking a half still works.',
+      'Undo — hover the Undo button in the top bar for a reminder. (It was always there; returning players who skipped the table tour often missed it.)',
+    ],
+  },
+  {
     version: '0.1.6',
     date: '2026-08-13',
     title: 'How the table works',

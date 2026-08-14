@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createGame } from './setup'
 import { missions } from '../data'
+import { resolveDecision, legalActions, assertConservation } from './index'
 import type { GameState } from './types'
 
 const countEnemies = (s: GameState): number =>
@@ -14,6 +15,7 @@ const countMaquis = (s: GameState): number => {
     ...s.hidden.discard,
     ...s.recruit.deck,
     ...s.recruit.revealed,
+    ...(s.draftPool ?? []),
     ...s.hand,
   ]
   return zones.filter((c) => c.dataId !== 'spy').length + s.inPlay.length
@@ -86,5 +88,77 @@ describe('determinism', () => {
     const a = createGame({ seed: 1 })
     const b = createGame({ seed: 2 })
     expect(a.hand.map((c) => c.uid)).not.toEqual(b.hand.map((c) => c.uid))
+  })
+})
+
+function pickHidden(state: GameState, uid: string): GameState {
+  const next = resolveDecision(state, { selection: [uid] })
+  assertConservation(next)
+  return next
+}
+
+function draftCandidate(state: GameState, index: 0 | 1): string {
+  const d = state.pendingDecision
+  if (d?.kind !== 'selectCards') throw new Error('expected a draft pair')
+  return d.candidates[index]
+}
+
+describe('draft setup', () => {
+  it('starts with 24 Maquis in the pool, an empty hand, and a pair to pick', () => {
+    const s = createGame({ seed: 12345, draft: true })
+    assertConservation(s)
+    expect(s.draftPool).toHaveLength(24)
+    expect(s.hand).toHaveLength(0)
+    expect(s.hidden.deck).toHaveLength(0)
+    expect(s.recruit.deck).toHaveLength(0)
+    expect(s.spiesAvailable).toBe(6)
+    expect(legalActions(s)).toHaveLength(0)
+    expect(s.pendingDecision?.kind).toBe('selectCards')
+    expect(s.pendingDecision?.kind === 'selectCards' && s.pendingDecision.from).toBe('draft.pool')
+    expect(s.pendingDecision?.kind === 'selectCards' && s.pendingDecision.candidates).toEqual([
+      s.draftPool![0].uid,
+      s.draftPool![1].uid,
+    ])
+    expect(s.missionRow).toHaveLength(4)
+  })
+
+  it('puts the chosen card in Hidden and the leftover in Recruit', () => {
+    const s0 = createGame({ seed: 7, draft: true })
+    const keep = draftCandidate(s0, 0)
+    const other = draftCandidate(s0, 1)
+    const s = pickHidden(s0, keep)
+    expect(s.hidden.deck.map((c) => c.uid)).toEqual([keep])
+    expect(s.recruit.deck.map((c) => c.uid)).toEqual([other])
+    expect(s.draftPool).toHaveLength(22)
+    expect(s.pendingDecision?.kind === 'selectCards' && s.pendingDecision.candidates).toHaveLength(2)
+  })
+
+  it('after twelve picks: 12/12 split, spies in Hidden, hand of 5, no pending pair', () => {
+    let s = createGame({ seed: 99, draft: true })
+    for (let i = 0; i < 12; i++) {
+      const keep = draftCandidate(s, 0)
+      s = pickHidden(s, keep)
+    }
+    expect(s.pendingDecision).toBeNull()
+    expect(s.draftPool).toEqual([])
+    expect(s.hand).toHaveLength(5)
+    expect(s.hidden.deck).toHaveLength(10)
+    expect(s.recruit.deck).toHaveLength(12)
+    expect(s.spiesAvailable).toBe(3)
+    expect(countSpiesInPlay(s)).toBe(3)
+    expect(countMaquis(s)).toBe(24)
+    expect(legalActions(s).length).toBeGreaterThan(0)
+  })
+
+  it('same seed and same picks yield the same game', () => {
+    const run = () => {
+      let s = createGame({ seed: 4242, draft: true })
+      for (let i = 0; i < 12; i++) {
+        const keep = draftCandidate(s, 1)
+        s = pickHidden(s, keep)
+      }
+      return s
+    }
+    expect(run()).toEqual(run())
   })
 })

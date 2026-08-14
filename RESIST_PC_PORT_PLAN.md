@@ -46,7 +46,7 @@ Built in verified slices, each with tests:
 - **Slice 3 — ATTACK phase ✅.** DEFEND triggers, mandatory play-out of hand, Attack Strength pooling, target-by-target spending via `SpendAttackOn`, DEFEAT/SURVIVE resolution.
 - **Slice 4 — AFTERMATH + RECOVER ✅.** Civilian/mission-failure loss checks, mission refill, end-or-continue, cleanup, redraw, all-Spy loss, scoring. A full round loops.
 - **Slice 5 — full effect coverage ✅.** All 24 Maquis actions, 20 mission effects, 8 enemy-type effects (no stubs — every effect real, including Emilio's copy), plus the rulebook FAQ edge cases. The enemy-Defense-reset-on-reshuffle bug is fixed (`baseDefense`).
-- **Slice 6 — draft-variant setup ⬜ (optional, not built).** `createGame({draft: true})` per the rulebook's recommended drafting rule (designed in `ENGINE_DESIGN.md`; interactive, so it needs the decision system — hence sequenced after slice 2, not in setup). The only remaining engine item.
+- **Slice 6 — draft-variant setup ✅.** `createGame({draft: true})` per the rulebook's recommended drafting rule; the UI offers it at the start of a new game (Settings can turn the prompt off).
 
 *Deliverable:* headless engine playable via a script/console — **done.** *Gate (M2):* `worked_example.test.ts` reproduces the rulebook's worked example (pp. 11–13) turn-by-turn — **passing.**
 
@@ -96,4 +96,4 @@ Rules-fidelity items surfaced during data transcription and design review — ea
 
 ## 6. Immediate next step
 
-**Phase 3 (continue).** The engine is done, the UI is playable end-to-end, and the decision-UX polish + visual theme have shipped. Next: **add the real card art** — reshoot the cards flat and run the slicer (`tools/card-art.md`); the rendering seam is already in place. Then playtest and minor niceties (log toasts, post-AFTERMATH summary, seed entry). The optional draft-variant setup is the only remaining engine item. See `HANDOFF.md` §8.
+**Phase 3 (continue).** The engine is done (including optional draft setup), the UI is playable end-to-end, real card art is in, and the first-run coach + draft offer have shipped. Next: playtest and minor niceties. See `HANDOFF.md` §8.

@@ -114,6 +114,55 @@ describe('PlayMaquis', () => {
   })
 })
 
+describe('MoveMaquis', () => {
+  it('moves a played Maquis to the other side and rebanks Attack, without undoing later plays', () => {
+    let s = createGame({ seed: SEED })
+    const [first, second] = s.hand.filter((c) => c.dataId !== 'spy')
+    const data = maquisData.find((m) => m.id === first.dataId)!
+
+    s = applyAction(s, { type: 'PlayMaquis', uid: first.uid, side: 'revealed' })
+    s = applyAction(s, { type: 'PlayMaquis', uid: second.uid, side: 'hidden' })
+    expect(s.attackStrength).toBe(data.revealed.attack + (maquisData.find((m) => m.id === second.dataId)?.hidden.attack ?? 0))
+    expect(legalActions(s)).toContainEqual({ type: 'MoveMaquis', uid: first.uid, side: 'hidden' })
+
+    s = applyAction(s, { type: 'MoveMaquis', uid: first.uid, side: 'hidden' })
+    expect(s.inPlay.find((m) => m.uid === first.uid)?.side).toBe('hidden')
+    expect(s.inPlay.find((m) => m.uid === second.uid)?.side).toBe('hidden')
+    expect(s.attackStrength).toBe(data.hidden.attack + (maquisData.find((m) => m.id === second.dataId)?.hidden.attack ?? 0))
+    expect(s.hand.find((c) => c.uid === first.uid)).toBeUndefined()
+    assertConservation(s)
+  })
+
+  it('stops offering MoveMaquis after any card action is used', () => {
+    const found = seedWithPlanActionInHand()
+    let s = createGame({ seed: found.seed })
+    const other = s.hand.find((c) => c.dataId !== 'spy' && c.uid !== found.uid)
+    s = applyAction(s, { type: 'PlayMaquis', uid: found.uid, side: 'hidden' })
+    if (other) s = applyAction(s, { type: 'PlayMaquis', uid: other.uid, side: 'revealed' })
+    expect(legalActions(s).some((a) => a.type === 'MoveMaquis')).toBe(true)
+
+    s = applyAction(s, { type: 'UseAction', uid: found.uid })
+    expect(legalActions(s).filter((a) => a.type === 'MoveMaquis')).toHaveLength(0)
+    const target = s.inPlay.find((m) => m.uid !== found.uid) ?? s.inPlay[0]
+    const dest = target.side === 'hidden' ? 'revealed' : 'hidden'
+    expect(() => applyAction(s, { type: 'MoveMaquis', uid: target.uid, side: dest })).toThrow(
+      /after using a card action|decision is pending/,
+    )
+  })
+
+  it('is not legal during ATTACK', () => {
+    let s = createGame({ seed: SEED })
+    const card = firstMaquisInHand(s)
+    s = applyAction(s, { type: 'PlayMaquis', uid: card.uid, side: 'hidden' })
+    s = applyAction(s, { type: 'ChooseMission', uid: s.missionRow[0].uid })
+    expect(s.phase).toBe('ATTACK')
+    expect(legalActions(s).some((a) => a.type === 'MoveMaquis')).toBe(false)
+    expect(() => applyAction(s, { type: 'MoveMaquis', uid: card.uid, side: 'revealed' })).toThrow(
+      /only legal during PLAN/,
+    )
+  })
+})
+
 describe('UseAction', () => {
   const found = seedWithPlanActionInHand()
 

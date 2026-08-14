@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { SaveMeta, SaveResult, LoadResult } from './useGame'
 import { UI_SCALES } from './useUiScale'
 import type { UiScale } from './useUiScale'
+import { isDraftPromptEnabled, setDraftPromptEnabled } from './draftPref'
 
 interface Props {
   onClose: () => void
@@ -43,6 +44,7 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
   // Track the save locally so the Load button + description update the moment a save is written.
   const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
   const [seedEntry, setSeedEntry] = useState('')
+  const [askDraft, setAskDraft] = useState(isDraftPromptEnabled)
 
   const handleNew = () => {
     onNewGame()
@@ -151,6 +153,37 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
               ))}
             </div>
             <span className="si-sub">Bigger cards mean more scrolling — pick what reads best.</span>
+          </div>
+          <div className="settings-scale">
+            <span className="si-title">Draft setup</span>
+            <span className="si-sub">
+              At the start of a new game, ask whether to pick your Hidden deck two cards at a time.
+              Turn this off to always deal at random.
+            </span>
+            <div className="scale-row" role="group" aria-label="Draft setup">
+              <button
+                type="button"
+                className={`scale-opt ${askDraft ? 'active' : ''}`}
+                onClick={() => {
+                  setAskDraft(true)
+                  setDraftPromptEnabled(true)
+                }}
+                aria-pressed={askDraft}
+              >
+                Ask each game
+              </button>
+              <button
+                type="button"
+                className={`scale-opt ${!askDraft ? 'active' : ''}`}
+                onClick={() => {
+                  setAskDraft(false)
+                  setDraftPromptEnabled(false)
+                }}
+                aria-pressed={!askDraft}
+              >
+                Off — random deal
+              </button>
+            </div>
           </div>
         </div>
 

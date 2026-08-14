@@ -5,6 +5,7 @@
 // queues them at the right trigger points.
 
 import { produce, type Draft } from 'immer'
+import { applyDraftPick, isDraftDecision } from './setup'
 import { maquis as maquisData, missions as missionsData, civilians as civiliansData } from '../data'
 import { shuffle } from './rng'
 import type { Action, Decision, DecisionResponse, GameState, MissionSlot } from './types'
@@ -101,6 +102,14 @@ export function legalActions(state: GameState): Action[] {
   }
 
   if (state.phase === 'PLAN') {
+    // Rearrange Hidden ↔ Revealed until anyone uses a card action. After a Use, sides lock —
+    // effects have started resolving and a later move would desync Attack Strength / the board.
+    if (!state.inPlay.some((m) => m.actionUsed)) {
+      for (const mip of state.inPlay) {
+        const other: Side = mip.side === 'hidden' ? 'revealed' : 'hidden'
+        actions.push({ type: 'MoveMaquis', uid: mip.uid, side: other })
+      }
+    }
     // Choose an available (face-up) mission — this ends PLAN.
     for (const slot of state.missionRow) {
       if (!slot.faceDown) actions.push({ type: 'ChooseMission', uid: slot.uid })
@@ -150,6 +159,9 @@ export function applyAction(state: GameState, action: Action): GameState {
     switch (action.type) {
       case 'PlayMaquis':
         applyPlayMaquis(draft, action.uid, action.side)
+        break
+      case 'MoveMaquis':
+        applyMoveMaquis(draft, action.uid, action.side)
         break
       case 'UseAction':
         applyUseAction(draft, action.uid)
@@ -208,6 +220,26 @@ function applyPlayMaquis(draft: Draft<GameState>, uid: string, side: Side): void
 
   const name = maquisById.get(card.dataId)?.name ?? card.dataId
   draft.log.push(`${draft.phase}: played ${name} ${side}`)
+}
+
+function applyMoveMaquis(draft: Draft<GameState>, uid: string, side: Side): void {
+  if (draft.phase !== 'PLAN') throw new Error('MoveMaquis: only legal during PLAN')
+  if (draft.inPlay.some((m) => m.actionUsed)) {
+    throw new Error('MoveMaquis: cannot rearrange after using a card action')
+  }
+  const mip = draft.inPlay.find((c) => c.uid === uid)
+  if (!mip) throw new Error(`MoveMaquis: '${uid}' is not in play`)
+  if (mip.side === side) throw new Error(`MoveMaquis: '${uid}' is already ${side}`)
+
+  const data = maquisById.get(mip.dataId)
+  const oldAtk = data?.[mip.side].attack ?? 0
+  const newAtk = data?.[side].attack ?? 0
+  draft.attackStrength += newAtk - oldAtk
+  const from = mip.side
+  mip.side = side
+
+  const name = data?.name ?? mip.dataId
+  draft.log.push(`PLAN: moved ${name} ${from} → ${side}`)
 }
 
 function applyUseAction(draft: Draft<GameState>, uid: string): void {
@@ -550,6 +582,11 @@ export function resolveDecision(state: GameState, response: DecisionResponse): G
   validateResponse(state.pendingDecision, response.selection)
 
   return produce(state, (draft) => {
+    if (isDraftDecision(draft.pendingDecision)) {
+      applyDraftPick(draft, response.selection[0])
+      return
+    }
+
     const task = draft.effectQueue[0]
     draft.pendingDecision = null
     if (!task) return // defensive: a decision with no owning task

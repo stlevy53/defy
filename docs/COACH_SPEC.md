@@ -43,8 +43,8 @@ the tour from Settings.
   cannot play *through* the tour; they are looking, not taking a turn.
 - **Not sound.** Mute / volume / stingers stay a later build. Settings can keep its "coming later"
   footnote.
-- **Not the leftover UX backlog.** Big-window board cap, era chips, the face-down Enemy back, and
-  draft setup are out of this version.
+- **Not the leftover UX backlog.** Big-window board cap, era chips, and the face-down Enemy back
+  are out of this version.
 
 ## Design principle
 
@@ -59,14 +59,13 @@ Four launch states. Persistence is `localStorage`, same family as What's New and
 
 | Player | How we know | First thing they see |
 |---|---|---|
-| **First ever** | no `defy.coachSeen` **and** no `defy.whatsNewSeen` | What's New, then the coach when it closes |
-| **Returning, coach never finished** | `defy.whatsNewSeen` set, no `defy.coachSeen` | What's New if this build is new, then the coach; or the coach immediately if notes were already dismissed |
-| **Returning, coach finished, new build** | `defy.coachSeen` set, `defy.whatsNewSeen` ≠ this version | What's New only |
-| **Returning, same build** | both keys match this session | the board |
+| **First ever** | no `defy.coachSeen` **and** no `defy.whatsNewSeen` | What's New, then the draft offer, then the coach when they skip (or after the draft) |
+| **Returning, coach never finished** | `defy.whatsNewSeen` set, no `defy.coachSeen` | What's New if this build is new, then the draft offer, then the coach; or the draft offer then coach if notes were already dismissed |
+| **Returning, coach finished, new build** | `defy.coachSeen` set, `defy.whatsNewSeen` ≠ this version | What's New, then the draft offer |
+| **Returning, same build** | both keys match this session | the draft offer, then the board |
 
-Completing or skipping the coach writes `defy.coachSeen = 1`. What's New writes `defy.whatsNewSeen =
-APP_VERSION` when dismissed. Closing What's New **starts the coach** when `defy.coachSeen` is not
-set — including a first-ever player, and a v0.1.5 tester who has never taken the tour.
+The draft offer is skipped when Settings → Draft setup is **Off** (`defy.askDraft = 0`). Completing or skipping the coach writes `defy.coachSeen = 1`. What's New writes `defy.whatsNewSeen =
+APP_VERSION` when dismissed. Closing What's New **starts the draft offer** (if enabled), then the coach when `defy.coachSeen` is not set — including a first-ever player, and a v0.1.5 tester who has never taken the tour.
 
 Reopening What's New from the version button does **not** restart the coach once it has been
 finished or skipped.
@@ -74,8 +73,9 @@ finished or skipped.
 **Replay.** Settings gains a "How to play this table" item that runs the same tour. Replay does not
 clear What's New. A first-ever player who skipped can replay later the same way.
 
-**Don't start the coach when** an end-game overlay, Settings, What's New, the decision modal, or
-card zoom is already up. Replay from Settings closes Settings first, then starts the tour.
+**Don't start the coach when** an end-game overlay, Settings, What's New, the draft offer, the
+decision modal, or card zoom is already up. Replay from Settings closes Settings first, then starts
+the tour.
 
 ## The beats
 
@@ -91,7 +91,8 @@ A one-line kicker on beat 1 only: *Welcome to Resist. Six short tips, then you p
 **Teach:**
 
 - Each Maquis is two sides of one card. **Left half = Hidden. Right half = Revealed.** Hover a half
-  to see `Play Hidden` / `Play Revealed`, then click to play that side.
+  to see `Play Hidden` / `Play Revealed`, then click to play that side — or **drag the card onto
+  Hidden or Revealed** on the table.
 - Hidden cards can come back through the deck. Revealed cards leave the Hidden deck for good (they
   sit in the Revealed pile).
 - A **Spy** has no halves to click. It stays in your hand until Recover. An all-Spy hand is a loss.
@@ -126,8 +127,10 @@ right-click during the tour unless it is cheap; telling them is enough for v0.1.
   ends PLAN and reveals its Enemies).
 - In ATTACK, **click a glowing Enemy or the Mission** to strike it. The glow means "this is a
   legal click."
-- After a Maquis is on the table, a **Use** ribbon appears on it when its action can fire — click
-  the ribbon, not a list of buttons.
+- After a Maquis is on the table, a small **Use** button appears under it when its action can fire —
+  click that, not a list of buttons.
+- During PLAN, **drag a played Maquis onto the other section** to move it Hidden ↔ Revealed — or
+  click the dimmed half. That locks as soon as anyone uses an action.
 
 **Don't teach here:** Guard / Grunt targeting order (the phase tile covers it when it matters),
 garrison vs defense vs VP iconography (hover tips already exist).
@@ -169,7 +172,8 @@ when it is "correct" to End vs Continue. AFTERMATH's own prompt handles that mom
 
 **Teach:**
 
-- **Undo** takes back the last move, including a bad play or a mis-click.
+- **Undo** takes back the last move. During PLAN you can also click the dimmed half of a played
+  Maquis to switch Hidden ↔ Revealed — until anyone uses an action.
 - The **⚙ cog** (or **Esc**) is Settings: New game, Save, Load, and **Board size** if the table is
   hard to read. Ctrl + and Ctrl − scale it any time; Ctrl 0 returns to 100%.
 - This tour lives under Settings as **How to play this table** if you want it again.

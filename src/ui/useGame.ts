@@ -96,7 +96,7 @@ export interface UseGame {
   dispatch: (action: Action) => void
   respond: (selection: string[]) => void
   undo: () => void
-  newGame: (seed?: number) => void
+  newGame: (seed?: number, draft?: boolean) => void
   /** Persist the current game (full undo history) to localStorage; returns whether it fit. */
   saveGame: () => SaveResult
   /** Restore the saved game, replacing the current one; treats it as a fresh animation context. */
@@ -147,12 +147,12 @@ export function useGame(initialSeed?: number): UseGame {
     setHistory((h) => (h.length > 1 ? h.slice(0, -1) : h))
   }, [])
 
-  const newGame = useCallback((s?: number) => {
+  const newGame = useCallback((s?: number, draft?: boolean) => {
     const next = s ?? randomSeed()
     setSeed(next)
     setGameId((n) => n + 1)
     setError(null)
-    setHistory([settle(createGame({ seed: next }))])
+    setHistory([settle(createGame({ seed: next, draft }))])
   }, [])
 
   const [savedMeta, setSavedMeta] = useState<SaveMeta | null>(() => {
@@ -353,28 +353,47 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
     prev.current = state
     if (!before) return
 
+    const next: CardFlight[] = []
+    let idx = 0
+
+    const beforePool = new Set((before.draftPool ?? []).map((c) => c.uid))
+    const leftover = state.recruit.deck.find((c) => beforePool.has(c.uid))
+    if (leftover) {
+      const to = pileCenter('recruit.deck')
+      if (to) {
+        next.push({
+          id: `${step}-draft-${leftover.uid}`,
+          dataId: leftover.dataId,
+          fromX: window.innerWidth / 2,
+          fromY: window.innerHeight / 2,
+          toX: to.x,
+          toY: to.y,
+          delay: 0,
+        })
+        idx++
+      }
+    }
+
     const beforeHand = new Map(before.hand.map((c) => [c.uid, c.dataId]))
     const afterHand = new Map(state.hand.map((c) => [c.uid, c.dataId]))
     const hand = handCenter()
-    if (!hand) return
-
-    const next: CardFlight[] = []
-    let idx = 0
-    for (const [uid, dataId] of beforeHand) {
-      if (afterHand.has(uid)) continue // still in hand
-      const z = zoneOfUid(state, uid) // where it landed
-      if (!z) continue // e.g. played to the board — that already has its own visible destination
-      const to = pileCenter(z)
-      if (!to) continue
-      next.push({ id: `${step}-out-${uid}`, dataId, fromX: hand.x, fromY: hand.y, toX: to.x, toY: to.y, delay: idx++ * 70 })
-    }
-    for (const [uid, dataId] of afterHand) {
-      if (beforeHand.has(uid)) continue // was already in hand
-      const z = zoneOfUid(before, uid) // where it came from
-      if (!z) continue
-      const from = pileCenter(z)
-      if (!from) continue
-      next.push({ id: `${step}-in-${uid}`, dataId, fromX: from.x, fromY: from.y, toX: hand.x, toY: hand.y, delay: idx++ * 70 })
+    if (hand) {
+      for (const [uid, dataId] of beforeHand) {
+        if (afterHand.has(uid)) continue
+        const z = zoneOfUid(state, uid)
+        if (!z) continue
+        const to = pileCenter(z)
+        if (!to) continue
+        next.push({ id: `${step}-out-${uid}`, dataId, fromX: hand.x, fromY: hand.y, toX: to.x, toY: to.y, delay: idx++ * 70 })
+      }
+      for (const [uid, dataId] of afterHand) {
+        if (beforeHand.has(uid)) continue
+        const z = zoneOfUid(before, uid)
+        if (!z) continue
+        const from = pileCenter(z)
+        if (!from) continue
+        next.push({ id: `${step}-in-${uid}`, dataId, fromX: from.x, fromY: from.y, toX: hand.x, toY: hand.y, delay: idx++ * 70 })
+      }
     }
     if (next.length) setFlights((f) => [...f, ...next])
   }, [state, gameId, step])

@@ -25,8 +25,8 @@ export interface DebugApi {
   dispatch: (action: Action) => void
   /** Answer the pending decision. */
   resolve: (selection: string[]) => void
-  /** Start a fresh game, optionally from a specific seed. */
-  newGame: (seed?: number) => void
+  /** Start a fresh game, optionally from a specific seed. Second arg is the rulebook draft. */
+  newGame: (seed?: number, draft?: boolean) => void
 }
 
 export type DefyDebugGlobal = DebugApi & { enabled: true; api: 'v1' }

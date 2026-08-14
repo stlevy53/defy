@@ -193,11 +193,13 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .card.mission.defeated { border-color: var(--win); }
 
 /* Victory feedback: a stamp that pops onto a Mission the moment it's defeated (it leaves the board
- *  at Continue, when the row refills). Shows the VP earned so the strike feels rewarding. */
+ *  at Continue, when the row refills). Shows the VP earned so the strike feels rewarding.
+ *  pointer-events: none so leftover Enemies stay clickable (Anastasio, leftover Attack, etc.). */
 .defeated-stamp {
   position: absolute; inset: 0; z-index: 3; border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem;
   background: rgba(20, 17, 14, 0.45); animation: stamp-fade 0.35s ease-out;
+  pointer-events: none;
 }
 .defeated-word {
   color: var(--win); border: 3px solid var(--win); border-radius: 8px; padding: 0.15rem 0.75rem;
@@ -228,7 +230,7 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
   border-radius: 5px; padding: 0.02rem 0.28rem;
 }
 .effect { font-size: 0.76rem; color: var(--muted); margin: 0.3rem 0; min-height: 2.2em; }
-.enemies { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.enemies { display: flex; flex-wrap: wrap; gap: 0.3rem; position: relative; z-index: 4; }
 .enemy { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); }
 .enemy.facedown { color: var(--muted); }
 .enemy.faceup { flex: 1 1 100%; padding: 0.3rem 0.4rem; }
@@ -350,6 +352,11 @@ button.enemy.pickable.picked::after {
   background: rgba(24, 19, 14, 0.5); border: 1px solid rgba(122, 98, 62, 0.32); border-radius: 10px;
   padding: 0.6rem 0.75rem; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
 }
+.zone.drop-ok {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.45) inset, 0 0 18px rgba(217, 154, 36, 0.18);
+  background: rgba(217, 154, 36, 0.12);
+}
 .hand { margin: 0.6rem 0; }
 /* Header note: a defeated Mission (Cross the Border / Valley) changes the size of the next hand.
  * Shown inline with the "Your hand" title so the player is warned before clicking Continue. */
@@ -378,10 +385,6 @@ button.enemy.pickable.picked::after {
   font-size: 0.9rem; padding: 0.26rem 0.5rem; border-bottom: 2px solid #8a5a12;
   text-shadow: 0 1px 0 rgba(255, 222, 150, 0.55);
 }
-.banner-side {
-  display: block; font-size: 0.54rem; font-weight: 700; letter-spacing: 0.16em; color: #5a3a0c; opacity: 0.9;
-}
-
 /* Duotone "portrait" placeholder: a faded monogram over a red (Hidden) / purple (Revealed) wash. */
 .portrait {
   position: relative; height: 76px; display: grid; place-items: center; overflow: hidden;
@@ -492,24 +495,43 @@ button.enemy.pickable.picked::after {
 .play-hotspots .hot:not(:disabled):focus-visible .hot-label { opacity: 1; }
 .card.hand-card.pickable .play-hotspots { pointer-events: none; }
 
-/* Played Maquis: dim the half not in play, label the active side, overlay a Use ribbon + live bonus. */
+/* Played Maquis: dim the half not in play. Use sits under the card so printed text stays readable. */
+.played-wrap { display: flex; flex-direction: column; align-items: stretch; width: 192px; }
+.played-wrap.is-sliding { opacity: 0.35; }
 .card.played.has-art { width: 192px; }
+.played-wrap .card.played.has-art { width: 100%; }
 .side-dim { position: absolute; top: 0; bottom: 0; width: 50%; background: rgba(10, 8, 6, 0.62); pointer-events: none; }
 .side-dim.left { left: 0; }
 .side-dim.right { right: 0; }
-.side-badge {
-  position: absolute; top: 6px; left: 50%; transform: translateX(-50%); color: #fff;
-  font-size: 0.56rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-  padding: 0.1rem 0.5rem; border-radius: 999px;
+button.side-dim.moveable {
+  pointer-events: auto; cursor: pointer; border: none; padding: 0; margin: 0; font: inherit;
 }
-.side-badge.hidden { background: rgba(173, 54, 38, 0.92); }
-.side-badge.revealed { background: rgba(127, 81, 168, 0.92); }
-.use-ribbon {
-  position: absolute; left: 0; right: 0; bottom: 0; border: none; cursor: pointer; font-family: inherit;
-  background: rgba(217, 154, 36, 0.92); color: #14110e; font-weight: 800; font-size: 0.66rem;
-  letter-spacing: 0.03em; text-transform: uppercase; padding: 0.3rem;
+button.side-dim.moveable:hover,
+button.side-dim.moveable:focus-visible {
+  background: rgba(217, 154, 36, 0.28); outline: none;
 }
-.use-ribbon:hover { background: var(--accent-2); }
+.move-label {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: var(--accent-2); color: #14110e; font-size: 0.62rem; font-weight: 800;
+  padding: 0.12rem 0.45rem; border-radius: 6px; white-space: nowrap; opacity: 0; transition: opacity 0.1s;
+  pointer-events: none; text-transform: uppercase; letter-spacing: 0.04em;
+}
+button.side-dim.moveable:hover .move-label,
+button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
+.move-side {
+  display: block; width: calc(100% - 0.7rem); margin: 0.25rem 0.35rem 0;
+  font-family: inherit; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.03em;
+  text-transform: uppercase; cursor: pointer;
+  background: rgba(217, 154, 36, 0.18); color: var(--accent-2);
+  border: 1px solid rgba(217, 154, 36, 0.45); border-radius: 6px; padding: 0.22rem 0.4rem;
+}
+.move-side:hover, .move-side:focus-visible { background: rgba(217, 154, 36, 0.32); outline: none; }
+.use-under {
+  margin-top: 0.28rem; border: 1px solid rgba(217, 154, 36, 0.55); cursor: pointer; font-family: inherit;
+  background: rgba(217, 154, 36, 0.88); color: #14110e; font-weight: 800; font-size: 0.58rem;
+  letter-spacing: 0.06em; text-transform: uppercase; padding: 0.16rem 0.4rem; border-radius: 6px;
+}
+.use-under:hover, .use-under:focus-visible { background: var(--accent-2); outline: none; }
 .action-live.art { position: absolute; top: 6px; right: 6px; margin: 0; }
 
 /* Mission art: image on top, Enemies guarding it below; Defense pill only when modified this round. */
@@ -975,6 +997,11 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
   box-shadow: 0 6px 18px rgba(150, 40, 30, 0.4); transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .whatsnew-cta:hover { transform: translateY(-1px); box-shadow: 0 9px 22px rgba(150, 40, 30, 0.5); }
+.draft-offer-copy { margin: 0; color: var(--ink); font-size: 0.95rem; line-height: 1.45; }
+.draft-offer-actions { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 1.15rem; }
+.draft-offer-actions .whatsnew-cta { margin-top: 0; }
+.draft-offer-skip { width: 100%; padding: 0.65rem 1rem; font-size: 0.95rem; }
+.draft-offer-note { margin: 1rem 0 0; color: var(--muted); font-size: 0.78rem; text-align: center; }
 @keyframes whatsnew-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes whatsnew-rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
@@ -1100,6 +1127,25 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 /* Flying-card cues: a card token animated between the hand and a pile tile when a card is discarded
  *  or drawn, so moves like Antonio's spy swap read visually. Overlay sits above the board and rail
  *  but below the What's-New / game-over modals (z 90). Purely decorative, never interactive. */
+.card.slidable { cursor: grab; touch-action: none; }
+.card.is-sliding { opacity: 0.35; }
+body.sliding-card { cursor: grabbing; user-select: none; }
+body.sliding-card .card.slidable { cursor: grabbing; }
+.sliding-ghost {
+  position: fixed; z-index: 70; pointer-events: none;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: rotate(-6deg) scale(1.04);
+  background: var(--panel);
+}
+.sliding-ghost img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sliding-ghost span {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  font-size: 0.78rem; font-weight: 800; color: #fff; text-align: center;
+  background: linear-gradient(150deg, #d5533b, #8f2c1a);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+@media (prefers-reduced-motion: reduce) { .sliding-ghost { transform: none; } }
 .flights { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 .flying-card {
   position: fixed;
@@ -1180,6 +1226,13 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
  * is 2–3 per row (never 1), which keeps scrolling down for large piles. Top/left padding must clear
  * `.dm-order`'s 8px corner overhang, or scrolling clips the first row's badges. */
 .dm-cards { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; gap: 0.7rem; padding: 0.65rem 0.3rem 0.2rem 0.65rem; }
+.dm-draft-note { flex: 0 0 auto; margin: 0 0 0.55rem; color: var(--muted); font-size: 0.9rem; line-height: 1.4; }
+.dm-cards.dm-draft-pair { grid-template-columns: 1fr 1fr; }
+.dm-draft-slot { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.dm-draft-cap {
+  text-align: center; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent-2);
+}
 .dm-card {
   position: relative; text-align: left; cursor: pointer;
   display: flex; flex-direction: column;

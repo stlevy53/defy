@@ -1,10 +1,22 @@
 // createGame: builds a legal initial GameState per the rulebook setup sequence.
 import { maquis, missions, enemyTypes, civilians, spyCount } from '../data'
 import { shuffle } from './rng'
-import type { GameState, CardInstance, EnemyInstance, MissionSlot } from './types'
+import type { GameState, CardInstance, EnemyInstance, MissionSlot, Decision } from './types'
+
+export const DRAFT_FROM = 'draft.pool'
 
 export interface CreateGameOptions {
   seed: number
+  /** Rulebook recommended variant: player splits each pair Hidden / Recruit, twelve times. */
+  draft?: boolean
+}
+
+export function isDraftDecision(d: Decision | null | undefined): d is Extract<Decision, { kind: 'selectCards' }> {
+  return !!d && d.kind === 'selectCards' && d.from === DRAFT_FROM
+}
+
+export function isDrafting(state: GameState): boolean {
+  return (state.draftPool?.length ?? 0) > 0 || isDraftDecision(state.pendingDecision)
 }
 
 /**
@@ -16,49 +28,168 @@ export interface CreateGameOptions {
  *  - 32 Enemies shuffled; each available Mission dealt Enemies equal to its Garrison
  *  - 8 Civilians shuffled into the Civilian deck
  *  - Draw a starting hand of 5 from the Hidden deck
+ *
+ * Draft variant (`draft: true`): the 24 Maquis stay in `draftPool` and `pendingDecision` asks
+ * which of the top 2 goes to Hidden (the other to Recruit). Spies and the starting hand wait
+ * until the twelfth pick; missions/enemies/civilians are dealt immediately so the table is visible.
  */
 export function createGame(options: CreateGameOptions): GameState {
   let rng = options.seed >>> 0
 
-  // --- Maquis ---
   const maquisInstances: CardInstance[] = maquis.map((m) => ({ uid: m.id, dataId: m.id }))
   const shuffledMaquis = shuffle(maquisInstances, rng)
   rng = shuffledMaquis.state
-  const hiddenMaquis = shuffledMaquis.result.slice(0, 12)
-  const recruitMaquis = shuffledMaquis.result.slice(12, 24)
 
-  // --- Spies ---
-  const spyInstances: CardInstance[] = Array.from({ length: spyCount }, (_, i) => ({
+  let hidden: GameState['hidden']
+  let recruit: GameState['recruit']
+  let hand: CardInstance[]
+  let spiesAvailable: number
+  let draftPool: CardInstance[]
+  let pendingDecision: Decision | null
+  let log: string[]
+
+  if (options.draft) {
+    hidden = { deck: [], discard: [] }
+    recruit = { deck: [], revealed: [] }
+    hand = []
+    spiesAvailable = spyCount
+    draftPool = shuffledMaquis.result
+    pendingDecision = null
+    log = ['DRAFT: choose a Maquis for the Hidden deck; the other goes to Recruit']
+  } else {
+    const hiddenMaquis = shuffledMaquis.result.slice(0, 12)
+    const recruitMaquis = shuffledMaquis.result.slice(12, 24)
+    const spiesInDeck: CardInstance[] = Array.from({ length: 3 }, (_, i) => ({
+      uid: `spy-${i}`,
+      dataId: 'spy',
+    }))
+    const hiddenCombined = shuffle([...hiddenMaquis, ...spiesInDeck], rng)
+    rng = hiddenCombined.state
+    hidden = { deck: hiddenCombined.result.slice(5), discard: [] }
+    recruit = { deck: recruitMaquis, revealed: [] }
+    hand = hiddenCombined.result.slice(0, 5)
+    spiesAvailable = spyCount - 3
+    draftPool = []
+    pendingDecision = null
+    log = []
+  }
+
+  const table = dealTable(rng)
+  rng = table.rng
+
+  const state: GameState = {
+    rng,
+    phase: 'PLAN',
+    round: 1,
+    hidden,
+    recruit,
+    hand,
+    inPlay: [],
+    missionRow: table.missionRow,
+    missionDeck: table.missionDeck,
+    defeatedMissions: [],
+    enemyDeck: table.enemyDeck,
+    enemyDiscard: [],
+    civilianDeck: table.civilianDeck,
+    graveyard: [],
+    spiesAvailable,
+    removedFromGame: [],
+    chosenMissionUid: null,
+    attackStrength: 0,
+    missionDefenseOverride: null,
+    attackRevealLimit: null,
+    revealedInAttack: 0,
+    ignoreMissionEffect: false,
+    recoverDrawModifier: 0,
+    failedMissions: 0,
+    pendingDecision,
+    effectQueue: [],
+    result: null,
+    log,
+    draftPool,
+  }
+  if (options.draft) raiseDraftPair(state)
+  return state
+}
+
+/** Move the chosen card to Hidden, the leftover to Recruit, then raise the next pair (or finish). */
+export function applyDraftPick(state: GameState, keepUid: string): void {
+  const pool = state.draftPool ?? []
+  const decision = state.pendingDecision
+  if (!isDraftDecision(decision)) {
+    throw new Error('applyDraftPick: no draft pair pending')
+  }
+  const otherUid = decision.candidates.find((u) => u !== keepUid)
+  if (!otherUid) throw new Error('applyDraftPick: pair is missing the leftover')
+
+  const take = (uid: string): CardInstance => {
+    const i = pool.findIndex((c) => c.uid === uid)
+    if (i === -1) throw new Error(`applyDraftPick: '${uid}' is not in the draft pool`)
+    return pool.splice(i, 1)[0]
+  }
+  state.hidden.deck.push(take(keepUid))
+  state.recruit.deck.push(take(otherUid))
+  state.draftPool = pool
+  const n = state.hidden.deck.length
+  state.log.push(`DRAFT: ${keepUid} → Hidden, ${otherUid} → Recruit (${n}/12)`)
+  raiseDraftPair(state)
+}
+
+function raiseDraftPair(state: GameState): void {
+  const pool = state.draftPool ?? []
+  if (pool.length < 2) {
+    finalizeDraft(state)
+    return
+  }
+  const pick = state.hidden.deck.length + 1
+  state.pendingDecision = {
+    kind: 'selectCards',
+    from: DRAFT_FROM,
+    min: 1,
+    max: 1,
+    prompt: `Choose which Maquis joins your Hidden deck (${pick} of 12). The other goes to Recruit.`,
+    candidates: [pool[0].uid, pool[1].uid],
+  }
+}
+
+function finalizeDraft(state: GameState): void {
+  const hiddenShuf = shuffle(state.hidden.deck, state.rng)
+  const recruitShuf = shuffle(state.recruit.deck, hiddenShuf.state)
+  const spies: CardInstance[] = Array.from({ length: 3 }, (_, i) => ({
     uid: `spy-${i}`,
     dataId: 'spy',
   }))
-  const spiesInDeck = spyInstances.slice(0, 3)
-  const spiesAvailable = spyCount - 3
+  const withSpies = shuffle([...hiddenShuf.result, ...spies], recruitShuf.state)
+  state.rng = withSpies.state
+  state.hidden.deck = withSpies.result.slice(5)
+  state.hand = withSpies.result.slice(0, 5)
+  state.recruit.deck = recruitShuf.result
+  state.spiesAvailable = spyCount - 3
+  state.draftPool = []
+  state.pendingDecision = null
+  state.log.push('DRAFT: decks shuffled; 3 Spies mixed into Hidden; drew 5')
+}
 
-  // Hidden deck = 12 Maquis + 3 Spies, shuffled together
-  const hiddenCombined = shuffle([...hiddenMaquis, ...spiesInDeck], rng)
-  rng = hiddenCombined.state
-  let hiddenDeck = hiddenCombined.result
-
-  // Starting hand of 5
-  const hand = hiddenDeck.slice(0, 5)
-  hiddenDeck = hiddenDeck.slice(5)
-
-  // --- Missions ---
+function dealTable(rng: number): {
+  rng: number
+  missionRow: MissionSlot[]
+  missionDeck: CardInstance[]
+  enemyDeck: EnemyInstance[]
+  civilianDeck: CardInstance[]
+} {
   const keepEra = (era: 1 | 2 | 3, remove: number): CardInstance[] => {
     const pool = missions
       .filter((m) => m.era === era)
       .map((m) => ({ uid: m.id, dataId: m.id }))
     const s = shuffle(pool, rng)
     rng = s.state
-    return s.result.slice(remove) // discard the first `remove` from the game
+    return s.result.slice(remove)
   }
-  const era1Available = keepEra(1, 4) // 4 remain -> available row
-  const era2Kept = keepEra(2, 3) // 3
-  const era3Kept = keepEra(3, 3) // 3
-  const missionDeck = [...era2Kept, ...era3Kept] // Era-2 on top
+  const era1Available = keepEra(1, 4)
+  const era2Kept = keepEra(2, 3)
+  const era3Kept = keepEra(3, 3)
+  const missionDeck = [...era2Kept, ...era3Kept]
 
-  // --- Enemies ---
   const enemyInstances: EnemyInstance[] = []
   for (const t of enemyTypes) {
     t.defenseValues.forEach((d, i) => {
@@ -75,42 +206,16 @@ export function createGame(options: CreateGameOptions): GameState {
     enemyPool = enemyPool.slice(mission.garrison)
     return { uid: mi.uid, dataId: mi.dataId, faceDown: false, defeated: false, enemies: dealt }
   })
-  const enemyDeck = enemyPool
 
-  // --- Civilians ---
   const civilianInstances: CardInstance[] = civilians.map((c) => ({ uid: c.id, dataId: c.id }))
   const shuffledCiv = shuffle(civilianInstances, rng)
   rng = shuffledCiv.state
-  const civilianDeck = shuffledCiv.result
 
   return {
     rng,
-    phase: 'PLAN',
-    round: 1,
-    hidden: { deck: hiddenDeck, discard: [] },
-    recruit: { deck: recruitMaquis, revealed: [] },
-    hand,
-    inPlay: [],
     missionRow,
     missionDeck,
-    defeatedMissions: [],
-    enemyDeck,
-    enemyDiscard: [],
-    civilianDeck,
-    graveyard: [],
-    spiesAvailable,
-    removedFromGame: [],
-    chosenMissionUid: null,
-    attackStrength: 0,
-    missionDefenseOverride: null,
-    attackRevealLimit: null,
-    revealedInAttack: 0,
-    ignoreMissionEffect: false,
-    recoverDrawModifier: 0,
-    failedMissions: 0,
-    pendingDecision: null,
-    effectQueue: [],
-    result: null,
-    log: [],
+    enemyDeck: enemyPool,
+    civilianDeck: shuffledCiv.result,
   }
 }

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import type { Decision, GameState } from '../engine'
 import { classifyCandidate, maquisOf, enemyOf, missionOf } from './format'
 import { maquisArt, enemyArt, missionArt, spyArt } from './cardArt'
+import { DRAFT_FROM } from '../engine'
 
 export function DecisionModal({
   decision,
@@ -45,6 +46,9 @@ function DecisionBody({
   }
   if (decision.kind === 'orderCards') {
     return <OrderChoice prompt={decision.prompt} cards={decision.cards} state={state} onRespond={onRespond} />
+  }
+  if (decision.kind === 'selectCards' && decision.from === DRAFT_FROM) {
+    return <DraftChoice decision={decision} state={state} onRespond={onRespond} />
   }
   const min = decision.kind === 'selectTarget' ? 1 : decision.min
   const max = decision.kind === 'selectTarget' ? 1 : decision.max
@@ -320,6 +324,34 @@ function DecisionCard({
       {order !== undefined && <span className="dm-order">{order}</span>}
       {body}
     </button>
+  )
+}
+
+function DraftChoice({
+  decision,
+  state,
+  onRespond,
+}: {
+  decision: Extract<Decision, { kind: 'selectCards' }>
+  state: GameState
+  onRespond: (selection: string[]) => void
+}) {
+  const pick = state.hidden.deck.length + 1
+  return (
+    <>
+      <ModalHead prompt={`Hidden deck — pick ${pick} of 12`} hint="click one" />
+      <p className="dm-draft-note">
+        Click the Maquis you want in your Hidden deck. The other card goes to Recruit.
+      </p>
+      <div className="dm-cards dm-draft-pair">
+        {decision.candidates.map((uid) => (
+          <div key={uid} className="dm-draft-slot">
+            <DecisionCard state={state} uid={uid} selected={false} onClick={() => onRespond([uid])} />
+            <span className="dm-draft-cap">Goes to Hidden</span>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 

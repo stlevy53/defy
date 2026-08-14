@@ -237,6 +237,9 @@ describe('Scout effects', () => {
     const twoEnemies = target.enemies.slice(0, 2).map((e) => e.uid)
     s = resolve(s, twoEnemies) // flip two
     expect(s.pendingDecision?.kind).toBe('selectCards')
+    // Faces must be up *before* the discard pick, so the player can see what they're choosing.
+    const afterFlip = s.missionRow.find((slot) => slot.uid === target.uid)!
+    expect(afterFlip.enemies.filter((e) => twoEnemies.includes(e.uid)).every((e) => e.faceUp)).toBe(true)
 
     s = resolve(s, [twoEnemies[0]]) // discard one of the flipped
     const slotNow = s.missionRow.find((slot) => slot.uid === target.uid)!

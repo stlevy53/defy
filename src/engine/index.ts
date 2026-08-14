@@ -1,5 +1,5 @@
 // Public engine API. Grows each slice; currently: setup, PLAN-phase actions, effects registry.
-export { createGame } from './setup'
+export { createGame, isDrafting, isDraftDecision, DRAFT_FROM } from './setup'
 export type { CreateGameOptions } from './setup'
 export { shuffle, rngNext } from './rng'
 export { applyAction, legalActions, resolveDecision } from './actions'

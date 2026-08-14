@@ -10,11 +10,19 @@ export interface NamedPolicy {
   choose: Policy
 }
 
+/** Drop PLAN rearrange so self-play doesn't flip cards forever. Falls back to the full list if
+ *  that would leave nothing (shouldn't happen — ChooseMission is almost always legal in PLAN). */
+function withoutRearrange(actions: Action[]): Action[] {
+  const rest = actions.filter((a) => a.type !== 'MoveMaquis')
+  return rest.length ? rest : actions
+}
+
 /** Uniform over legal moves. Best raw bug-finding coverage; tends to end games early (random play
- *  often picks EndResistance), so pair it with `greedy` for depth. */
+ *  often picks EndResistance), so pair it with `greedy` for depth. Skips PLAN rearrange so it
+ *  cannot loop Hidden ↔ Revealed. */
 export const randomPolicy: NamedPolicy = {
   name: 'random',
-  choose: (_s, actions, rng) => pick(rng, actions),
+  choose: (_s, actions, rng) => pick(rng, withoutRearrange(actions)),
 }
 
 // Progress-seeking. Reveals Maquis and fires card actions first — that maximizes how many effect
@@ -29,14 +37,16 @@ const RANK: Record<Action['type'], number> = {
   AdvancePhase: 3,
   Continue: 2,
   EndResistance: 1,
+  MoveMaquis: 0,
 }
 
 export const greedyPolicy: NamedPolicy = {
   name: 'greedy',
   choose: (state, actions) => {
-    let best = actions[0]
+    const pool = withoutRearrange(actions)
+    let best = pool[0]
     let bestScore = -Infinity
-    for (const a of actions) {
+    for (const a of pool) {
       let s = RANK[a.type] * 10
       if (a.type === 'PlayMaquis' && a.side === 'revealed') s += 5 // prefer revealing (fires revealed actions)
       if (a.type === 'SpendAttackOn') {
