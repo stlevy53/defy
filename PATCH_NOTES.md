@@ -8,7 +8,18 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## Unreleased
 
+- **Fix** — a first-time launch now shows What’s New, then starts the table tour automatically when that window closes. (v0.1.6 showed What’s New and then dropped you on the board.)
+
 _Work in progress toward the next version — add changes here as we make them, then stamp a version + date when we cut a release._
+
+---
+
+## v0.1.6 — 2026-08-13
+
+How the table works — a short tour for new players.
+
+- **First-run coach** — six short tips that point at the table: Hidden/Revealed halves on your hand, right-click zoom, clicking Missions, the phase tile, how a game ends, and Undo / Settings. Shown once the first time you ever launch; skip any time. If you already played v0.1.5 you will not be walked through it — replay it any time from ⚙ Settings → **How to play this table**.
+- **Fix** — while the tour is up, scrolling no longer slides the highlighted region out of the spotlight.
 
 ---
 

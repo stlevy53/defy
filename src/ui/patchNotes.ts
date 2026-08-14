@@ -11,6 +11,15 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.6',
+    date: '2026-08-13',
+    title: 'How the table works',
+    changes: [
+      'A short first-run tour of the table — Hidden/Revealed halves on your hand, right-click zoom, clicking Missions, the phase tile, how a game ends, and Undo / Settings. Six tips, skippable, then you play. If you already played v0.1.5 you will not be walked through it; replay it any time from ⚙ Settings → How to play this table.',
+      'Fix — while the tour is up, scrolling no longer slides the highlighted region out of the spotlight.',
+    ],
+  },
+  {
     version: '0.1.5',
     date: '2026-08-12',
     title: 'The real cards, at a size you can read',

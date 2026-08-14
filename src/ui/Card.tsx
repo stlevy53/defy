@@ -56,6 +56,8 @@ export type CardFace =
       onPick?: (uid: string) => void
       /** Enemy uids just added to this Mission (a reinforcement) — animated in when present. */
       newEnemyUids?: string[]
+      /** Spotlight target for the first-run coach (right-click-zoom beat). */
+      coachMark?: string
     }
 
 /** Render any card face. Discriminated on `kind` so callers pass only what that face needs. */
@@ -100,6 +102,7 @@ export function Card(face: CardFace) {
           pickedTargets={face.pickedTargets}
           onPick={face.onPick}
           newEnemyUids={face.newEnemyUids}
+          coachMark={face.coachMark}
         />
       )
   }
@@ -392,6 +395,7 @@ function MissionFace({
   pickedTargets,
   onPick,
   newEnemyUids,
+  coachMark,
 }: {
   slot: MissionSlot
   state: GameState
@@ -403,6 +407,7 @@ function MissionFace({
   pickedTargets?: string[]
   onPick?: (uid: string) => void
   newEnemyUids?: string[]
+  coachMark?: string
 }) {
   const reinforcedCount = newEnemyUids?.length ?? 0
   const zoomMission = useMissionZoom(slot.dataId)
@@ -488,6 +493,7 @@ function MissionFace({
     tabIndex: act ? 0 : undefined,
     title: act?.title,
     onKeyDown: act ? (e: KeyboardEvent) => onEnter(e, act.run) : undefined,
+    ...(coachMark ? { 'data-coach': coachMark } : {}),
   }
 
   // Real mission art: the image carries name/stats/effect; we keep the click behaviour, the defeated

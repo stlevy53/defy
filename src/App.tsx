@@ -11,31 +11,38 @@ import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
 import { SettingsMenu } from './ui/SettingsMenu'
+import { Coach } from './ui/Coach'
 import { useUiScale } from './ui/useUiScale'
 import { APP_VERSION } from './ui/patchNotes'
+import {
+  WHATS_NEW_SEEN_KEY,
+  hasCompletedCoach,
+  shouldAutoShowCoach,
+  shouldAutoShowWhatsNew,
+  markCoachFinished,
+} from './ui/coachLaunch'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 /** Stable empty array so a "no board selection" render doesn't churn child props. */
 const EMPTY: string[] = []
 
-/** localStorage key remembering the build version whose What's New was last dismissed. */
-const WHATS_NEW_SEEN_KEY = 'defy.whatsNewSeen'
-
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
     useGame()
 
-  // Patch-notes modal: greets a playtester once per build (not every launch), and is reopenable from
-  // the top bar. We remember the last version whose notes were dismissed, so a returning player on
-  // the same build isn't shown it again.
-  const [showWhatsNew, setShowWhatsNew] = useState(() => {
-    try {
-      return localStorage.getItem(WHATS_NEW_SEEN_KEY) !== APP_VERSION
-    } catch {
-      return true
-    }
-  })
+  // First launch of a build: What's New. When it closes, the coach starts if it has never been
+  // finished. Coach on launch only when What's New is not in the way (e.g. they dismissed notes
+  // last time but never finished the tour).
+  const [showCoach, setShowCoach] = useState(() => shouldAutoShowCoach(APP_VERSION))
+  const closeCoach = useCallback(() => {
+    setShowCoach(false)
+    markCoachFinished(APP_VERSION)
+  }, [])
+
+  // Patch-notes modal: greets a playtester once per build (not every launch), including a first-ever
+  // launch. Reopenable from the version button. Closing it starts the coach when the tour is still due.
+  const [showWhatsNew, setShowWhatsNew] = useState(() => shouldAutoShowWhatsNew(APP_VERSION))
   const closeWhatsNew = useCallback(() => {
     setShowWhatsNew(false)
     try {
@@ -43,6 +50,7 @@ export function App() {
     } catch {
       /* storage unavailable — just close for this session */
     }
+    if (!hasCompletedCoach()) setShowCoach(true)
   }, [])
 
   // Settings modal (New/Save/Load, board size; sound options later). Opened by the cog or Escape.
@@ -52,8 +60,8 @@ export function App() {
   // whether or not Settings is open, and so the scale survives closing it.
   const ui = useUiScale()
 
-  // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew and the
-  // card zoom bind their own Escape handlers, so we don't also pop Settings while one of them is up.
+  // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew, the
+  // coach, and the card zoom bind their own Escape handlers, so we don't also pop Settings.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -65,12 +73,13 @@ export function App() {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return
       if (showWhatsNew) return
+      if (showCoach) return
       if (typeof document !== 'undefined' && document.querySelector('.zoom-overlay')) return
       setShowSettings(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [showSettings, showWhatsNew])
+  }, [showSettings, showWhatsNew, showCoach])
 
   // Dev/preview aid: append `?preview=<state>` to the URL to see any end-of-game overlay without
   // reaching it in play — useful for iterating on the animations. Values: loss, draw, minor,
@@ -180,7 +189,7 @@ export function App() {
         <div className="title">
           <strong>RESIST!</strong> <span className="muted">Maquis vs. Franco</span>
         </div>
-        <div className="status">
+        <div className="status" data-coach="status">
           <span className="pill">Round {state.round}</span>
           {(state.phase === 'ATTACK' || state.attackStrength > 0) && (
             <AttackStrengthPill value={state.attackStrength} />
@@ -194,7 +203,7 @@ export function App() {
             </Tip>
           )}
         </div>
-        <div className="controls">
+        <div className="controls" data-coach="controls">
           <button className="ghost" onClick={undo} disabled={!canUndo}>
             Undo
           </button>
@@ -216,6 +225,8 @@ export function App() {
 
       {showWhatsNew && <WhatsNew onClose={closeWhatsNew} />}
 
+      {showCoach && <Coach scale={ui.scale} onClose={closeCoach} />}
+
       {showSettings && (
         <SettingsMenu
           onClose={() => setShowSettings(false)}
@@ -226,11 +237,15 @@ export function App() {
           savedMeta={savedMeta}
           appVersion={APP_VERSION}
           ui={ui}
+          onReplayCoach={() => {
+            setShowSettings(false)
+            setShowCoach(true)
+          }}
         />
       )}
 
-      {shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
-      {shown?.outcome === 'win' && (
+      {!showCoach && shown?.outcome === 'loss' && <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />}
+      {!showCoach && shown?.outcome === 'win' && (
         <WinOverlay tier={shown.tier} points={shown.points} onPlayAgain={playAgain} />
       )}
 
@@ -254,8 +269,8 @@ export function App() {
 
       <div className="board-grid">
       <div className="board-main">
-      <section className="missions">
-        {state.missionRow.map((slot) => (
+      <section className="missions" data-coach="missions">
+        {state.missionRow.map((slot, i) => (
           <Card
             key={slot.uid}
             kind="mission"
@@ -269,6 +284,7 @@ export function App() {
             pickedTargets={pickedTargets}
             onPick={onPick}
             newEnemyUids={reinforced[slot.uid]}
+            coachMark={i === 0 ? 'zoom' : undefined}
           />
         ))}
       </section>
@@ -296,7 +312,7 @@ export function App() {
         />
       </section>
 
-      <section className="hand">
+      <section className="hand" data-coach="hand">
         <h3 className="hand-head">
           Your hand
           <HandDrawNote state={state} />
@@ -347,7 +363,7 @@ function PhaseGuide({ state, actions, choices }: { state: GameState; actions: Ac
   const guide = guidanceFor(state, actions)
   const activeIndex = guide ? ROUND_PHASES.indexOf(guide.phase) : -1
   return (
-    <section className="phase-guide">
+    <section className="phase-guide" data-coach="guide">
       <ol className="breadcrumb">
         {ROUND_PHASES.map((p, i) => {
           const cls = [

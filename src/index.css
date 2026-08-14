@@ -1034,6 +1034,69 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .settings-status.err { color: #fff; background: var(--warn); border-color: var(--warn); }
 .settings-foot { margin: 1rem 0 0; color: var(--muted); font-size: 0.74rem; text-align: center; }
 
+/* First-run coach: a dimmed board with a spotlight hole around one region, plus a copy card.
+   Clicks never reach the table (`.coach-catch`); the hole is visual only. z 97 sits above
+   Settings / What's New / game-over and below card zoom. Overflow hidden so the 9999px
+   box-shadow cannot stretch the page (same class of bug the hover tooltips had). */
+.coach-overlay {
+  position: fixed; inset: 0; z-index: 97; overflow: hidden;
+  pointer-events: none;
+  overscroll-behavior: none;
+  animation: whatsnew-fade 0.2s ease both;
+}
+.coach-catch { position: absolute; inset: 0; pointer-events: auto; }
+.coach-hole {
+  position: fixed; pointer-events: none; border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(6, 4, 3, 0.72);
+  outline: 2px solid var(--accent-2);
+  animation: coach-pulse 1.8s ease-in-out infinite;
+}
+@keyframes coach-pulse {
+  0%, 100% { outline-color: var(--accent-2); }
+  50% { outline-color: rgba(217, 154, 36, 0.35); }
+}
+.coach-card {
+  position: fixed; pointer-events: auto; z-index: 1;
+  background: linear-gradient(180deg, #241d16, var(--panel));
+  border: 1px solid rgba(122, 98, 62, 0.55); border-radius: 14px;
+  padding: 1.05rem 1.15rem 1.15rem;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+  animation: whatsnew-rise 0.22s ease both;
+}
+.coach-kicker {
+  margin: 0 0 0.45rem; color: var(--accent-2);
+  text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.68rem; font-weight: 700;
+}
+.coach-title {
+  margin: 0 0 0.55rem; color: var(--ink); font-size: 1.12rem;
+  text-transform: none; letter-spacing: 0.01em; line-height: 1.25;
+}
+.coach-body {
+  margin: 0 0 0.5rem; color: var(--ink); font-size: 0.88rem; line-height: 1.4;
+}
+.coach-body:last-of-type { margin-bottom: 0.85rem; }
+.coach-foot {
+  display: flex; align-items: center; gap: 0.5rem;
+  border-top: 1px solid var(--line); padding-top: 0.75rem;
+}
+.coach-step { margin-right: auto; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.coach-skip {
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 0.85rem; padding: 0.35rem 0.5rem;
+}
+.coach-skip:hover { color: var(--ink); }
+.coach-next {
+  font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  color: #fff; background: var(--accent); border: 1px solid #e06a58; border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  box-shadow: 0 4px 12px rgba(150, 40, 30, 0.35);
+}
+.coach-next:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(150, 40, 30, 0.45); }
+@media (prefers-reduced-motion: reduce) {
+  .coach-overlay, .coach-card { animation: none; }
+  .coach-hole { animation: none; }
+}
+
 /* Flying-card cues: a card token animated between the hand and a pile tile when a card is discarded
  *  or drawn, so moves like Antonio's spy swap read visually. Overlay sits above the board and rail
  *  but below the What's-New / game-over modals (z 90). Purely decorative, never interactive. */

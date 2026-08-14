@@ -1,7 +1,7 @@
 // Settings modal: opened by the cog in the top bar or the Escape key. Holds the three game-management
-// actions — New game, Save game, Load game — plus the board-size control, and is the natural future
-// home for sound/volume options. Save/load are thin wrappers over useGame's localStorage helpers;
-// board size is a thin wrapper over useUiScale.
+// actions — New game, Save game, Load game — plus the first-run coach replay, the board-size control,
+// and is the natural future home for sound/volume options. Save/load are thin wrappers over useGame's
+// localStorage helpers; board size is a thin wrapper over useUiScale.
 
 import { useState } from 'react'
 import type { SaveMeta, SaveResult, LoadResult } from './useGame'
@@ -18,6 +18,8 @@ interface Props {
   savedMeta: SaveMeta | null
   appVersion: string
   ui: UiScale
+  /** Close Settings and run the first-run table tour. */
+  onReplayCoach: () => void
 }
 
 /** Compact local date+time for the save's timestamp (e.g. "Jul 27, 2:14 PM"). */
@@ -36,7 +38,7 @@ function formatWhen(ts: number): string {
 
 type Status = { tone: 'ok' | 'warn' | 'err'; text: string }
 
-export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion, ui }: Props) {
+export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion, ui, onReplayCoach }: Props) {
   const [status, setStatus] = useState<Status | null>(null)
   // Track the save locally so the Load button + description update the moment a save is written.
   const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
@@ -125,6 +127,10 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
           <button className="settings-item" onClick={handleLoad} disabled={!meta}>
             <span className="si-title">Load game</span>
             <span className="si-sub">{loadSub}</span>
+          </button>
+          <button className="settings-item" onClick={onReplayCoach}>
+            <span className="si-title">How to play this table</span>
+            <span className="si-sub">A short tour of the controls. You can skip it any time.</span>
           </button>
           <div className="settings-scale">
             <span className="si-title">Board size</span>
