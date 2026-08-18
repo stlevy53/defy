@@ -10,6 +10,7 @@ import {
 } from './coachLaunch'
 import type { StorageLike } from './coachLaunch'
 import { isDraftPromptEnabled, setDraftPromptEnabled } from './draftPref'
+import { coachStageBox, placeCoachCard, visibleCoachWindow } from './Coach'
 
 function mem(init: Record<string, string> = {}): StorageLike {
   const m = new Map(Object.entries(init))
@@ -74,5 +75,27 @@ describe('draft prompt preference', () => {
     expect(isDraftPromptEnabled(s)).toBe(false)
     setDraftPromptEnabled(true, s)
     expect(isDraftPromptEnabled(s)).toBe(true)
+  })
+})
+
+describe('coach card placement', () => {
+  const table = { left: 40, top: 80, right: 820, bottom: 700 }
+
+  it('pulls a right-edge hole (Undo/Settings) back onto the table', () => {
+    const vis = visibleCoachWindow(1, 1280, 800)
+    const box = coachStageBox(table, vis)
+    const pos = placeCoachCard({ top: 8, left: 980, width: 220, height: 40 }, 220, 380, box)
+    expect(pos.left).toBeGreaterThanOrEqual(box.left)
+    expect(pos.left + pos.width).toBeLessThanOrEqual(box.right)
+    expect(pos.top).toBeGreaterThanOrEqual(box.top)
+    expect(pos.top + 220).toBeLessThanOrEqual(box.bottom)
+  })
+
+  it('shrinks the visible window by board-size zoom so 140% stays on-screen', () => {
+    const vis = visibleCoachWindow(1.4, 1280, 800)
+    expect(vis.right).toBeLessThan(1280 / 1.4)
+    const box = coachStageBox(table, vis)
+    const pos = placeCoachCard({ top: 8, left: 900, width: 200, height: 40 }, 200, 380, box)
+    expect(pos.left + pos.width).toBeLessThanOrEqual(vis.right)
   })
 })

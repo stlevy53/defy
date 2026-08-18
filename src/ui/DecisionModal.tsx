@@ -6,11 +6,13 @@
 //
 // UI only: it reads the engine's pendingDecision and calls onRespond(selection) — no rules here.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import type { Decision, GameState } from '../engine'
+import { DRAFT_FROM } from '../engine'
 import { classifyCandidate, maquisOf, enemyOf, missionOf } from './format'
 import { maquisArt, enemyArt, missionArt, spyArt } from './cardArt'
-import { DRAFT_FROM } from '../engine'
+import { zoomNodeFor } from './Card'
+import { useZoom } from './Zoom'
 
 export function DecisionModal({
   decision,
@@ -239,6 +241,14 @@ function DecisionCard({
 }) {
   const c = classifyCandidate(state, uid)
   const cls = `dm-card ${c.kind} ${selected ? 'selected' : ''}`
+  const openZoom = useZoom()
+  const zoom = (e: MouseEvent) => {
+    const node = zoomNodeFor(state, uid)
+    if (!node) return
+    e.preventDefault()
+    e.stopPropagation()
+    openZoom(node)
+  }
 
   // Art vs. text is either/or, exactly as the board's card renderer does: when a card image exists
   // it IS the face (the Maquis image already carries the name + both Hidden/Revealed halves side by
@@ -320,7 +330,7 @@ function DecisionCard({
   })()
 
   return (
-    <button type="button" className={cls} onClick={onClick} aria-pressed={selected}>
+    <button type="button" className={cls} onClick={onClick} onContextMenu={zoom} aria-pressed={selected} title="Right-click to zoom">
       {order !== undefined && <span className="dm-order">{order}</span>}
       {body}
     </button>

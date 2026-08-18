@@ -543,6 +543,14 @@ button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
   position: absolute; top: 6px; left: 6px; background: var(--accent); color: #fff;
   font-weight: 800; font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 6px;
 }
+.era-chip-host { position: absolute; top: 6px; right: 6px; z-index: 2; }
+.era-chip {
+  display: block; background: rgba(20, 17, 14, 0.88); color: var(--accent-2);
+  font-weight: 800; font-size: 0.68rem; letter-spacing: 0.04em;
+  padding: 0.12rem 0.4rem; border-radius: 6px;
+  border: 1px solid rgba(217, 154, 36, 0.45);
+}
+.era-inline { font-size: 0.72rem; color: var(--accent-2); font-weight: 700; }
 
 /* Enemy art: small portrait token with this copy's Defense overlaid (full text on hover). */
 .enemy.has-art { flex: 0 0 auto; padding: 0; border: none; background: transparent; overflow: visible; position: relative; }
@@ -1006,7 +1014,7 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 @keyframes whatsnew-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes whatsnew-rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-/* Settings cog + modal (New / Save / Load; sound options later). Mirrors the What's New look. */
+/* Settings cog + modal (New / Save / Load, board size, sound). Mirrors the What's New look. */
 .ghost.cog { font-size: 1rem; line-height: 1; padding: 0.28rem 0.5rem; }
 .settings-overlay {
   position: fixed; inset: 0; z-index: 96;
@@ -1052,6 +1060,14 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 }
 .scale-opt:hover { border-color: var(--accent-2); transform: translateY(-1px); }
 .scale-opt.active { background: var(--accent-2); border-color: var(--accent-2); color: #241503; }
+.volume-row {
+  display: flex; align-items: center; gap: 0.55rem; margin: 0.2rem 0 0.1rem;
+}
+.volume-row input[type='range'] {
+  flex: 1; accent-color: var(--accent-2); min-width: 0;
+}
+.volume-row input[type='range']:disabled { opacity: 0.4; }
+.volume-pct { font-size: 0.78rem; color: var(--muted); min-width: 2.6rem; text-align: right; }
 
 .settings-status {
   margin: 0.9rem 0 0; padding: 0.5rem 0.7rem; border-radius: 8px; font-size: 0.84rem;

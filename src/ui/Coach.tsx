@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { COACH_BEATS } from './coachLaunch'
+import { playSfx } from './audio'
 
 interface Hole {
   top: number
@@ -14,12 +15,57 @@ interface Hole {
 interface CardPos {
   top: number
   left: number
+  width: number
 }
 
 const HOLE_PAD = 8
 const CARD_GAP = 14
 const VIEW_PAD = 16
 const CARD_WIDTH = 380
+
+export interface CoachBox {
+  top: number
+  left: number
+  right: number
+  bottom: number
+}
+
+export interface CoachCardPos {
+  top: number
+  left: number
+  width: number
+}
+
+/** Visible window in the same coordinates as `position: fixed` under CSS zoom on `<html>`. */
+export function visibleCoachWindow(scale: number, vw: number, vh: number): CoachBox {
+  const s = scale > 0 ? scale : 1
+  return { left: VIEW_PAD, top: VIEW_PAD, right: vw / s - VIEW_PAD, bottom: vh / s - VIEW_PAD }
+}
+
+/** Keep the copy card on the table column (`.board-main`), never past the visible window. */
+export function coachStageBox(stage: CoachBox | null, vis: CoachBox): CoachBox {
+  const box: CoachBox = {
+    left: Math.max(vis.left, stage?.left ?? vis.left),
+    top: Math.max(vis.top, stage?.top ?? vis.top),
+    right: Math.min(vis.right, stage?.right ?? vis.right),
+    bottom: Math.min(vis.bottom, stage?.bottom ?? vis.bottom),
+  }
+  if (box.right - box.left < 80 || box.bottom - box.top < 80) return vis
+  return box
+}
+
+/** Sit next to the spotlight hole, fully inside `box` (the table play area ∩ the window). */
+export function placeCoachCard(hole: Hole, cardH: number, cardW: number, box: CoachBox): CoachCardPos {
+  const width = Math.min(cardW, Math.max(0, box.right - box.left))
+  const minL = box.left
+  const maxL = box.right - width
+  const left = clamp(hole.left, minL, Math.max(minL, maxL))
+  const below = hole.top + hole.height + CARD_GAP
+  if (below >= box.top && below + cardH <= box.bottom) return { top: below, left, width }
+  const above = hole.top - cardH - CARD_GAP
+  if (above >= box.top && above + cardH <= box.bottom) return { top: above, left, width }
+  return { top: clamp(hole.top, box.top, Math.max(box.top, box.bottom - cardH)), left, width }
+}
 
 function markerFor(index: number): string {
   const beat = COACH_BEATS[index]
@@ -40,16 +86,6 @@ function readHole(index: number, bringIntoView: boolean): Hole | null {
   }
 }
 
-function placeCard(hole: Hole, cardH: number, vw: number, vh: number): CardPos {
-  const width = Math.min(CARD_WIDTH, vw - VIEW_PAD * 2)
-  const left = clamp(hole.left, VIEW_PAD, vw - width - VIEW_PAD)
-  const below = hole.top + hole.height + CARD_GAP
-  if (below + cardH + VIEW_PAD <= vh) return { top: below, left }
-  const above = hole.top - cardH - CARD_GAP
-  if (above >= VIEW_PAD) return { top: above, left }
-  return { top: Math.max(VIEW_PAD, vh - cardH - VIEW_PAD), left }
-}
-
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n))
 }
@@ -64,7 +100,7 @@ export function Coach({
 }) {
   const [index, setIndex] = useState(0)
   const [hole, setHole] = useState<Hole | null>(null)
-  const [cardPos, setCardPos] = useState<CardPos>({ top: 24, left: 24 })
+  const [cardPos, setCardPos] = useState<CardPos>({ top: 24, left: 24, width: CARD_WIDTH })
   const [cardEl, setCardEl] = useState<HTMLDivElement | null>(null)
 
   const measure = useCallback(
@@ -73,9 +109,18 @@ export function Coach({
       setHole(next)
       if (!next) return
       const cardH = cardEl?.offsetHeight ?? 220
-      setCardPos(placeCard(next, cardH, window.innerWidth, window.innerHeight))
+      const vis = visibleCoachWindow(scale, window.innerWidth, window.innerHeight)
+      const stageEl = document.querySelector('.board-main')
+      const stage =
+        stageEl instanceof HTMLElement
+          ? (() => {
+              const r = stageEl.getBoundingClientRect()
+              return { top: r.top, left: r.left, right: r.right, bottom: r.bottom }
+            })()
+          : null
+      setCardPos(placeCoachCard(next, cardH, CARD_WIDTH, coachStageBox(stage, vis)))
     },
-    [index, cardEl],
+    [index, cardEl, scale],
   )
 
   useLayoutEffect(() => {
@@ -113,7 +158,13 @@ export function Coach({
   const last = index === COACH_BEATS.length - 1
   const beat = COACH_BEATS[index]
 
+  const skip = useCallback(() => {
+    playSfx('play')
+    onClose()
+  }, [onClose])
+
   const next = () => {
+    playSfx('play')
     if (last) onClose()
     else setIndex((i) => i + 1)
   }
@@ -124,11 +175,11 @@ export function Coach({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.preventDefault()
-      onClose()
+      skip()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [skip])
 
   return (
     <div className="coach-overlay" role="dialog" aria-modal="true" aria-label="How to play this table">
@@ -143,7 +194,7 @@ export function Coach({
         ref={setCardEl}
         key={beat.id}
         className="coach-card"
-        style={{ top: cardPos.top, left: cardPos.left, width: Math.min(CARD_WIDTH, window.innerWidth - VIEW_PAD * 2) }}
+        style={{ top: cardPos.top, left: cardPos.left, width: cardPos.width }}
       >
         {beat.kicker && <p className="coach-kicker">{beat.kicker}</p>}
         <h2 className="coach-title">{beat.title}</h2>
@@ -156,7 +207,7 @@ export function Coach({
           <span className="coach-step">
             {index + 1} / {COACH_BEATS.length}
           </span>
-          <button type="button" className="coach-skip" onClick={onClose}>
+          <button type="button" className="coach-skip" onClick={skip}>
             Skip
           </button>
           <button type="button" className="coach-next" onClick={next} autoFocus>

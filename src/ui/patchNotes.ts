@@ -11,6 +11,18 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.9',
+    date: '2026-08-18',
+    title: 'The table makes a sound',
+    changes: [
+      'Sound — a card flip when something moves on the table; a gunshot when you defeat an Enemy; a knife when a Spy leaves; an explosion when you destroy a Mission. Win and loss have their own stingers. Mute and volume live under ⚙ Settings. The How to play tour uses the card flip on Next and Skip.',
+      'Fix — Undo after discarding the wrong Enemy (Anastasio, and the same kind of pick) takes back the whole action, so you can use the card again.',
+      'Fix — right-click zoom works on cards in the Revealed-pile picker.',
+      'Fix — the last How to play tip stays on the table, so Skip / Start playing stay clickable.',
+      'Missions show an Era 1 / 2 / 3 chip so the printed era is readable at board size.',
+    ],
+  },
+  {
     version: '0.1.8',
     date: '2026-08-18',
     title: 'You can’t un-see Enemies',

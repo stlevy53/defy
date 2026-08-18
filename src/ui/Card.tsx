@@ -6,7 +6,7 @@
 
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
-import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip } from './format'
+import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip, eraLabel, classifyCandidate } from './format'
 import { maquisArt, enemyArt, enemyBackArt, missionArt, spyArt } from './cardArt'
 import { Tip } from './Tip'
 import { useZoom } from './Zoom'
@@ -578,7 +578,14 @@ function MissionFace({
         {act && <div className="click-hint">{act.hint}</div>}
         {stamp}
         {reinforceBadge}
-        <img className="card-art" src={art} alt={name} draggable={false} />
+        <img className="card-art" src={art} alt={data ? `${name} · ${eraLabel(data.era)}` : name} draggable={false} />
+        {data && (
+          <span className="era-chip-host">
+            <Tip text={eraLabel(data.era)} below>
+              <span className="era-chip">Era {data.era}</span>
+            </Tip>
+          </span>
+        )}
         {modified && (
           <Tip text="Defense modified for this round.">
             <span className="def-override">🛡 {defense}</span>
@@ -596,6 +603,7 @@ function MissionFace({
       {reinforceBadge}
       <div className="card-head">
         <span className="card-name">{data?.name ?? slot.dataId}</span>
+        {data && <span className="era-inline">{eraLabel(data.era)}</span>}
         <Tip text={keywordTip(data?.keyword)}>
           <span className={`kw kw-${data?.keyword}`}>{data?.keyword}</span>
         </Tip>
@@ -780,6 +788,22 @@ const useMaquisZoom = (dataId: string) => useZoomHandler(() => <ZoomMaquisCard d
 const useMissionZoom = (dataId: string) => useZoomHandler(() => <ZoomMissionCard dataId={dataId} />)
 const useEnemyZoom = (enemy: EnemyInstance) =>
   useZoomHandler(() => <ZoomEnemyCard typeId={enemy.typeId} defense={enemy.defense} />)
+
+export function zoomNodeFor(state: GameState, uid: string): ReactNode | null {
+  const c = classifyCandidate(state, uid)
+  switch (c.kind) {
+    case 'maquis':
+      return <ZoomMaquisCard dataId={c.dataId} />
+    case 'spy':
+      return <ZoomMaquisCard dataId="spy" />
+    case 'mission':
+      return <ZoomMissionCard dataId={c.slot.dataId} />
+    case 'enemy':
+      return <ZoomEnemyCard typeId={c.enemy.typeId} defense={c.enemy.defense} />
+    default:
+      return null
+  }
+}
 
 function ZoomMaquisCard({ dataId }: { dataId: string }) {
   const name = nameOfMaquis(dataId)

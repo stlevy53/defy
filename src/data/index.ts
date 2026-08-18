@@ -15,6 +15,11 @@ import type {
 
 export const maquis = maquisJson.cards as MaquisCard[]
 export const missions = missionsJson.cards as MissionCard[]
+export const eraNames: Record<1 | 2 | 3, string> = {
+  1: missionsJson.eraNames['1'],
+  2: missionsJson.eraNames['2'],
+  3: missionsJson.eraNames['3'],
+}
 export const enemyTypes = enemiesJson.types as EnemyType[]
 export const civilians = civiliansJson.cards as CivilianCard[]
 export const spy = spiesJson.card as SpyCard

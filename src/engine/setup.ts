@@ -23,8 +23,8 @@ export function isDrafting(state: GameState): boolean {
  * Standard setup:
  *  - 24 Maquis shuffled, split 12 (Hidden) / 12 (Recruit)
  *  - 3 Spies shuffled into the Hidden deck; 3 kept aside (available for effects)
- *  - Missions sorted by era, shuffled; remove 4/3/3; 4 Era-1 become the available row,
- *    remaining Era-2 (top) + Era-3 (bottom) form the Mission deck
+ *  - Missions sorted by the era printed on the card, shuffled; remove 4/3/3; 4 Era-1 become
+ *    the available row, remaining Era-2 (top) + Era-3 (bottom) form the Mission deck
  *  - 32 Enemies shuffled; each available Mission dealt Enemies equal to its Garrison
  *  - 8 Civilians shuffled into the Civilian deck
  *  - Draw a starting hand of 5 from the Hidden deck

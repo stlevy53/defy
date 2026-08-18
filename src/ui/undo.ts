@@ -45,3 +45,18 @@ export function canPopUndo(history: GameState[]): boolean {
   if (wouldUnchooseRevealedMission(prev, current)) return false
   return true
 }
+
+/**
+ * Pop the last move. If that lands on a targeting prompt that an action just opened (UseAction →
+ * pick an Enemy), pop that prompt too so the card's action resets. Stops before a prompt that
+ * itself revealed Enemies (scout / ChooseMission) — those stay locked.
+ */
+export function popUndo(history: GameState[]): GameState[] {
+  if (!canPopUndo(history)) return history
+  let next = history.slice(0, -1)
+  const top = next[next.length - 1]
+  const openedByAction =
+    next.length >= 2 && top.pendingDecision != null && next[next.length - 2].pendingDecision == null
+  if (openedByAction && canPopUndo(next)) next = next.slice(0, -1)
+  return next
+}

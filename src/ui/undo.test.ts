@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createGame, applyAction, legalActions, resolveDecision } from '../engine'
 import type { GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
-import { canPopUndo, missionGarrisonCommitted } from './undo'
+import { canPopUndo, missionGarrisonCommitted, popUndo } from './undo'
 
 ensureEffectsRegistered()
 
@@ -109,5 +109,75 @@ describe('canPopUndo', () => {
     // Walking back through ATTACK is fine; crossing ChooseMission is not.
     while (history.length > 2) history.pop()
     expect(canPopUndo(history)).toBe(false)
+  })
+})
+
+describe('popUndo', () => {
+  it("takes back Anastasio's enemy discard and resets his action in one Undo", () => {
+    let start: GameState | undefined
+    let mi = -1
+    for (let seed = 1; seed <= 2000; seed++) {
+      const s = createGame({ seed })
+      if (!s.hand.some((c) => c.dataId === 'anastasio')) continue
+      mi = s.missionRow.findIndex((m) => m.enemies.length >= 2)
+      if (mi === -1) continue
+      start = s
+      break
+    }
+    if (!start) throw new Error('no seed with Anastasio and a 2-Enemy Mission')
+
+    const card = start.hand.find((c) => c.dataId === 'anastasio')!
+    const played = applyAction(start, { type: 'PlayMaquis', uid: card.uid, side: 'hidden' })
+    const attack = drain(applyAction(played, { type: 'ChooseMission', uid: played.missionRow[mi].uid }))
+    const used = applyAction(attack, { type: 'UseAction', uid: card.uid })
+    expect(used.pendingDecision?.kind).toBe('selectTarget')
+    const d = used.pendingDecision
+    if (!d || d.kind !== 'selectTarget') throw new Error('expected selectTarget')
+    const target = d.candidates[0]
+    const resolved = drain(resolveDecision(used, { selection: [target] }))
+    expect(resolved.inPlay.find((m) => m.uid === card.uid)?.actionUsed).toBe(true)
+    expect(resolved.missionRow.find((m) => m.uid === resolved.chosenMissionUid)?.enemies.some((e) => e.uid === target)).toBe(
+      false,
+    )
+
+    const back = popUndo([played, attack, used, resolved])
+    expect(back).toHaveLength(2)
+    const s = back[back.length - 1]
+    expect(s.pendingDecision).toBeNull()
+    expect(s.inPlay.find((m) => m.uid === card.uid)?.actionUsed).toBe(false)
+    expect(legalActions(s).some((a) => a.type === 'UseAction' && a.uid === card.uid)).toBe(true)
+    expect(s.missionRow.find((m) => m.uid === s.chosenMissionUid)?.enemies.some((e) => e.uid === target)).toBe(true)
+  })
+
+  it('undoing the targeting prompt before a pick also resets the action', () => {
+    let start: GameState | undefined
+    let mi = -1
+    for (let seed = 1; seed <= 2000; seed++) {
+      const s = createGame({ seed })
+      if (!s.hand.some((c) => c.dataId === 'anastasio')) continue
+      mi = s.missionRow.findIndex((m) => m.enemies.length >= 2)
+      if (mi === -1) continue
+      start = s
+      break
+    }
+    if (!start) throw new Error('no seed with Anastasio and a 2-Enemy Mission')
+
+    const card = start.hand.find((c) => c.dataId === 'anastasio')!
+    const played = applyAction(start, { type: 'PlayMaquis', uid: card.uid, side: 'hidden' })
+    const attack = drain(applyAction(played, { type: 'ChooseMission', uid: played.missionRow[mi].uid }))
+    const used = applyAction(attack, { type: 'UseAction', uid: card.uid })
+    const back = popUndo([played, attack, used])
+    expect(back[back.length - 1].inPlay.find((m) => m.uid === card.uid)?.actionUsed).toBe(false)
+    expect(back[back.length - 1].pendingDecision).toBeNull()
+  })
+
+  it('does not skip a whole draft when undoing one pick', () => {
+    const first = createGame({ seed: 1, draft: true })
+    expect(first.pendingDecision?.kind).toBe('selectCards')
+    const pick = first.pendingDecision && first.pendingDecision.kind === 'selectCards' ? first.pendingDecision.candidates[0] : ''
+    const second = resolveDecision(first, { selection: [pick] })
+    const back = popUndo([first, second])
+    expect(back).toHaveLength(1)
+    expect(back[0].pendingDecision).toEqual(first.pendingDecision)
   })
 })

@@ -12,6 +12,19 @@ _Work in progress toward the next version — add changes here as we make them, 
 
 ---
 
+## v0.1.9 — 2026-08-18
+
+The table makes a sound.
+
+- **Sound** — card flip when anything moves on the table; gunshot when you defeat an Enemy; knife when a Spy leaves; explosion when you destroy a Mission. End-game stingers: defeat, draw, victory, major victory, overwhelming (epic) victory. Mute and volume live under ⚙ Settings (Esc). The How to play tour uses the same card flip on Next, Skip, and Start playing.
+- **Fix** — the gunshot on an Enemy now starts on the crack (trimmed the lead-in) so it lands with the click.
+- **Fix** — right-click zoom works on cards in the Revealed-pile (and other off-board) picker, same as the table.
+- **Fix** — the How to play tour stays on the table. The last tip no longer slides off the right edge, so Skip / Start playing stay clickable.
+- **Fix** — Undo after a targeting action (Anastasio discarding an Enemy, and the same shape of pick) takes back the whole action, so the card can be used again and other Maquis actions stay available.
+- **Missions** — each Mission shows its printed era (Era 1 / 2 / 3) on the tile, so the starting row is readable as Era 1 at board size.
+
+---
+
 ## v0.1.8 — 2026-08-18
 
 You can’t un-see Enemies.

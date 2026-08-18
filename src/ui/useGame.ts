@@ -7,7 +7,8 @@ import type { Action, Decision, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
 import { APP_VERSION } from './patchNotes'
 import { useDebugHook } from './debugHook'
-import { canPopUndo } from './undo'
+import { canPopUndo, popUndo } from './undo'
+import { actionSfx, flightSfx, playSfx } from './audio'
 
 ensureEffectsRegistered()
 
@@ -124,6 +125,11 @@ export function useGame(initialSeed?: number): UseGame {
       try {
         setError(null)
         push(settle(applyAction(state, action)))
+        const cue = actionSfx(
+          action,
+          state.missionRow.map((m) => m.uid),
+        )
+        if (cue) playSfx(cue)
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e))
       }
@@ -145,7 +151,7 @@ export function useGame(initialSeed?: number): UseGame {
 
   const undo = useCallback(() => {
     setError(null)
-    setHistory((h) => (canPopUndo(h) ? h.slice(0, -1) : h))
+    setHistory((h) => popUndo(h))
   }, [])
 
   const newGame = useCallback((s?: number, draft?: boolean) => {
@@ -267,7 +273,10 @@ export function useReinforcements(state: GameState, gameId: number): Record<stri
       const fresh = slot.enemies.filter((e) => !had.has(e.uid)).map((e) => e.uid)
       if (fresh.length > 0) next[slot.uid] = fresh
     }
-    if (Object.keys(next).length > 0) setAdded(next)
+    if (Object.keys(next).length > 0) {
+      setAdded(next)
+      playSfx('reinforce')
+    }
   }, [state, gameId])
 
   useEffect(() => {
@@ -396,7 +405,16 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
         next.push({ id: `${step}-in-${uid}`, dataId, fromX: from.x, fromY: from.y, toX: hand.x, toY: hand.y, delay: idx++ * 70 })
       }
     }
-    if (next.length) setFlights((f) => [...f, ...next])
+    if (next.length) {
+      setFlights((f) => [...f, ...next])
+      const cue = flightSfx({
+        discard: next.some((f) => f.id.includes('-out-')),
+        draw: next.some((f) => f.id.includes('-in-')),
+        spyLeft: next.some((f) => f.id.includes('-out-') && f.dataId === 'spy'),
+        other: next.some((f) => f.id.includes('-draft-')),
+      })
+      if (cue) playSfx(cue)
+    }
   }, [state, gameId, step])
 
   const remove = useCallback((id: string) => setFlights((f) => f.filter((x) => x.id !== id)), [])

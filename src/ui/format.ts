@@ -1,7 +1,7 @@
 // Presentation helpers: turn engine ids/actions into human-readable labels. Cards render from the
 // /data JSON (text-first). No rules here — pure formatting over GameState.
 
-import { maquis, missions, enemyTypes, civilians } from '../data'
+import { maquis, missions, enemyTypes, civilians, eraNames } from '../data'
 import type { ActionType } from '../types'
 import type { Action, EnemyInstance, GameState, MissionSlot } from '../engine'
 import { isDrafting } from '../engine'
@@ -51,6 +51,9 @@ export function keywordTip(kw?: string): string {
   }
 }
 export const missionOf = (dataId: string) => missionCard.get(dataId)
+
+/** Printed era line, e.g. "Era 1: Re-invasion of Spain". */
+export const eraLabel = (era: 1 | 2 | 3): string => `Era ${era}: ${eraNames[era]}`
 export const maquisOf = (dataId: string) => maquisCard.get(dataId)
 export const enemyOf = (typeId: string) => enemyTypeById.get(typeId)
 

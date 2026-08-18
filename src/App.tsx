@@ -26,6 +26,7 @@ import {
   markCoachFinished,
 } from './ui/coachLaunch'
 import { isDraftPromptEnabled } from './ui/draftPref'
+import { installUnlock, playEndgameSfx } from './ui/audio'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
 import { isDraftDecision, isDrafting } from './engine'
 import type { Action, Decision, GameResult, GameState } from './engine'
@@ -98,12 +99,14 @@ export function App() {
     [newGame],
   )
 
-  // Settings modal (New/Save/Load, board size; sound options later). Opened by the cog or Escape.
+  // Settings modal (New/Save/Load, board size, sound). Opened by the cog or Escape.
   const [showSettings, setShowSettings] = useState(false)
 
   // Player-chosen board size. Owned here (not in the modal) so the Ctrl +/-/0 accelerators work
   // whether or not Settings is open, and so the scale survives closing it.
   const ui = useUiScale()
+
+  useEffect(() => installUnlock(), [])
 
   // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew, the
   // coach, and the card zoom bind their own Escape handlers, so we don't also pop Settings.
@@ -282,7 +285,7 @@ export function App() {
           )}
         </div>
         <div className="controls" data-coach="controls">
-          <Tip below text="Takes back the last move. You cannot undo revealing Enemies (a scout or choosing a Mission) once they are face-up. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
+          <Tip below text="Takes back the last move, including a targeting choice (so a used action resets). You cannot undo revealing Enemies (a scout or choosing a Mission) once they are face-up. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
             <button className="ghost" onClick={undo} disabled={!canUndo}>
               Undo
             </button>
@@ -329,10 +332,15 @@ export function App() {
       )}
 
       {!showCoach && !showDraftOffer && shown?.outcome === 'loss' && (
-        <LossOverlay reason={shown.reason} onPlayAgain={playAgain} />
+        <LossOverlay reason={shown.reason} cueKey={`${gameId}-loss`} onPlayAgain={playAgain} />
       )}
       {!showCoach && !showDraftOffer && shown?.outcome === 'win' && (
-        <WinOverlay tier={shown.tier} points={shown.points} onPlayAgain={playAgain} />
+        <WinOverlay
+          tier={shown.tier}
+          points={shown.points}
+          cueKey={`${gameId}-win`}
+          onPlayAgain={playAgain}
+        />
       )}
 
       {slide && <SlidingCard slide={slide} />}
@@ -848,7 +856,16 @@ function lossHeadline(reason?: string): string {
 
 /** Full-screen, animated defeat modal. Covers the board so the loss lands with weight; the only
  *  action out is Play again. */
-function LossOverlay({ reason, onPlayAgain }: { reason?: string; onPlayAgain: () => void }) {
+function LossOverlay({
+  reason,
+  cueKey,
+  onPlayAgain,
+}: {
+  reason?: string
+  cueKey: string
+  onPlayAgain: () => void
+}) {
+  useEffect(() => playEndgameSfx('loss', cueKey), [cueKey])
   return (
     <div className="gameover-overlay loss" role="alertdialog" aria-modal="true" aria-label="Defeat">
       <div className="gameover-vignette" aria-hidden="true" />
@@ -909,9 +926,20 @@ const WIN_TIERS: Record<string, WinTier> = {
 }
 
 /** Full-screen victory modal, escalating with the tier. */
-function WinOverlay({ tier, points, onPlayAgain }: { tier?: string; points?: number; onPlayAgain: () => void }) {
+function WinOverlay({
+  tier,
+  points,
+  cueKey,
+  onPlayAgain,
+}: {
+  tier?: string
+  points?: number
+  cueKey: string
+  onPlayAgain: () => void
+}) {
   const info = WIN_TIERS[tier ?? 'Draw'] ?? WIN_TIERS.Draw
   const level = info.level
+  useEffect(() => playEndgameSfx('win', cueKey, { tier: tier ?? info.headline }), [cueKey, tier, info.headline])
   return (
     <div className={`gameover-overlay win win-l${level}`} role="alertdialog" aria-modal="true" aria-label={tier}>
       {level >= 2 && <div className="win-rays" aria-hidden="true" />}

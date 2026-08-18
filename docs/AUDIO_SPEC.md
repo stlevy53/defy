@@ -1,10 +1,10 @@
 # Audio — selection guide and build plan
 
-**Status:** held — documented, do not build yet · **Next after** the v0.1.6 coach drop · **Area:** UI only
+**Status:** shipped in v0.1.9 — pipe + real cue files · **Area:** UI only
 
-The game has **no audio layer**. Settings already reserves a home for mute/volume. This note is how we
-*choose* sounds and how we *ship* them. **Held on purpose** — v0.1.6 ships the first-run coach to the
-v0.1.5 playtesters; do not start Slice A until this plan is picked back up.
+The game has a small audio layer (`src/ui/audio.ts`). Settings holds mute/volume. This note is how we
+*choose* sounds and how we *ship* them. Cue files live in `src/assets/audio/`; replacing a file is a
+drop-in, same as card art. Credits: [`docs/audio-credits.md`](./audio-credits.md).
 
 Same constraint as the card art: **personal, non-commercial** use, intended to show the game's
 creators. Do not grab commercial tracks, YouTube rips, or another game's assets.
@@ -15,14 +15,14 @@ Resist is a quiet card game on a wooden table about the Spanish Maquis. Sound sh
 **paper, wood, and weight** — sparse, dry, analog. It speaks at a few moments, then gets out of
 the way.
 
-**Yes:** a card hitting the table, a muted strike, a short loss breath, a win that grows with the
+**Yes:** a card hitting the table, a gunshot on an Enemy, an explosion when a Mission falls, a short loss breath, a win that grows with the
 tier the way the overlay already does.
 
-**No:** arcade boings, modern UI whooshes, trailer music, gunfire, radio chatter on a loop, a cue
+**No:** arcade boings, modern UI whooshes, trailer music, radio chatter on a loop, a cue
 on every click.
 
 If a sound would still make sense with the speakers off because the animation already said it,
-skip that sound.
+skip that sound. Combat is the exception — playtesters could not hear a second card-tap as an attack.
 
 ## How we select (before any code)
 
@@ -79,20 +79,25 @@ What's New notes. Prefer CC0 so we do not owe on-screen credits.
 
 ## Cue list (this pass)
 
-Eight cues. That is the whole set.
+Table movement shares one card-flip; combat is gunshot / knife / explosion; end-game is five titled stingers.
 
 | Cue | When | Notes |
 |---|---|---|
-| `play` | A Maquis is played from hand to the table | One sound for Hidden and Revealed. Do not split. |
-| `draw` | A card flies into the hand (Recover, draw actions) | Fire from the existing card-flight hook, not from the engine. |
-| `discard` | A card flies out of the hand to a pile | Same. Skip if `draw`+`discard` stacked on one action would double-hit — then keep **one** of the two. |
-| `strike` | Spend Attack on an Enemy or Mission | Short. No separate "kill" unless defeat already has its own cue. |
-| `reinforce` | An Enemy is added to a Mission (the glow + REINFORCED badge) | Matches `useReinforcements`. |
-| `defeat` | A Mission is defeated (the Defeated · +N VP stamp) | Optional if `strike` on the Mission is enough; decide in the listen pass. |
-| `loss` | Loss overlay opens | One stinger. All three loss reasons share it. |
-| `win` | Win overlay opens | **One file**, not five. Escalate in code (volume / a second layered hit on Major+Epic) so we do not hunt five fanfares. Draw should be the quietest. |
+| `play` | A Maquis is played or rearranged; coach Next / Skip / Start playing | File: `Card Flip.wav`. |
+| `choose` | A Mission is chosen ("Click to attack") | File: `Mission attack selection audio.wav`. |
+| `draw` / `discard` | A card flies into or out of the hand | Same flip, unless a Spy is leaving — then `slash`. |
+| `strike` | Spend Attack on an Enemy | File: `Gunshot.wav`. |
+| `slash` | A Spy leaves the table (discarded from hand) | File: `Knife slash.mp3`. |
+| `reinforce` | An Enemy is added to a Mission | Same card flip (a card sliding onto the board). |
+| `defeat` | Spend Attack on the Mission (the killing blow) | File: `Explosion.mp3`. |
+| `loss` | Loss overlay opens | File: `Defeat Audio.mp3`. All three loss reasons share it. |
+| `winDraw` | Draw overlay | File: `Draw Audio.mp3`. |
+| `winMinor` | Minor Victory overlay | File: `Minor Victory Audio.mp3`. |
+| `winVictory` | Victory overlay | File: `Victory Audio.mp3`. |
+| `winMajor` | Major Victory overlay | File: `Major Victory Audio.mp3`. |
+| `winEpic` | Epic Victory overlay | File: `Overwhelming Victory Audio.mp3`. |
 
-**Explicitly not this pass:** music loop, UI button clicks, hover, Undo, Settings open, coach beats,
+**Explicitly not this pass:** music loop, UI button clicks, hover, Undo, Settings open,
 phase-change stingers, per-Enemy voicelines.
 
 ## Build plan (after files exist, or with placeholders)
@@ -125,9 +130,9 @@ Skip audio on New game and Undo (same `gameId` / `step` guards the flight hook a
 
 ### Slice C — end-game stingers
 
-Fire `loss` when `LossOverlay` mounts, `win` when `WinOverlay` mounts. Scale `win` with
-`WIN_TIERS.level` (Draw quiet → Epic fullest), matching the visual spectacle. The `?preview=`
-harness is how we audition tiers without playing a whole game.
+Fire `loss` when `LossOverlay` mounts and the matching stinger when `WinOverlay` mounts (`Draw Audio`,
+`Minor Victory Audio`, `Victory Audio`, `Major Victory Audio`, `Overwhelming Victory Audio` for Epic).
+The `?preview=` harness is how we audition tiers without playing a whole game.
 
 ### Slice D — later, optional
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Resist! Mission cards. 20 total: Era 1 (8), Era 2 (6), Era 3 (6). Icon mapping (confirmed visually, verify vs rulebook component key): 'garrison' = card-stack icon = number of Enemy cards dealt to this Mission; 'defense' = numbered shield icon = Attack Strength required to defeat the Mission; 'victoryPoints' = laurel icon. 'keyword' is DEFEAT or DEFEND (skull marker = DEFEAT, shield marker = DEFEND). Transcribed from Era 1/2/3 Cards.jpg.",
+  "_comment": "Resist! Mission cards. 20 total: Era 1 (8), Era 2 (6), Era 3 (6). Era is the printed line on the current photos — Card Assets/Missions.jpg (Era 1), Missions 2.jpg (Era 2), Missions 3.jpg (Era 3) — not the Old Art sheets. Icon mapping: 'garrison' = card-stack icon = Enemies dealt; 'defense' = numbered shield = Attack Strength to defeat; 'victoryPoints' = laurel. 'keyword' is DEFEAT or DEFEND (skull = DEFEAT, shield = DEFEND).",
   "count": 20,
   "eraNames": { "1": "Re-invasion of Spain", "2": "Splintering of the Maquis", "3": "Hunting the Maquis" },
   "cards": [

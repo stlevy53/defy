@@ -1,13 +1,14 @@
 // Settings modal: opened by the cog in the top bar or the Escape key. Holds the three game-management
 // actions — New game, Save game, Load game — plus the first-run coach replay, the board-size control,
-// and is the natural future home for sound/volume options. Save/load are thin wrappers over useGame's
-// localStorage helpers; board size is a thin wrapper over useUiScale.
+// and mute / volume. Save/load are thin wrappers over useGame's localStorage helpers; board size is
+// a thin wrapper over useUiScale.
 
 import { useState } from 'react'
 import type { SaveMeta, SaveResult, LoadResult } from './useGame'
 import { UI_SCALES } from './useUiScale'
 import type { UiScale } from './useUiScale'
 import { isDraftPromptEnabled, setDraftPromptEnabled } from './draftPref'
+import { getVolume, isMuted, playSfx, setMuted, setVolume, unlock } from './audio'
 
 interface Props {
   onClose: () => void
@@ -45,6 +46,8 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
   const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
   const [seedEntry, setSeedEntry] = useState('')
   const [askDraft, setAskDraft] = useState(isDraftPromptEnabled)
+  const [muted, setMutedUi] = useState(isMuted)
+  const [volume, setVolumeUi] = useState(getVolume)
 
   const handleNew = () => {
     onNewGame()
@@ -185,10 +188,67 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
               </button>
             </div>
           </div>
+          <div className="settings-scale">
+            <span className="si-title">Sound</span>
+            <span className="si-sub">
+              Card flip when anything moves on the table, a sting when you choose a Mission to
+              attack, a gunshot when you defeat an Enemy, a knife when a Spy leaves, and an
+              explosion when a Mission falls. On by default; mute is one click away. Remembered
+              between sessions.
+            </span>
+            <div className="scale-row" role="group" aria-label="Sound">
+              <button
+                type="button"
+                className={`scale-opt ${!muted ? 'active' : ''}`}
+                onClick={() => {
+                  unlock()
+                  setMuted(false)
+                  setMutedUi(false)
+                  playSfx('play')
+                }}
+                aria-pressed={!muted}
+              >
+                On
+              </button>
+              <button
+                type="button"
+                className={`scale-opt ${muted ? 'active' : ''}`}
+                onClick={() => {
+                  setMuted(true)
+                  setMutedUi(true)
+                }}
+                aria-pressed={muted}
+              >
+                Mute
+              </button>
+            </div>
+            <div className="volume-row">
+              <label className="si-sub" htmlFor="defy-volume">
+                Volume
+              </label>
+              <input
+                id="defy-volume"
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(volume * 100)}
+                disabled={muted}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(volume * 100)}
+                aria-label="Volume"
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100
+                  setVolume(v)
+                  setVolumeUi(v)
+                }}
+              />
+              <span className="volume-pct">{Math.round(volume * 100)}%</span>
+            </div>
+          </div>
         </div>
 
         {status && <p className={`settings-status ${status.tone}`}>{status.text}</p>}
-        <p className="settings-foot">Sound &amp; volume options coming in a later build.</p>
       </div>
     </div>
   )
