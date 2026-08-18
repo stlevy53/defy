@@ -4,7 +4,7 @@ A single-player digital port of the physical solitaire card game *Resist!* (Salt
 
 ## Status
 
-**Playable prototype — v0.1.7.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. **Every card renders its real printed art** (all 61 images: 24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians, the Spy), over a wooden **tabletop** theme, with a **Board size** setting that scales the table 100–160% so the printed card text reads at board scale, a **settings menu** (⚙ / Esc) holding **save & load**, a **full-card decision window** for pile choices — see [`docs/DECISION_MODAL_SPEC.md`](./docs/DECISION_MODAL_SPEC.md) — a **first-run coach**, and the rulebook **draft setup** (offered at the start of a new game; turn it off in Settings). Spec: [`docs/COACH_SPEC.md`](./docs/COACH_SPEC.md). **165/165 tests pass**; `tsc` + `build` are clean.
+**Playable prototype — v0.1.8.** The headless rules engine (Phase 2) is **complete and rulebook-verified**, and a **playable, polished, themed React UI** (Phase 3) sits on top of it — run `npm run dev` and play a full game start to finish. **Every card renders its real printed art** (all 61 images: 24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians, the Spy), over a wooden **tabletop** theme, with a **Board size** setting that scales the table 100–160% so the printed card text reads at board scale, a **settings menu** (⚙ / Esc) holding **save & load**, a **full-card decision window** for pile choices — see [`docs/DECISION_MODAL_SPEC.md`](./docs/DECISION_MODAL_SPEC.md) — a **first-run coach**, and the rulebook **draft setup** (offered at the start of a new game; turn it off in Settings). Spec: [`docs/COACH_SPEC.md`](./docs/COACH_SPEC.md). **176/176 tests pass**; `tsc` + `build` are clean.
 
 **Automated testing.** An in-repo test harness (`sim/`) self-plays the pure engine to find bugs fast: a headless **invariant fuzzer** (`npm run fuzz`) plays thousands of seeded games per minute asserting card-conservation, softlock, crash, and unimplemented-effect oracles; a **regression corpus** (`npm run regress`) detects any behavioral change against a committed baseline; and a **live CDP harness** (`npm run tier2`) drives the real Electron build to screenshot the UI and capture console errors. See [`sim/README.md`](./sim/README.md). Every fuzz run on v0.1.4 is clean, and the regression corpus confirms the recent UI work changed presentation only.
 
@@ -15,7 +15,7 @@ Board readability at that art's scale is handled by a **Board size** setting (Se
 ```
 npm install      # install dependencies
 npm run dev      # start the dev server
-npm test         # run the test suite (165 tests)
+npm test         # run the test suite (176 tests)
 npm run build    # typecheck + production build
 npm run package  # build a Windows portable .exe for playtesters (see HANDOFF.md §10)
 

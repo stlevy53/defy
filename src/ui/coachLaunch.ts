@@ -135,7 +135,7 @@ export const COACH_BEATS: CoachBeat[] = [
     marker: 'controls',
     title: 'Undo and Settings',
     body: [
-      'Undo takes back the last move. During PLAN you can also drag a played Maquis to the other section (or click its dimmed half) — until anyone uses an action.',
+      'Undo takes back the last move. You cannot undo revealing Enemies — a scout or choosing a Mission — once they are face-up. During PLAN you can also drag a played Maquis to the other section (or click its dimmed half) — until anyone uses an action.',
       'The ⚙ cog (or Esc) is Settings: New game, Save, Load, and Board size if the table is hard to read. Ctrl + and Ctrl − scale it any time; Ctrl 0 returns to 100%.',
       'This tour lives under Settings as How to play this table if you want it again.',
     ],

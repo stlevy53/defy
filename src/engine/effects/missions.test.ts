@@ -147,6 +147,42 @@ describe('mission DEFEAT effect logic', () => {
     expect(flipped.enemies.every((e) => e.faceUp)).toBe(true)
   })
 
+  it('Mountain Pass still asks which Mission after this garrison is already revealed', () => {
+    const { g, slot } = chosenGame()
+    for (const e of slot.enemies) e.faceUp = true
+    const others = g.missionRow.filter((m) => m.uid !== slot.uid && m.enemies.some((e) => !e.faceUp))
+    expect(others.length).toBeGreaterThan(1)
+
+    const d = fire('mountain_pass', g, 'DEFEAT') as Decision
+    expect(d.kind).toBe('selectTarget')
+    const candidates = (d as Extract<Decision, { kind: 'selectTarget' }>).candidates
+    expect(candidates).not.toContain(slot.uid)
+    expect(candidates.length).toBe(others.length)
+    // Nothing flipped yet — the player has to pick.
+    for (const m of others) expect(m.enemies.every((e) => !e.faceUp)).toBe(true)
+
+    const targetUid = candidates.find((uid) => uid !== slot.uid)!
+    fire('mountain_pass', g, 'DEFEAT', [[targetUid]])
+    expect(g.missionRow.find((m) => m.uid === targetUid)!.enemies.every((e) => e.faceUp)).toBe(true)
+    for (const m of g.missionRow.filter((m) => m.uid !== targetUid && m.uid !== slot.uid)) {
+      expect(m.enemies.every((e) => !e.faceUp)).toBe(true)
+    }
+  })
+
+  it('Mountain Pass still asks when only one other Mission has face-down Enemies', () => {
+    const { g, slot } = chosenGame()
+    for (const e of slot.enemies) e.faceUp = true
+    const others = g.missionRow.filter((m) => m.uid !== slot.uid && m.enemies.length > 0)
+    expect(others.length).toBeGreaterThan(0)
+    for (const m of others.slice(1)) for (const e of m.enemies) e.faceUp = true
+    const last = others[0]
+
+    const d = fire('mountain_pass', g, 'DEFEAT') as Decision
+    expect(d.kind).toBe('selectTarget')
+    expect((d as Extract<Decision, { kind: 'selectTarget' }>).candidates).toEqual([last.uid])
+    expect(last.enemies.every((e) => !e.faceUp)).toBe(true)
+  })
+
   it('Farmhouse (E2) moves a chosen Revealed-pile card to the Hidden discard', () => {
     const { g } = chosenGame()
     const moved = g.recruit.deck.shift()!
@@ -277,6 +313,44 @@ describe('end-to-end wiring', () => {
     expect(s.hand.filter((c) => c.dataId !== 'spy').length).toBe(handMaquis - 1)
     expect(s.hidden.discard.some((c) => c.uid === pick)).toBe(true)
     assertConservation(s)
+  })
+
+  it('Mountain Pass DEFEAT asks which Mission to flip after ChooseMission reveals this garrison', () => {
+    let done: GameState | null = null
+    search: for (let seed = 1; seed <= 3000; seed++) {
+      const g0 = createGame({ seed })
+      const mp = g0.missionRow.find((m) => m.dataId === 'mountain_pass')
+      if (!mp || mp.enemies.some((e) => e.typeId === 'guard')) continue
+      let s = g0
+      for (const c of s.hand.filter((c) => c.dataId !== 'spy')) {
+        s = applyAction(s, { type: 'PlayMaquis', uid: c.uid, side: 'revealed' })
+      }
+      s = applyAction(s, { type: 'ChooseMission', uid: mp.uid })
+      while (s.pendingDecision) {
+        const d = s.pendingDecision
+        const pick =
+          d.kind === 'selectTarget' || d.kind === 'selectCards'
+            ? d.candidates[0]
+            : d.kind === 'chooseOption'
+              ? d.options[0]
+              : d.cards
+        s = resolveDecision(s, { selection: Array.isArray(pick) ? pick : [pick] })
+      }
+      if (s.attackStrength < 5) continue
+      const next = applyAction(s, { type: 'SpendAttackOn', targetUid: mp.uid })
+      done = next
+      break search
+    }
+    if (!done) throw new Error('no mountain-pass-defeat scenario found')
+    expect(done.pendingDecision?.kind).toBe('selectTarget')
+    const d = done.pendingDecision as Extract<Decision, { kind: 'selectTarget' }>
+    expect(d.prompt).toMatch(/Flip all Enemies/)
+    expect(d.candidates.length).toBeGreaterThan(0)
+    expect(d.candidates).not.toContain(done.chosenMissionUid)
+    const target = d.candidates[0]
+    const after = resolveDecision(done, { selection: [target] })
+    expect(after.missionRow.find((m) => m.uid === target)!.enemies.every((e) => e.faceUp)).toBe(true)
+    assertConservation(after)
   })
 
   it('Border DEFEAT fires when the mission is defeated', () => {

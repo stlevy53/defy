@@ -7,6 +7,7 @@ import type { Action, Decision, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
 import { APP_VERSION } from './patchNotes'
 import { useDebugHook } from './debugHook'
+import { canPopUndo } from './undo'
 
 ensureEffectsRegistered()
 
@@ -144,7 +145,7 @@ export function useGame(initialSeed?: number): UseGame {
 
   const undo = useCallback(() => {
     setError(null)
-    setHistory((h) => (h.length > 1 ? h.slice(0, -1) : h))
+    setHistory((h) => (canPopUndo(h) ? h.slice(0, -1) : h))
   }, [])
 
   const newGame = useCallback((s?: number, draft?: boolean) => {
@@ -217,7 +218,7 @@ export function useGame(initialSeed?: number): UseGame {
     saveGame,
     loadGame,
     savedMeta,
-    canUndo: history.length > 1,
+    canUndo: canPopUndo(history),
     error,
   }
 }

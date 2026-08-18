@@ -282,7 +282,7 @@ export function App() {
           )}
         </div>
         <div className="controls" data-coach="controls">
-          <Tip below text="Takes back the last move. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
+          <Tip below text="Takes back the last move. You cannot undo revealing Enemies (a scout or choosing a Mission) once they are face-up. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
             <button className="ghost" onClick={undo} disabled={!canUndo}>
               Undo
             </button>

@@ -11,6 +11,16 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.1.8',
+    date: '2026-08-18',
+    title: 'You can’t un-see Enemies',
+    changes: [
+      'Undo — revealing Enemies cannot be undone: a scout during PLAN, or choosing a Mission, once those Enemies are face-up. You can still undo plays after that.',
+      'The “Click to attack” cue sits at the top of the Mission, so it no longer covers the Enemies underneath.',
+      'Fix — Recon the Mountain Pass now asks which Mission to flip after you defeat it. It no longer auto-picks that Mission after its garrison is already revealed.',
+    ],
+  },
+  {
     version: '0.1.7',
     date: '2026-08-14',
     title: 'Draft your Maquis, and a clearer table',

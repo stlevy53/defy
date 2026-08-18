@@ -12,6 +12,16 @@ _Work in progress toward the next version — add changes here as we make them, 
 
 ---
 
+## v0.1.8 — 2026-08-18
+
+You can’t un-see Enemies.
+
+- **Undo** — revealing Enemies cannot be undone: a scout during PLAN, or choosing a Mission, once those Enemies are face-up. You can still undo plays after that.
+- **Missions** — the “Click to attack” cue sits at the top of the card, so it no longer covers the Enemies underneath.
+- **Fix** — Recon the Mountain Pass now asks which Mission to flip after you defeat it. It no longer auto-picks, and it will not silently flip this Mission after its garrison is already revealed.
+
+---
+
 ## v0.1.7 — 2026-08-14
 
 Draft your Maquis, and a clearer table.

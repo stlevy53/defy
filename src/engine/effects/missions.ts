@@ -75,13 +75,12 @@ const valleyRecoverPlus = ({ state }: EffectContext) => {
 
 const mountainPassScout = ({ state, responses }: EffectContext): Decision | void => {
   const s = state as Draft<GameState>
-  const eligible = s.missionRow.filter((m) => m.enemies.some((e) => !e.faceUp))
+  // Any available Mission that still has a face-down Enemy — including this one, if its
+  // garrison wasn't already revealed. Never auto-pick: ChooseMission has already flipped
+  // *this* Mission's garrison, and "one Mission" is a player choice, not a default.
+  const eligible = s.missionRow.filter((m) => !m.faceDown && m.enemies.some((e) => !e.faceUp))
   if (eligible.length === 0) return
   if (responses.length === 0) {
-    if (eligible.length === 1) {
-      for (const e of eligible[0].enemies) e.faceUp = true
-      return
-    }
     return { kind: 'selectTarget', candidates: eligible.map((m) => m.uid), prompt: 'Flip all Enemies at one Mission' }
   }
   const m = s.missionRow.find((x) => x.uid === responses[0][0])
