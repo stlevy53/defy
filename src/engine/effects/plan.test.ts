@@ -151,6 +151,24 @@ describe('spy effects', () => {
     expect(s.hand.some(isSpy)).toBe(false) // the (only injected) spy left the hand
   })
 
+  it('Celia hidden still dumps a Spy when the Hidden deck and discard are both empty', () => {
+    const s0 = seedWhere(handHas('celia'))
+    injectSpyIntoHand(s0)
+    // Empty the Hidden pool so a naive discard-then-draw would shuffle the Spy back in.
+    s0.removedFromGame.push(...s0.hidden.deck, ...s0.hidden.discard)
+    s0.hidden.deck = []
+    s0.hidden.discard = []
+    let s = play(s0, 'celia', 'hidden')
+    expect(legalActions(s).some((a) => a.type === 'UseAction' && a.uid === 'celia')).toBe(true)
+
+    const spiesInHand = s.hand.filter(isSpy).length
+    s = useAction(s, 'celia')
+    expect(s.hand.filter(isSpy).length).toBe(spiesInHand - 1)
+    expect(s.hidden.discard.filter(isSpy).length).toBe(1)
+    expect(s.hidden.deck.length).toBe(0)
+    expect(s.log.some((line) => line.includes('no card drawn'))).toBe(true)
+  })
+
   it('Manuela revealed removes a Spy from the game (conservation still balances)', () => {
     const s0 = seedWhere(handHas('manuela'))
     injectSpyIntoHand(s0)

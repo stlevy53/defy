@@ -52,16 +52,20 @@ function effectiveDefense(state: GameState, slot: MissionSlot, targetUid: string
 /**
  * Enemy DEFEND ordering constraints (Guard/Grunt), enforced structurally rather than as queued
  * effects: Grunts must be defeated before any other Enemy; Guards must be defeated before the
- * Mission. Returns whether `targetUid` may be attacked right now given who's still standing.
+ * Mission. UIDs of the Enemies that currently gate `targetUid` (empty = the target is in order).
+ * The UI pulses these when the player clicks a blocked Guard, other Enemy, or the Mission.
  */
-function isTargetLegal(slot: MissionSlot, targetUid: string): boolean {
-  const gruntsRemain = slot.enemies.some((e) => e.typeId === 'grunt')
-  const guardsRemain = slot.enemies.some((e) => e.typeId === 'guard')
-  if (targetUid === slot.uid) return !guardsRemain // Guards gate the Mission
+export function gatingStrikeUids(slot: MissionSlot, targetUid: string): string[] {
+  if (targetUid === slot.uid) return slot.enemies.filter((e) => e.typeId === 'guard').map((e) => e.uid)
   const enemy = slot.enemies.find((e) => e.uid === targetUid)
-  if (!enemy) return false
-  if (enemy.typeId === 'grunt') return true // Grunts are always attackable
-  return !gruntsRemain // other Enemies wait until every Grunt is gone
+  if (!enemy || enemy.typeId === 'grunt') return []
+  return slot.enemies.filter((e) => e.typeId === 'grunt').map((e) => e.uid)
+}
+
+/** Whether `targetUid` may be attacked right now given who's still standing. */
+function isTargetLegal(slot: MissionSlot, targetUid: string): boolean {
+  if (targetUid !== slot.uid && !slot.enemies.some((e) => e.uid === targetUid)) return false
+  return gatingStrikeUids(slot, targetUid).length === 0
 }
 
 // --- legalActions -----------------------------------------------------------

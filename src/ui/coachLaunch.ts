@@ -126,8 +126,8 @@ export const COACH_BEATS: CoachBeat[] = [
     title: 'How a game ends',
     body: [
       '★ VP is your score from defeated Missions. You choose when to End the resistance and take that score.',
-      'You lose if you fail two Missions, if five civilians reach the Graveyard (right-hand rail), or if Recover deals an all-Spy hand.',
-      'The “✗ n / 2 failed” pill only appears after the first failed Mission — it is not missing at the start of the game.',
+      'You lose if you fail two Missions, if five civilians reach the Graveyard, or if Recover deals an all-Spy hand.',
+      'The “✗ n / 2 failed” and “n / 5 civilians” pills appear after the first hit toward that loss — they are not missing at the start of the game.',
     ],
   },
   {

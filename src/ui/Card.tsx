@@ -6,10 +6,37 @@
 
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
+import { gatingStrikeUids } from '../engine'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip, eraLabel, classifyCandidate } from './format'
-import { maquisArt, enemyArt, enemyBackArt, missionArt, spyArt } from './cardArt'
+import { maquisArt, enemyArt, enemyBackArt, missionArt, missionBackArt, spyArt } from './cardArt'
 import { Tip } from './Tip'
 import { useZoom } from './Zoom'
+
+/** Fixed capacity of the garrison strip (see MissionFace) — the observed max printed garrison is 5
+ *  (data/missions.json), with one slot of reinforcement headroom folded in since Radio Operator /
+ *  the Barracks can push a Mission past its printed count. */
+const GARRISON_SLOTS = 5
+
+function ordinal(n: number): string {
+  if (n === 1) return '1st'
+  if (n === 2) return '2nd'
+  if (n === 3) return '3rd'
+  return `${n}th`
+}
+
+/** How many "waves" of striking must clear before `targetUid` becomes a legal target — 1 if it's
+ *  legal right now, 2 if one gate must fall first (a non-Grunt Enemy while Grunts remain), 3 if two
+ *  gates must fall (the Mission itself, gated by Guards, which are themselves gated by Grunts).
+ *  Lets the strip teach strike order up front instead of only pulsing after an illegal click.
+ *  Recursion always bottoms out: Grunts are never themselves gated. */
+function strikeWave(slot: MissionSlot, targetUid: string, cache: Map<string, number>): number {
+  const cached = cache.get(targetUid)
+  if (cached != null) return cached
+  const gates = gatingStrikeUids(slot, targetUid)
+  const wave = gates.length === 0 ? 1 : 1 + Math.max(...gates.map((g) => strikeWave(slot, g, cache)))
+  cache.set(targetUid, wave)
+  return wave
+}
 
 type Side = 'hidden' | 'revealed'
 
@@ -49,6 +76,8 @@ export type CardFace =
       /** Attack this card's own action has already granted (Consuelo/Marcelino/etc.), added to its
        *  printed value on the face so the card reflects its true contribution. */
       attackBonus?: number
+      /** Whether this card's action has already fired this round — labels the foot bar "SPENT". */
+      actionUsed?: boolean
     }
   | {
       kind: 'mission'
@@ -66,6 +95,18 @@ export type CardFace =
       onPick?: (uid: string) => void
       /** Enemy uids just added to this Mission (a reinforcement) — animated in when present. */
       newEnemyUids?: string[]
+      /** UIDs that are on the chosen Mission but gated by Grunt/Guard order — click pulses the gate. */
+      blockedStrikeUids?: string[]
+      onBlockedStrike?: (uid: string) => void
+      /** Enemies that must be struck first; `pulseId` remounts the ring so a repeat click retriggers. */
+      pulseUids?: string[]
+      pulseId?: number
+      /** The most recent strike's cost, mirrored here from the single Attack Strength token so the
+       *  struck target's Mission flashes its own "-{cost}" too (see App's strikeFlash /
+       *  findStrikeCost). Keyed on the Mission's uid, not the struck target's — a defeated Enemy is
+       *  spliced out of the slot the instant the strike commits, so its own uid can't anchor a
+       *  floater in the post-strike render; the Mission tile it was on can. */
+      strikeFlash?: { missionUid: string; cost: number; seq: number } | null
       /** Spotlight target for the first-run coach (right-click-zoom beat). */
       coachMark?: string
     }
@@ -103,6 +144,7 @@ export function Card(face: CardFace) {
           onPick={face.onPick}
           liveBonus={face.liveBonus}
           attackBonus={face.attackBonus}
+          actionUsed={face.actionUsed}
         />
       )
     case 'mission':
@@ -118,6 +160,11 @@ export function Card(face: CardFace) {
           pickedTargets={face.pickedTargets}
           onPick={face.onPick}
           newEnemyUids={face.newEnemyUids}
+          blockedStrikeUids={face.blockedStrikeUids}
+          onBlockedStrike={face.onBlockedStrike}
+          pulseUids={face.pulseUids}
+          pulseId={face.pulseId}
+          strikeFlash={face.strikeFlash}
           coachMark={face.coachMark}
         />
       )
@@ -152,13 +199,13 @@ function MaquisHandFace({
     const spyImg = spyArt()
     if (spyImg) {
       return (
-        <div className="card hand-card has-art spy" onContextMenu={zoom}>
+        <div className="card hand-card has-art spy" data-card-uid={uid} onContextMenu={zoom}>
           <img className="card-art" src={spyImg} alt="Spy" draggable={false} />
         </div>
       )
     }
     return (
-      <div className="card hand-card mcard spy" onContextMenu={zoom}>
+      <div className="card hand-card mcard spy" data-card-uid={uid} onContextMenu={zoom}>
         <div className="mcard-banner">Spy</div>
         <div className="portrait spy">
           <span className="portrait-monogram">S</span>
@@ -178,6 +225,8 @@ function MaquisHandFace({
     return (
       <div
         className={`card hand-card has-art ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`}
+        data-card-uid={uid}
+        data-peek-id={dataId}
         onClick={pick ?? undefined}
         onContextMenu={zoom}
         onPointerDown={canSlide ? onSlideStart : undefined}
@@ -209,6 +258,13 @@ function MaquisHandFace({
             <span className="hot-label">Play Revealed</span>
           </button>
         </div>
+        {/* Readable strip matching the printed Hidden/Revealed split — the art alone can't show the
+         *  side's Attack or which phase its action fires in. Non-interactive: the hotspots above
+         *  handle the click. */}
+        <div className="hand-side-plates" aria-hidden="true">
+          <HandSidePlate dataId={dataId} side="hidden" />
+          <HandSidePlate dataId={dataId} side="revealed" />
+        </div>
       </div>
     )
   }
@@ -216,6 +272,7 @@ function MaquisHandFace({
   return (
     <div
       className={`card hand-card mcard ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`}
+      data-card-uid={uid}
       onClick={pick ?? undefined}
       onContextMenu={zoom}
       onPointerDown={canSlide ? onSlideStart : undefined}
@@ -281,6 +338,21 @@ function SidePanel({
   )
 }
 
+/** One half of the readable strip on an arted hand card: the printed side's Attack and which
+ *  phase its action fires in — the one scannable fact that tells a player whether this side is
+ *  useful *this* phase without reading the fine print. */
+function HandSidePlate({ dataId, side }: { dataId: string; side: Side }) {
+  const attack = maquisAttack(dataId, side)
+  const phase = maquisSideAction(dataId, side)?.type ?? '—'
+  return (
+    <div className={`hand-side-plate ${side}`}>
+      <span className="hsp-label">{side === 'hidden' ? 'Hidden' : 'Revealed'}</span>
+      <span className="hsp-value">⚔ {attack}</span>
+      <span className="hsp-phase">{phase}</span>
+    </div>
+  )
+}
+
 /** A Maquis committed to the table on a known side. Its action is clickable when it can be fired
  *  in the current phase (`canUse`); otherwise it renders as plain reference text. */
 function MaquisPlayedFace({
@@ -297,6 +369,7 @@ function MaquisPlayedFace({
   onPick,
   liveBonus,
   attackBonus,
+  actionUsed,
 }: {
   dataId: string
   uid: string
@@ -311,6 +384,7 @@ function MaquisPlayedFace({
   onPick?: (uid: string) => void
   liveBonus?: number | null
   attackBonus?: number
+  actionUsed?: boolean
 }) {
   const action = maquisSideAction(dataId, side)
   const name = nameOfMaquis(dataId)
@@ -351,22 +425,34 @@ function MaquisPlayedFace({
   // card so the printed name and action text stay readable. The zone title already says Hidden /
   // Revealed, so there is no side badge on the face.
   if (art) {
-    const useBtn =
-      action && canUse && onUse ? (
-        <button
-          type="button"
-          className="use-under"
-          onClick={onUse}
-          onPointerDown={(e) => e.stopPropagation()}
-          title={`Use ${name}'s ${action.type} action`}
-        >
-          Use · {action.type}
-        </button>
-      ) : null
+    // A bar across the foot of the card, always present, replacing the old use-under button (which
+    // only appeared while firable and otherwise left the card's attack value unlabeled). Left side
+    // is always the card's live attack contribution; right side is the action state — clickable only
+    // while firable.
+    const firable = !!(action && canUse && onUse)
+    // The action's own type (PLAN / ATTACK / PLAN/ATTACK), not a hardcoded phase — a PLAN-only
+    // action used during PLAN must say so, not imply it only fires during an Attack. When the action
+    // exists but isn't firable right now and hasn't fired yet, just name its type (no verb) — it may
+    // be the wrong phase, or there's no valid target yet, and claiming it was "used" would be wrong.
+    const footState = firable ? `${action?.type} · USE` : actionUsed ? 'SPENT' : action ? action.type : '—'
+    const footBar = (
+      <button
+        type="button"
+        className={`card-foot-bar ${firable ? 'firable' : ''}`}
+        onClick={firable ? onUse : undefined}
+        onPointerDown={(e) => e.stopPropagation()}
+        disabled={!firable}
+        title={firable ? `Use ${name}'s ${action?.type} action` : undefined}
+      >
+        <span className="cfb-attack">⚔ {totalAttack}</span>
+        <span className="cfb-state">{footState}</span>
+      </button>
+    )
     return (
       <div className={`played-wrap ${sliding ? 'is-sliding' : ''}`}>
         <div
           className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''}`}
+          data-peek-id={dataId}
           onClick={pick ?? undefined}
           onContextMenu={zoom}
           onPointerDown={canSlide ? onSlideStart : undefined}
@@ -390,7 +476,7 @@ function MaquisPlayedFace({
             </Tip>
           )}
         </div>
-        {useBtn}
+        {footBar}
       </div>
     )
   }
@@ -467,6 +553,11 @@ function MissionFace({
   pickedTargets,
   onPick,
   newEnemyUids,
+  blockedStrikeUids,
+  onBlockedStrike,
+  pulseUids,
+  pulseId,
+  strikeFlash,
   coachMark,
 }: {
   slot: MissionSlot
@@ -479,14 +570,25 @@ function MissionFace({
   pickedTargets?: string[]
   onPick?: (uid: string) => void
   newEnemyUids?: string[]
+  blockedStrikeUids?: string[]
+  onBlockedStrike?: (uid: string) => void
+  pulseUids?: string[]
+  pulseId?: number
+  strikeFlash?: { missionUid: string; cost: number; seq: number } | null
   coachMark?: string
 }) {
   const reinforcedCount = newEnemyUids?.length ?? 0
-  const zoomMission = useMissionZoom(slot.dataId)
+  const zoomMission = useMissionZoom(slot.dataId, slot.faceDown)
   const data = missionOf(slot.dataId)
   const chosen = state.chosenMissionUid === slot.uid
   const defense = chosen && state.missionDefenseOverride != null ? state.missionDefenseOverride : data?.defense
   const name = data?.name ?? slot.dataId
+  // During ATTACK the chosen Mission is the only one that matters this round — dim the other three
+  // so it's unmistakable which one is live, and mark it plainly rather than leaving that to the
+  // border color alone.
+  const duringAttack = state.phase === 'ATTACK'
+  const underAttack = duringAttack && chosen
+  const attackDimmed = duringAttack && !chosen && !slot.faceDown && !slot.defeated
 
   // Garrison is a printed card stat, but effects can add Enemies beyond it (Radio Operator,
   // Barracks, a moved Enemy). Show a persistent "+N" so the number always matches the chips on the
@@ -498,6 +600,7 @@ function MissionFace({
   // choose it to attack (PLAN), strike it (ATTACK), or pick it as a decision target.
   const canStrikeMission = !!onStrike && (strikeTargets?.includes(slot.uid) ?? false)
   const canPickMission = !!onPick && (pickTargets?.includes(slot.uid) ?? false)
+  const blockedMission = !!onBlockedStrike && (blockedStrikeUids?.includes(slot.uid) ?? false)
   const act =
     canChoose && onChoose
       ? { run: () => onChoose(slot.uid), hint: 'Click to attack', title: `Attack this Mission: ${name}` }
@@ -508,11 +611,14 @@ function MissionFace({
           : null
 
   const art = missionArt(slot.dataId)
+  const back = slot.faceDown ? missionBackArt() : undefined
   const cls = [
     'card',
     'mission',
-    art ? 'has-art' : '',
+    art || back ? 'has-art' : '',
     chosen ? 'chosen' : '',
+    underAttack ? 'under-attack' : '',
+    attackDimmed ? 'attack-dimmed' : '',
     slot.faceDown ? 'failed' : '',
     slot.defeated ? 'defeated' : '',
     act ? 'actionable' : '',
@@ -550,6 +656,10 @@ function MissionFace({
           canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
           picked={pickedTargets?.includes(e.uid) ?? false}
           onPick={onPick ? () => onPick(e.uid) : undefined}
+          blocked={!!onBlockedStrike && (blockedStrikeUids?.includes(e.uid) ?? false)}
+          onBlocked={onBlockedStrike ? () => onBlockedStrike(e.uid) : undefined}
+          pulse={pulseUids?.includes(e.uid) ?? false}
+          pulseId={pulseId}
           isNew={newEnemyUids?.includes(e.uid) ?? false}
         />
       ))}
@@ -557,41 +667,127 @@ function MissionFace({
     </div>
   )
 
+  // Fixed five-slot garrison strip (art-mode Missions only): a constant tile height regardless of
+  // how many Enemies are actually here, instead of flex-wrapping chips that push the tile taller.
+  // Five covers every printed garrison in data/missions.json (max 5) with no headroom to spare, so a
+  // Mission that's been reinforced past that (Radio Operator / the Barracks, repeatedly, on a
+  // Mission that's gone unattacked for a while) collapses into a "+N" overflow slot rather than
+  // silently growing the row or hiding Enemies with no indication they're there.
+  const waveCache = new Map<string, number>()
+  const overflow = slot.enemies.length > GARRISON_SLOTS ? slot.enemies.length - (GARRISON_SLOTS - 1) : 0
+  const visibleEnemies = overflow > 0 ? slot.enemies.slice(0, GARRISON_SLOTS - 1) : slot.enemies
+  const emptyCount = Math.max(0, GARRISON_SLOTS - visibleEnemies.length - (overflow > 0 ? 1 : 0))
+  const garrisonStrip = (
+    <div className="enemies garrison-strip">
+      {visibleEnemies.map((e) => (
+        <EnemyChip
+          key={e.uid}
+          enemy={e}
+          canStrike={!!onStrike && (strikeTargets?.includes(e.uid) ?? false)}
+          onStrike={onStrike ? () => onStrike(e.uid) : undefined}
+          canPick={!!onPick && (pickTargets?.includes(e.uid) ?? false)}
+          picked={pickedTargets?.includes(e.uid) ?? false}
+          onPick={onPick ? () => onPick(e.uid) : undefined}
+          blocked={!!onBlockedStrike && (blockedStrikeUids?.includes(e.uid) ?? false)}
+          onBlocked={onBlockedStrike ? () => onBlockedStrike(e.uid) : undefined}
+          pulse={pulseUids?.includes(e.uid) ?? false}
+          pulseId={pulseId}
+          isNew={newEnemyUids?.includes(e.uid) ?? false}
+          rank={strikeWave(slot, e.uid, waveCache)}
+        />
+      ))}
+      {overflow > 0 && (
+        <Tip text={`${overflow} more Enem${overflow === 1 ? 'y' : 'ies'} here, past the usual garrison — reinforcements have stacked up.`}>
+          <div className="enemy has-art enemy-overflow">+{overflow}</div>
+        </Tip>
+      )}
+      {Array.from({ length: emptyCount }).map((_, i) => (
+        <div key={`empty-${i}`} className="enemy has-art enemy-slot-empty">
+          {chosen && i === emptyCount - 1 && <span className="enemy-slot-hint">room for 1 more</span>}
+        </div>
+      ))}
+      {/* Keyed on the Mission, not the struck target: a defeated Enemy is gone from `slot.enemies`
+       *  by the time this re-renders, so nothing on the strip itself could anchor the floater. */}
+      {strikeFlash?.missionUid === slot.uid && (
+        <span key={strikeFlash.seq} className="strike-cost-flash">−{strikeFlash.cost}</span>
+      )}
+    </div>
+  )
+
   const wrap = {
     className: cls,
-    onClick: act?.run,
+    onClick: act?.run ?? (blockedMission ? () => onBlockedStrike!(slot.uid) : undefined),
     onContextMenu: zoomMission,
     role: act ? ('button' as const) : undefined,
     tabIndex: act ? 0 : undefined,
-    title: act?.title,
+    title: act?.title ?? (blockedMission ? 'Defeat Guards before the Mission' : slot.faceDown ? 'Failed Mission' : undefined),
     onKeyDown: act ? (e: KeyboardEvent) => onEnter(e, act.run) : undefined,
     ...(coachMark ? { 'data-coach': coachMark } : {}),
+  }
+
+  // Failed Missions stay in the row face-down. The printed back is the whole face — no era chip,
+  // no garrison, no zoom of the hidden front.
+  if (slot.faceDown) {
+    return (
+      <div {...wrap}>
+        {back ? (
+          <img className="card-art" src={back} alt="Failed Mission" draggable={false} />
+        ) : (
+          <div className="mission-failed-fallback">Failed</div>
+        )}
+      </div>
+    )
   }
 
   // Real mission art: the image carries name/stats/effect; we keep the click behaviour, the defeated
   // stamp, a Defense pill when it's modified this round, and the Enemies guarding it below.
   if (art) {
-    const modified =
-      chosen && state.missionDefenseOverride != null && data != null && state.missionDefenseOverride !== data.defense
+    // The photo carries no legible stats at board scale, so the numbers a player scans — Defense,
+    // VP, Garrison, the keyword — are overlaid as real text via a stat rail across the foot of the
+    // art. (No era plate: the era is already printed on the card under the name banner, and it's on
+    // the card art below.) `defense` already honours missionDefenseOverride, so the rail always
+    // shows the live number — no separate "modified" pill needed.
     return (
       <div {...wrap}>
         {act && <div className="click-hint">{act.hint}</div>}
         {stamp}
         {reinforceBadge}
-        <img className="card-art" src={art} alt={data ? `${name} · ${eraLabel(data.era)}` : name} draggable={false} />
-        {data && (
-          <span className="era-chip-host">
-            <Tip text={eraLabel(data.era)} below>
-              <span className="era-chip">Era {data.era}</span>
-            </Tip>
-          </span>
-        )}
-        {modified && (
-          <Tip text="Defense modified for this round.">
-            <span className="def-override">🛡 {defense}</span>
-          </Tip>
-        )}
-        <div className="mission-body">{enemiesRow}</div>
+        <div className="mission-art">
+          <img className="card-art" src={art} alt={data ? `${name} · ${eraLabel(data.era)}` : name} draggable={false} />
+          {underAttack && <div className="under-attack-plate">Under attack</div>}
+          <div className="mission-stat-rail">
+            {data && (
+              <Tip text={keywordTip(data.keyword)}>
+                <span className={`stat-rail-badge kw-${data.keyword}`}>{data.keyword}</span>
+              </Tip>
+            )}
+            <div className="mission-stat-rail-figures">
+              <Tip text="Defense — the Attack Strength needed to defeat this Mission.">
+                <span className="ms-def">🛡 {defense}</span>
+              </Tip>
+              <Tip text="Victory Points — scored when you defeat this Mission.">
+                <span className="ms-vp">★ {data?.victoryPoints}</span>
+              </Tip>
+              <Tip
+                text={
+                  garrisonExtra > 0
+                    ? `Garrison — ${garrisonBase} printed, +${garrisonExtra} reinforced (${slot.enemies.length} Enemies here now).`
+                    : 'Garrison — how many Enemies guard this Mission.'
+                }
+              >
+                <span className="ms-garrison garrison-stat">
+                  ☗ {garrisonBase}
+                  {garrisonExtra > 0 && <span className="garrison-plus">+{garrisonExtra}</span>}
+                </span>
+              </Tip>
+            </div>
+          </div>
+        </div>
+        <div className="mission-text">
+          <div className="mission-name">{name}</div>
+          <p className="mission-effect">{data?.effect}</p>
+        </div>
+        <div className="mission-body">{garrisonStrip}</div>
       </div>
     )
   }
@@ -641,7 +837,12 @@ function EnemyChip({
   canPick,
   picked,
   onPick,
+  blocked,
+  onBlocked,
+  pulse,
+  pulseId,
   isNew,
+  rank,
 }: {
   enemy: EnemyInstance
   canStrike?: boolean
@@ -650,20 +851,32 @@ function EnemyChip({
   /** True when this Enemy is already toggled on in a multi-pick — shown highlighted. */
   picked?: boolean
   onPick?: () => void
+  /** Click is illegal until Grunts fall — pulse those instead of striking. */
+  blocked?: boolean
+  onBlocked?: () => void
+  pulse?: boolean
+  pulseId?: number
   /** True when this Enemy was just added to the Mission (reinforcement) — plays an enter animation. */
   isNew?: boolean
+  /** Strike order (1 = legal now, 2/3/… = waves of gating still ahead) — see strikeWave. Shown as a
+   *  badge so the order is taught before the click, not only after an illegal one. */
+  rank?: number
 }) {
   const type = enemyOf(enemy.typeId)
   const art = enemyArt(enemy.typeId)
   const newCls = isNew ? ' reinforce-enter' : ''
+  const hostCls = pulse ? ' must-strike-host' : ''
   const zoom = useEnemyZoom(enemy)
+  const ring = pulse ? <span key={pulseId} className="must-strike-ring" aria-hidden /> : null
 
   if (!enemy.faceUp) {
     const back = enemyBackArt()
+    // Every face-down Enemy occupies a fixed art-sized garrison slot, whether or not the card-back
+    // art has landed yet — the "?" placeholder fills the same slot rather than shrinking to a chip.
     const inner = back ? (
       <img className="enemy-art" src={back} alt="Face-down Enemy" draggable={false} />
     ) : (
-      '🂠'
+      <span className="enemy-backfill" aria-hidden="true">?</span>
     )
     // A pick candidate on its Mission: clickable, but the identity stays hidden (no name, no zoom) —
     // the player is choosing which Mission's garrison to hit blind, as the physical game intends.
@@ -672,7 +885,7 @@ function EnemyChip({
         <button
           type="button"
           aria-pressed={picked || undefined}
-          className={`enemy facedown pickable${picked ? ' picked' : ''}${back ? ' has-art' : ''}${newCls}`}
+          className={`enemy facedown pickable has-art${picked ? ' picked' : ''}${newCls}`}
           onClick={(e) => {
             e.stopPropagation()
             onPick()
@@ -683,11 +896,7 @@ function EnemyChip({
         </button>
       )
     }
-    return back ? (
-      <span className={`enemy facedown has-art${newCls}`}>{inner}</span>
-    ) : (
-      <span className={`enemy facedown${newCls}`}>{inner}</span>
-    )
+    return <span className={`enemy facedown has-art${newCls}`}>{inner}</span>
   }
 
   // Copies of a type share the same art but differ in Defense, so with art we show the portrait and
@@ -726,7 +935,7 @@ function EnemyChip({
     return (
       <button
         type="button"
-        className={`enemy faceup strikeable kw-${type?.keyword}${artCls}${newCls}`}
+        className={`enemy faceup strikeable kw-${type?.keyword}${artCls}${newCls}${hostCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onStrike()
@@ -734,7 +943,9 @@ function EnemyChip({
         onContextMenu={zoom}
         title={`Strike ${type?.name} (cost ${enemy.defense})`}
       >
+        {rank != null && <span className="strike-rank">STRIKE {ordinal(rank)}</span>}
         {body}
+        {ring}
       </button>
     )
   }
@@ -745,7 +956,7 @@ function EnemyChip({
       <button
         type="button"
         aria-pressed={picked || undefined}
-        className={`enemy faceup pickable kw-${type?.keyword}${picked ? ' picked' : ''}${artCls}${newCls}`}
+        className={`enemy faceup pickable kw-${type?.keyword}${picked ? ' picked' : ''}${artCls}${newCls}${hostCls}`}
         onClick={(e) => {
           e.stopPropagation()
           onPick()
@@ -754,16 +965,38 @@ function EnemyChip({
         title={`Select ${type?.name}`}
       >
         {body}
+        {ring}
+      </button>
+    )
+  }
+  // Order-blocked (a Guard or other Enemy while Grunts remain): the click pulses the Grunts.
+  if (blocked && onBlocked) {
+    return (
+      <button
+        type="button"
+        className={`enemy faceup order-blocked kw-${type?.keyword}${artCls}${newCls}${hostCls}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onBlocked()
+        }}
+        onContextMenu={zoom}
+        title="Defeat Grunts first"
+      >
+        {rank != null && <span className="strike-rank quiet">{ordinal(rank)}</span>}
+        {body}
+        {ring}
       </button>
     )
   }
   return (
     <div
-      className={`enemy faceup kw-${type?.keyword}${artCls}${newCls}`}
+      className={`enemy faceup kw-${type?.keyword}${artCls}${newCls}${hostCls}`}
       title={art ? tip : undefined}
+      onClick={(e) => e.stopPropagation()}
       onContextMenu={zoom}
     >
       {body}
+      {ring}
     </div>
   )
 }
@@ -785,7 +1018,8 @@ function useZoomHandler(content: () => ReactNode): (e: MouseEvent) => void {
 }
 
 const useMaquisZoom = (dataId: string) => useZoomHandler(() => <ZoomMaquisCard dataId={dataId} />)
-const useMissionZoom = (dataId: string) => useZoomHandler(() => <ZoomMissionCard dataId={dataId} />)
+const useMissionZoom = (dataId: string, faceDown = false) =>
+  useZoomHandler(() => <ZoomMissionCard dataId={dataId} faceDown={faceDown} />)
 const useEnemyZoom = (enemy: EnemyInstance) =>
   useZoomHandler(() => <ZoomEnemyCard typeId={enemy.typeId} defense={enemy.defense} />)
 
@@ -797,7 +1031,7 @@ export function zoomNodeFor(state: GameState, uid: string): ReactNode | null {
     case 'spy':
       return <ZoomMaquisCard dataId="spy" />
     case 'mission':
-      return <ZoomMissionCard dataId={c.slot.dataId} />
+      return <ZoomMissionCard dataId={c.slot.dataId} faceDown={c.slot.faceDown} />
     case 'enemy':
       return <ZoomEnemyCard typeId={c.enemy.typeId} defense={c.enemy.defense} />
     default:
@@ -848,9 +1082,11 @@ function ZoomMaquisCard({ dataId }: { dataId: string }) {
   )
 }
 
-function ZoomMissionCard({ dataId }: { dataId: string }) {
+function ZoomMissionCard({ dataId, faceDown }: { dataId: string; faceDown?: boolean }) {
   const data = missionOf(dataId)
   const name = data?.name ?? dataId
+  const back = faceDown ? missionBackArt() : undefined
+  if (back) return <img className="zoom-art" src={back} alt="Failed Mission" draggable={false} />
   const art = missionArt(dataId)
   if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
   return (

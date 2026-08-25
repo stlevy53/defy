@@ -12,6 +12,11 @@ const missionCard = new Map(missions.map((m) => [m.id, m]))
 const enemyTypeById = new Map(enemyTypes.map((t) => [t.id, t]))
 const civilianCount = new Map(civilians.map((c) => [c.id, c.civilians]))
 
+/** Total civilians in the Graveyard (sum of each card's printed count — the loss condition is 5). */
+export function graveyardCivilians(state: GameState): number {
+  return state.graveyard.reduce((n, c) => n + (civilianCount.get(c.dataId) ?? 0), 0)
+}
+
 /** Live Attack bonus a count-based ATTACK action would grant right now (it snapshots at use-time),
  *  or null if the card's action isn't count-based. Mirrors the engine handlers so the played card
  *  can show, e.g., Abel hidden's "+1 per revealed Maquis" as its current value. */
@@ -28,7 +33,7 @@ export function countActionBonus(
     case 'marcelino:revealed':
       return state.inPlay.filter((m) => m.uid !== uid).length
     case 'abel:revealed':
-      return state.graveyard.reduce((n, c) => n + (civilianCount.get(c.dataId) ?? 0), 0)
+      return graveyardCivilians(state)
     default:
       return null
   }
@@ -233,7 +238,12 @@ export interface GuideStep {
 export interface Guidance {
   phase: RoundPhase
   goal: string
+  /** The single most important instruction right now — must read as one line (see PhaseGuide in
+   *  App.tsx: nowrap + ellipsis, budget ~690px at 1920). Keep it short; the full sub-step detail
+   *  lives in `steps`, shown behind the "?" button. */
   now: string
+  /** Optional short muted clause shown after `now` on the same line (e.g. "Grunts fall first."). */
+  hint?: string
   steps: GuideStep[]
   auto?: boolean
 }
@@ -251,7 +261,8 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
     return {
       phase: 'PLAN',
       goal: 'Draft your Maquis.',
-      now: `Click the Maquis you want in your Hidden deck (${pick} of 12). The other goes to Recruit.`,
+      now: `Click the Maquis for your Hidden deck (${pick} of 12).`,
+      hint: 'The other goes to Recruit.',
       steps: [
         { text: 'Click one of the two cards for Hidden.', active: true },
         { text: 'The other card is added to Recruit.' },
@@ -267,14 +278,14 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
         phase: 'PLAN',
         goal: 'Set up your attack.',
         now: !played
-          ? 'Play Maquis from your hand — click a side, or drag the card onto Hidden or Revealed.'
+          ? 'Play Maquis onto Hidden or Revealed, then choose the Mission you attack.'
           : canMove
             ? canUseAction
-              ? 'Drag a played Maquis to the other section (or click its dimmed half) until you use an action, use a PLAN action, or click a Mission to attack.'
-              : 'Drag a played Maquis to the other section (or click its dimmed half), play more, or click a Mission to attack.'
+              ? 'Switch sides, use an action, or choose the Mission you attack.'
+              : 'Switch sides, play more, or choose the Mission you attack.'
             : canUseAction
-              ? "Use a card's action by clicking its highlighted action, or choose a Mission to attack."
-              : 'Play or use more cards, or click a Mission to attack — choosing ends PLAN.',
+              ? "Use a card's action, or choose the Mission you attack."
+              : 'Play or use more cards, or choose the Mission you attack.',
         steps: [
           { text: 'Play Maquis — click Hidden/Revealed, or drag the card onto that section.', active: canDo(actions, 'PlayMaquis') },
           {
@@ -292,7 +303,8 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
         return {
           phase: 'ATTACK',
           goal: 'Defeat the Mission and its Enemies.',
-          now: 'Play out your whole hand first — every remaining Maquis must be played (Spies stay in hand).',
+          now: 'Play out your whole hand first — Spies stay in hand.',
+          hint: 'Fire ATTACK actions as you go.',
           steps: [
             { text: 'Play out the rest of your hand — mandatory.', active: true },
             { text: 'Fire ATTACK actions to raise Attack Strength or weaken Enemies.', active: true },
@@ -304,9 +316,8 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
       return {
         phase: 'ATTACK',
         goal: 'Defeat the Mission and its Enemies.',
-        now: canStrike
-          ? 'Click an Enemy or the Mission to strike it (cost = its Defense). Grunts fall first, Guards before the Mission — or click Done attacking.'
-          : 'No target is affordable now — click Done attacking. (Leftover Attack Strength is lost.)',
+        now: canStrike ? 'Spend Attack Strength on the guards, then the Mission.' : 'No target is affordable — click Done attacking.',
+        hint: canStrike ? 'Grunts fall first.' : 'Leftover Attack Strength is lost.',
         steps: [
           { text: 'Hand played out.' },
           { text: 'Fire any remaining ATTACK actions to boost your strike.', active: true },
@@ -319,9 +330,7 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
       return {
         phase: 'AFTERMATH',
         goal: 'See the outcome, then decide.',
-        now: canContinue
-          ? 'End the resistance to score now, or Continue to the next round.'
-          : 'No Missions remain — End the resistance to score your game.',
+        now: canContinue ? 'End the resistance to score now, or Continue to the next round.' : 'No Missions remain — end the resistance to score.',
         steps: [
           { text: 'Mission outcome and civilian losses resolved automatically.' },
           { text: 'End the resistance to score, or Continue to another round.', active: true },

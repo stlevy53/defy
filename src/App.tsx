@@ -2,7 +2,7 @@
 // GameState, offers legalActions as buttons, and answers pendingDecision via the DecisionPanel.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { useGame, useReinforcements, useCardFlights, useLogToasts } from './ui/useGame'
 import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
@@ -16,7 +16,8 @@ import { Coach } from './ui/Coach'
 import { useUiScale } from './ui/useUiScale'
 import { useCardSlide } from './ui/useCardSlide'
 import type { CardSlide } from './ui/useCardSlide'
-import { maquisArt } from './ui/cardArt'
+import { maquisArt, spyArt } from './ui/cardArt'
+import { maquisSideAction, maquisAttack } from './ui/format'
 import { APP_VERSION } from './ui/patchNotes'
 import {
   WHATS_NEW_SEEN_KEY,
@@ -27,12 +28,33 @@ import {
 } from './ui/coachLaunch'
 import { isDraftPromptEnabled } from './ui/draftPref'
 import { installUnlock, playEndgameSfx } from './ui/audio'
-import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis } from './ui/format'
-import { isDraftDecision, isDrafting } from './engine'
+import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis, graveyardCivilians } from './ui/format'
+import { isDraftDecision, isDrafting, gatingStrikeUids } from './engine'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 /** Stable empty array so a "no board selection" render doesn't churn child props. */
 const EMPTY: string[] = []
+
+/** The Defense cost of striking `uid` — a Mission or one of its garrison Enemies — and the uid of
+ *  the Mission slot it belongs to, read from the board at click time (before the dispatch that
+ *  removes it). The mission uid is what the struck-target floater keys on: a defeated Enemy is
+ *  spliced out of `slot.enemies` the instant the strike commits, so its own uid never exists in a
+ *  post-strike render for a floater to attach to — the Mission tile it was on does. */
+function findStrikeCost(state: GameState, uid: string): { missionUid: string; cost: number } | undefined {
+  for (const slot of state.missionRow) {
+    if (slot.uid === uid) {
+      const data = missionOf(slot.dataId)
+      const cost =
+        slot.uid === state.chosenMissionUid && state.missionDefenseOverride != null
+          ? state.missionDefenseOverride
+          : data?.defense
+      return cost != null ? { missionUid: slot.uid, cost } : undefined
+    }
+    const enemy = slot.enemies.find((e) => e.uid === uid)
+    if (enemy) return { missionUid: slot.uid, cost: enemy.defense }
+  }
+  return undefined
+}
 
 export function App() {
   const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
@@ -151,6 +173,60 @@ export function App() {
   // Enemy chips added to a Mission this transition (reinforcements) — used to animate them in.
   const reinforced = useReinforcements(state, gameId)
 
+  // A strike's cost, flashed on the single Attack Strength token and mirrored on the struck target,
+  // so the number reads at the seam between where it's generated and where it's spent (Phase 6).
+  // Captured at click time (see findStrikeCost) since the target is gone from state the instant
+  // after dispatch. seq forces the CSS animation to replay even if the same cost strikes twice in a
+  // row.
+  const strikeSeq = useRef(0)
+  const [strikeFlash, setStrikeFlash] = useState<{ missionUid: string; cost: number; seq: number } | null>(null)
+  const flashStrike = useCallback((missionUid: string, cost: number) => {
+    strikeSeq.current += 1
+    const seq = strikeSeq.current
+    setStrikeFlash({ missionUid, cost, seq })
+    setTimeout(() => {
+      setStrikeFlash((cur) => (cur?.seq === seq ? null : cur))
+    }, 1100)
+  }, [])
+
+  // Hover-peek: a large read-only preview lifted above whichever hand or committed art-mode card the
+  // pointer is over, showing both sides' printed rules text — no click required (Phase 6). Delegated
+  // on the app root and positioned via `position: fixed` from the hovered card's measured rect, the
+  // same technique FloatingPickBar/SlidingCard use, so it isn't clipped by the scrolling zones/hand
+  // (an ancestor `overflow` silently clips plain `position: absolute` popovers — see the phase-help
+  // popover fix).
+  const [peek, setPeek] = useState<{ dataId: string; x: number; y: number; width: number } | null>(null)
+  const appRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const root = appRef.current
+    if (!root) return
+    const sel = '.card.hand-card.has-art[data-peek-id], .card.played.has-art[data-peek-id]'
+    let hideTimer: ReturnType<typeof setTimeout> | undefined
+    const onOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest(sel) as HTMLElement | null
+      if (!target) return
+      clearTimeout(hideTimer)
+      const dataId = target.getAttribute('data-peek-id')
+      if (!dataId) return
+      const r = target.getBoundingClientRect()
+      setPeek({ dataId, x: r.left + r.width / 2, y: r.top, width: r.width })
+    }
+    const onOut = (e: MouseEvent) => {
+      const from = (e.target as HTMLElement).closest(sel)
+      if (!from) return
+      const to = e.relatedTarget instanceof Node ? (e.relatedTarget as HTMLElement).closest(sel) : null
+      if (to === from) return
+      hideTimer = setTimeout(() => setPeek(null), 40)
+    }
+    root.addEventListener('mouseover', onOver)
+    root.addEventListener('mouseout', onOut)
+    return () => {
+      clearTimeout(hideTimer)
+      root.removeEventListener('mouseover', onOver)
+      root.removeEventListener('mouseout', onOut)
+    }
+  }, [])
+
   // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
   const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
 
@@ -196,6 +272,38 @@ export function App() {
   // Every legal strike target this Attack (the chosen Mission and/or its Enemies), so the board can
   // make them directly clickable instead of listing them as buttons.
   const strikeTargets = actions.flatMap((a) => (a.type === 'SpendAttackOn' ? [a.targetUid] : []))
+
+  // After play-out, a click on a Guard/other Enemy/the Mission that isn't legal yet pulses the
+  // Grunt or Guard that has to fall first (same order as gatingStrikeUids).
+  const spendingAttack = actions.some((a) => a.type === 'AdvancePhase')
+  const chosenSlot = spendingAttack
+    ? state.missionRow.find((s) => s.uid === state.chosenMissionUid)
+    : undefined
+  const blockedStrikeUids = (() => {
+    if (!chosenSlot) return EMPTY
+    const uids: string[] = []
+    const consider = (uid: string) => {
+      if (!strikeTargets.includes(uid) && gatingStrikeUids(chosenSlot, uid).length > 0) uids.push(uid)
+    }
+    consider(chosenSlot.uid)
+    for (const e of chosenSlot.enemies) consider(e.uid)
+    return uids.length > 0 ? uids : EMPTY
+  })()
+  const [mustStrike, setMustStrike] = useState({ uids: EMPTY as string[], id: 0 })
+  const onBlockedStrike = (uid: string) => {
+    if (!chosenSlot) return
+    const gates = gatingStrikeUids(chosenSlot, uid)
+    if (gates.length === 0) return
+    setMustStrike((s) => ({ uids: gates, id: s.id + 1 }))
+  }
+  useEffect(() => {
+    if (mustStrike.uids.length === 0) return
+    const id = mustStrike.id
+    const t = window.setTimeout(() => {
+      setMustStrike((s) => (s.id === id ? { uids: EMPTY, id: s.id } : s))
+    }, 1500)
+    return () => window.clearTimeout(t)
+  }, [mustStrike])
 
   // Board-multi decision: a "choose N" (N>1) selectCards whose candidates all live on the board
   // (e.g. Paquita's "discard 2 Enemies from this Mission", or Juana's flip-1-or-2). Answered by
@@ -252,47 +360,81 @@ export function App() {
   ) : !state.result && turnActions.length > 0 ? (
     <ActionGroup title="Your turn" actions={turnActions} state={state} onClick={dispatch} />
   ) : null
-  // Live Attack Strength readout, shown all through ATTACK (it grows as Maquis are played, then
-  // shrinks with each strike) so the player always sees how much they have left to spend.
-  const attackMeter = state.phase === 'ATTACK' && !state.result ? <AttackMeter value={state.attackStrength} /> : null
   const sideContent =
-    error || playerChoice || attackMeter ? (
+    error || playerChoice ? (
       <>
-        {attackMeter}
         {error && <div className="error">{error}</div>}
         {playerChoice}
       </>
     ) : null
+  const civiliansLost = graveyardCivilians(state)
+
+  // An on-board decision (flip/discard a highlighted Enemy, strike a Mission, etc.) asks the player
+  // to click something down on the board — which can be scrolled well away from the turn-row panel
+  // that shows the prompt and Confirm button. Mirror the essentials in a bar fixed to the bottom of
+  // the viewport whenever there's something to click, so the player never loses track of what
+  // they're mid-selecting. Off-board decisions (which already open the full-card modal) don't need
+  // this — the modal itself is always in view.
+  const floatingPick =
+    decision && !modalDecision && pickTargets.length > 0 ? (
+      boardMulti ? (
+        <FloatingPickBar
+          prompt={selectCards!.prompt}
+          count={multiPicked.length}
+          max={selectCards!.max}
+          valid={multiPicked.length >= selectCards!.min && multiPicked.length <= selectCards!.max}
+          onConfirm={() => respond(multiPicked)}
+          onClear={multiPicked.length > 0 ? () => setMultiPicked([]) : undefined}
+        />
+      ) : (
+        <FloatingPickBar prompt={decision.prompt} hint="Click a highlighted card on the board to choose." />
+      )
+    ) : null
+
+  // Situational prompt for the Missions row label: which Mission is chosen (or needs choosing) is
+  // about a specific card, so it lives on the row, not the guidance tile.
+  const chosenSlotForHint = state.missionRow.find((s) => s.uid === state.chosenMissionUid)
+  const chosenMissionName = chosenSlotForHint ? (missionOf(chosenSlotForHint.dataId)?.name ?? chosenSlotForHint.dataId) : null
 
   return (
-    <div className="app">
+    <div className="app" ref={appRef}>
       <header className="topbar">
         <div className="title">
-          <strong>RESIST!</strong> <span className="muted">Maquis vs. Franco</span>
+          <strong>RESIST!</strong>
         </div>
-        <div className="status" data-coach="status">
-          <span className="pill">Round {state.round}</span>
-          {(state.phase === 'ATTACK' || state.attackStrength > 0) && (
-            <AttackStrengthPill value={state.attackStrength} />
-          )}
+        <div className="status-meters" data-coach="status">
           <Tip below text="Victory Points — your score so far from defeated Missions.">
-            <span className="pill">★ {victoryPoints(state)} VP</span>
+            <div className="meter">
+              <span className="meter-label">Score</span>
+              <span className="meter-score-value">★ {victoryPoints(state)} VP</span>
+            </div>
           </Tip>
-          {state.failedMissions > 0 && (
-            <Tip below text="Failed Missions — fail two and the resistance is crushed.">
-              <span className="pill warn">✗ {state.failedMissions} / 2 failed</span>
-            </Tip>
-          )}
+          <Tip below text="Failed Missions — fail two and the resistance is crushed.">
+            <div className="meter">
+              <span className="meter-label">Missions failed</span>
+              <div className="meter-segments">
+                {[0, 1].map((i) => (
+                  <span key={i} className={`meter-seg mf ${i < state.failedMissions ? 'filled' : ''}`} />
+                ))}
+              </div>
+            </div>
+          </Tip>
+          <Tip below text="Civilians in the Graveyard — five or more and the resistance is crushed.">
+            <div className="meter">
+              <span className="meter-label">Civilians lost</span>
+              <div className="meter-segments">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <span key={i} className={`meter-seg cl ${i < civiliansLost ? civilianFillClass(civiliansLost) : ''}`} />
+                ))}
+              </div>
+            </div>
+          </Tip>
         </div>
+        <Piles state={state} landingPiles={flights.map((f) => f.pileKey)} />
         <div className="controls" data-coach="controls">
           <Tip below text="Takes back the last move, including a targeting choice (so a used action resets). You cannot undo revealing Enemies (a scout or choosing a Mission) once they are face-up. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
-            <button className="ghost" onClick={undo} disabled={!canUndo}>
-              Undo
-            </button>
-          </Tip>
-          <Tip below text="What’s new in this build">
-            <button className="ghost" onClick={() => setShowWhatsNew(true)} aria-label="What’s new">
-              v{APP_VERSION}
+            <button className="undo-btn" onClick={undo} disabled={!canUndo}>
+              ↺ Undo
             </button>
           </Tip>
           <Tip below text="Settings — new / save / load game (or press Esc)">
@@ -303,6 +445,8 @@ export function App() {
           <SeedControl seed={seed} />
         </div>
       </header>
+
+      <PhaseGuide state={state} actions={actions} />
 
       {modalDecision && <DecisionModal decision={modalDecision} state={state} onRespond={respond} />}
 
@@ -328,6 +472,10 @@ export function App() {
             setShowSettings(false)
             setShowCoach(true)
           }}
+          onShowWhatsNew={() => {
+            setShowSettings(false)
+            setShowWhatsNew(true)
+          }}
         />
       )}
 
@@ -343,6 +491,10 @@ export function App() {
         />
       )}
 
+      {floatingPick}
+
+      {peek && <HoverPeek dataId={peek.dataId} x={peek.x} y={peek.y} width={peek.width} />}
+
       {slide && <SlidingCard slide={slide} />}
 
       {flights.length > 0 && (
@@ -353,36 +505,60 @@ export function App() {
         </div>
       )}
 
-      {toasts.length > 0 && (
-        <div className="toasts" role="status" aria-live="polite">
-          {toasts.map((t) => (
-            <Toast key={t.id} toast={t} onDone={() => dismissToast(t.id)} />
-          ))}
+      <div className="event-line" role="status" aria-live="polite">
+        {toasts.length > 0 &&
+          (() => {
+            const latest = toasts[toasts.length - 1]
+            return <Toast key={latest.id} toast={latest} onDone={() => dismissToast(latest.id)} />
+          })()}
+      </div>
+
+      {sideContent && (
+        <div className="turn-row" data-coach="turn">
+          {sideContent}
         </div>
       )}
 
-      <PhaseGuide state={state} actions={actions} choices={sideContent} />
-
-      <div className="board-grid">
-      <div className="board-main">
       <section className="missions" data-coach="missions">
-        {state.missionRow.map((slot, i) => (
-          <Card
-            key={slot.uid}
-            kind="mission"
-            slot={slot}
-            state={state}
-            canChoose={canChoose(actions, slot.uid)}
-            onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
-            strikeTargets={strikeTargets}
-            onStrike={(uid) => dispatch({ type: 'SpendAttackOn', targetUid: uid })}
-            pickTargets={pickTargets}
-            pickedTargets={pickedTargets}
-            onPick={onPick}
-            newEnemyUids={reinforced[slot.uid]}
-            coachMark={i === 0 ? 'zoom' : undefined}
-          />
-        ))}
+        <h3 className="missions-head">
+          Missions
+          {state.phase === 'PLAN' && !chosenMissionName && (
+            <span className="board-hint">Choose one to attack this round</span>
+          )}
+          {state.phase === 'ATTACK' && chosenMissionName && (
+            <span className="board-hint attack">
+              Attacking {chosenMissionName} — the other three are out of reach this round
+            </span>
+          )}
+        </h3>
+        <div className="missions-row">
+          {state.missionRow.map((slot, i) => (
+            <Card
+              key={slot.uid}
+              kind="mission"
+              slot={slot}
+              state={state}
+              canChoose={canChoose(actions, slot.uid)}
+              onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
+              strikeTargets={strikeTargets}
+              onStrike={(uid) => {
+                const hit = findStrikeCost(state, uid)
+                if (hit) flashStrike(hit.missionUid, hit.cost)
+                dispatch({ type: 'SpendAttackOn', targetUid: uid })
+              }}
+              blockedStrikeUids={blockedStrikeUids}
+              onBlockedStrike={onBlockedStrike}
+              pulseUids={mustStrike.uids}
+              pulseId={mustStrike.id}
+              pickTargets={pickTargets}
+              pickedTargets={pickedTargets}
+              onPick={onPick}
+              newEnemyUids={reinforced[slot.uid]}
+              strikeFlash={strikeFlash}
+              coachMark={i === 0 ? 'zoom' : undefined}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="play-area">
@@ -414,6 +590,7 @@ export function App() {
           pickTargets={pickTargets}
           onPick={onPick}
         />
+        <AttackStrengthToken value={state.attackStrength} phase={state.phase} spend={strikeFlash} />
       </section>
 
       <section className="hand" data-coach="hand">
@@ -421,6 +598,7 @@ export function App() {
           Your hand
           <HandDrawNote state={state} />
         </h3>
+        <p className="hand-hint">click a half to commit that side · hover to read the card</p>
         <div className="cards" data-flight-hand>
           {state.hand.map((c) => (
             <Card
@@ -452,64 +630,134 @@ export function App() {
             ))}
         </ol>
       </details>
-      </div>
-
-      <Piles state={state} />
-      </div>
     </div>
   )
 }
 
-/** Breadcrumb of the four round phases with the current one highlighted, plus sub-step-aware
- *  guidance: a prominent "what to do now" line and the phase's steps with the active ones lit.
- *  Steers a new player through PLAN → ATTACK → AFTERMATH → RECOVER. Any player choice (a decision
- *  or the Turn buttons), when present, fills the right half of the tile — no separate section, so
- *  the page doesn't grow and choices always appear in one consistent place. */
-function PhaseGuide({ state, actions, choices }: { state: GameState; actions: Action[]; choices: ReactNode }) {
+/** One-line guidance: a phase chip (which phase, colored) plus the single most important
+ *  instruction right now. The full four-step breadcrumb and the phase's sub-steps (active ones
+ *  lit) move behind the "?" button — always available, never taking up board space. Sits in its own
+ *  thin band directly under the status bar (not folded into it) so the status bar's fixed set of
+ *  controls — score, loss-condition meters, piles, Undo, Settings — stays uncrowded. Turn actions /
+ *  the pending-decision panel render separately in `.turn-row`, below this band. */
+function PhaseGuide({ state, actions }: { state: GameState; actions: Action[] }) {
   const guide = guidanceFor(state, actions)
   const activeIndex = guide ? ROUND_PHASES.indexOf(guide.phase) : -1
+  const [showSteps, setShowSteps] = useState(false)
   return (
     <section className="phase-guide" data-coach="guide">
-      <ol className="breadcrumb">
-        {ROUND_PHASES.map((p, i) => {
-          const cls = [
-            'crumb',
-            i === activeIndex ? 'current' : '',
-            activeIndex >= 0 && i < activeIndex ? 'done' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')
-          return (
-            <li key={p} className={cls}>
-              <span className="crumb-num">{i + 1}</span>
-              <span className="crumb-label">{p}</span>
-            </li>
-          )
-        })}
-      </ol>
-      {(guide || choices) && (
-        <div className="phase-message">
-          {guide && (
-            <div className="phase-message-main">
-              <div className="phase-goal">
-                <span className="phase-name">{guide.phase}</span>
-                {guide.goal}
-                {guide.auto && <span className="phase-auto">automatic</span>}
-              </div>
-              <p className="phase-now">{guide.now}</p>
-              <ol className="phase-steps">
-                {guide.steps.map((s, i) => (
-                  <li key={i} className={s.active ? 'active' : ''}>
-                    {s.text}
+      <div className="phase-guide-row">
+        {guide && <PhaseChip phase={guide.phase} />}
+        <div className="phase-help">
+          <button
+            type="button"
+            className="phase-help-btn"
+            onClick={() => setShowSteps((s) => !s)}
+            aria-expanded={showSteps}
+            aria-label="How this phase works"
+          >
+            ?
+          </button>
+          {showSteps && <div className="popover-backdrop" onClick={() => setShowSteps(false)} aria-hidden="true" />}
+          <div className={`phase-help-popover ${showSteps ? 'open' : ''}`} role="dialog" aria-label="How this phase works">
+            <ol className="breadcrumb">
+              {ROUND_PHASES.map((p, i) => {
+                const cls = [
+                  'crumb',
+                  i === activeIndex ? 'current' : '',
+                  activeIndex >= 0 && i < activeIndex ? 'done' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                return (
+                  <li key={p} className={cls}>
+                    <span className="crumb-num">{i + 1}</span>
+                    <span className="crumb-label">{p}</span>
                   </li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {choices && <div className="phase-message-side">{choices}</div>}
+                )
+              })}
+            </ol>
+            {guide && (
+              <>
+                <p className="phase-help-goal">{guide.goal}</p>
+                <ol className="phase-steps">
+                  {guide.steps.map((s, i) => (
+                    <li key={i} className={s.active ? 'active' : ''}>
+                      {s.text}
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </div>
         </div>
-      )}
+        {guide && (
+          <p className="phase-now-line">
+            {guide.now}
+            {guide.hint && <span className="phase-now-hint"> {guide.hint}</span>}
+            {guide.auto && <span className="phase-auto">automatic</span>}
+          </p>
+        )}
+      </div>
     </section>
+  )
+}
+
+/** Compact chip: which round phase (numbered 1–4, same order as the breadcrumb) plus its name,
+ *  colored by phase — folds what used to be an always-on 4-item breadcrumb into one line. */
+function PhaseChip({ phase }: { phase: (typeof ROUND_PHASES)[number] }) {
+  const num = ROUND_PHASES.indexOf(phase) + 1
+  return (
+    <span className={`phase-chip phase-${phase}`}>
+      <span className="phase-chip-num">{num}</span>
+      <span className="phase-chip-label">{phase}</span>
+    </span>
+  )
+}
+
+/** Fixed to the bottom of the viewport whenever the player needs to click something on the board to
+ *  answer a decision — the turn-row panel that also shows this prompt can scroll out of view (the
+ *  candidates it's asking about are often further down the page than the panel itself), so this bar
+ *  stays reachable regardless of scroll position. Two shapes: a multi-pick with a running count and
+ *  Confirm/Clear (`onConfirm` set), or a single-pick that's just a reminder of what's being chosen
+ *  (no confirm needed — clicking the card itself answers it). */
+function FloatingPickBar({
+  prompt,
+  hint,
+  count,
+  max,
+  valid,
+  onConfirm,
+  onClear,
+}: {
+  prompt: string
+  hint?: string
+  count?: number
+  max?: number
+  valid?: boolean
+  onConfirm?: () => void
+  onClear?: () => void
+}) {
+  return (
+    <div className="floating-pick-bar" role="status">
+      <span className="fpb-prompt">{prompt}</span>
+      {hint && <span className="fpb-hint">{hint}</span>}
+      {onConfirm && (
+        <>
+          <span className={`fpb-count ${valid ? 'ok' : ''}`}>
+            {count}/{max} selected
+          </span>
+          <button className="confirm" disabled={!valid} onClick={onConfirm}>
+            Confirm{count ? ` (${count})` : ''}
+          </button>
+          {onClear && (
+            <button className="ghost" onClick={onClear}>
+              Clear
+            </button>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -566,9 +814,14 @@ function Zone({
   pickTargets: string[]
   onPick: (uid: string) => void
 }) {
+  const hint = side === 'hidden' ? 'concealed from Franco' : 'active — visible to Franco'
   return (
     <div className={`zone${dropOk ? ' drop-ok' : ''}`} data-drop-side={side}>
-      <h4>{title}</h4>
+      <div className="zone-head">
+        <span className={`zone-swatch ${side}`} aria-hidden="true" />
+        <span className="zone-name">{title}</span>
+        <span className="zone-hint">{hint}</span>
+      </div>
       <div className="cards">
         {cards.map((m) => {
           const canUse = actions.some((a) => a.type === 'UseAction' && a.uid === m.uid)
@@ -592,10 +845,11 @@ function Zone({
               // A count-based action's preview ("⚔ +N now") only makes sense before it fires; once
               // used, the gained attack is baked into the card's value, so drop the stale preview.
               liveBonus={canUse ? countActionBonus(state, m.dataId, side, m.uid) : null}
+              actionUsed={m.actionUsed}
             />
           )
         })}
-        {cards.length === 0 && <span className="muted">—</span>}
+        {cards.length === 0 && <div className="zone-empty">nothing here yet</div>}
       </div>
     </div>
   )
@@ -631,7 +885,11 @@ interface PileInfo {
   flightKey?: string
 }
 
-function Piles({ state }: { state: GameState }) {
+/** Labels of the four piles a player checks constantly — these stay inline in the status bar.
+ *  The rest (played less often, or purely informational) move behind the "All piles" disclosure. */
+const INLINE_PILE_LABELS = new Set(['Hidden deck', 'Enemy deck', 'Mission deck', 'Graveyard'])
+
+function Piles({ state, landingPiles = EMPTY }: { state: GameState; landingPiles?: string[] }) {
   const piles: PileInfo[] = [
     { label: 'Hidden deck', n: state.hidden.deck.length, tone: 'hidden', flightKey: 'hidden.deck', hint: 'Hidden Maquis (and shuffled Spies) you draw your hand from.' },
     { label: 'Hidden discard', n: state.hidden.discard.length, tone: 'hidden', flightKey: 'hidden.discard', hint: 'Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out.' },
@@ -645,18 +903,56 @@ function Piles({ state }: { state: GameState }) {
     { label: 'Spy supply', n: state.spiesAvailable, tone: 'spy', hint: 'Spies available to be added to your Hidden deck by enemy effects.' },
     { label: 'Removed', n: state.removedFromGame.length, tone: 'removed', flightKey: 'removed', hint: 'Cards removed from the game entirely (back in the box).' },
   ]
+  const inline = piles.filter((p) => INLINE_PILE_LABELS.has(p.label))
+  const rest = piles.filter((p) => !INLINE_PILE_LABELS.has(p.label))
+  const [open, setOpen] = useState(false)
+
   return (
-    <aside className="piles">
-      <h3 className="piles-head">Card Piles</h3>
-      {piles.map((p) => (
-        <div key={p.label} data-pile-key={p.flightKey} className={`pile ${p.n === 0 ? 'empty' : ''}`} title={`${p.label} — ${p.hint}`}>
-          <span className={`deck-ico tone-${p.tone}`}>
-            <span className="deck-count">{p.n}</span>
+    <div className="status-piles">
+      {inline.map((p) => (
+        <div
+          key={p.label}
+          data-pile-key={p.flightKey}
+          className={`status-pile ${p.n === 0 ? 'empty' : ''} ${p.flightKey && landingPiles.includes(p.flightKey) ? 'flight-land' : ''}`}
+          title={`${p.label} — ${p.hint}`}
+        >
+          <span className={`deck-ico-sm tone-${p.tone}`}>
+            <span className="status-pile-count">{p.n}</span>
           </span>
-          <span className="pile-label">{p.label}</span>
+          <span className="status-pile-label">{p.label}</span>
         </div>
       ))}
-    </aside>
+      <div className="piles-disclosure">
+        <button
+          type="button"
+          className="ghost piles-toggle"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label="All piles"
+        >
+          All piles
+        </button>
+        {open && <div className="popover-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
+        {/* Stays mounted (shown/hidden via CSS, not conditional rendering) even while closed, so
+         *  useCardFlights can still measure these tiles as flight targets. See Phase 6. */}
+        <div className={`piles-popover ${open ? 'open' : ''}`} role="dialog" aria-label="All piles">
+          <h3 className="piles-popover-head">Card Piles</h3>
+          {rest.map((p) => (
+            <div
+              key={p.label}
+              data-pile-key={p.flightKey}
+              className={`pile ${p.n === 0 ? 'empty' : ''} ${p.flightKey && landingPiles.includes(p.flightKey) ? 'flight-land' : ''}`}
+              title={`${p.label} — ${p.hint}`}
+            >
+              <span className={`deck-ico tone-${p.tone}`}>
+                <span className="deck-count">{p.n}</span>
+              </span>
+              <span className="pile-label">{p.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -695,7 +991,7 @@ function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setMoved(true))
     })
-    const t = setTimeout(onDone, 620 + flight.delay)
+    const t = setTimeout(onDone, 720 + flight.delay)
     return () => {
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(raf2)
@@ -703,14 +999,15 @@ function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void
     }
   }, [onDone, flight.delay])
 
-  const w = 66
-  const h = 92
+  const spy = flight.dataId === 'spy'
+  const art = spy ? spyArt() : maquisArt(flight.dataId)
+  const w = spy ? 96 : 66
+  const h = spy ? 68 : 92
   const dx = flight.toX - flight.fromX
   const dy = flight.toY - flight.fromY
-  const spy = flight.dataId === 'spy'
   return (
     <div
-      className={`flying-card ${spy ? 'spy' : 'maquis'}`}
+      className={`flying-card ${spy ? 'spy' : 'maquis'}${art ? ' has-art' : ''}`}
       style={{
         left: flight.fromX - w / 2,
         top: flight.fromY - h / 2,
@@ -718,12 +1015,12 @@ function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void
         height: h,
         transitionDelay: `${flight.delay}ms`,
         transform: moved
-          ? `translate(${dx}px, ${dy}px) scale(0.5) rotate(8deg)`
+          ? `translate(${dx}px, ${dy}px) scale(0.45) rotate(8deg)`
           : 'translate(0, 0) scale(1) rotate(-4deg)',
         opacity: moved ? 0 : 1,
       }}
     >
-      <span className="fc-name">{nameOfMaquis(flight.dataId)}</span>
+      {art ? <img src={art} alt="" draggable={false} /> : <span className="fc-name">{nameOfMaquis(flight.dataId)}</span>}
     </div>
   )
 }
@@ -742,37 +1039,20 @@ function Toast({ toast, onDone }: { toast: LogToast; onDone: () => void }) {
   )
 }
 
-/** Prominent Attack Strength readout for the turn tile during ATTACK — the running pool the player
- *  spends to defeat targets. Pulses when it changes so gains (playing Maquis, firing actions) and
- *  spends (striking) both register. */
-function AttackMeter({ value }: { value: number }) {
-  const prev = useRef(value)
-  const [bump, setBump] = useState(0)
-  useEffect(() => {
-    if (value !== prev.current) {
-      prev.current = value
-      setBump((b) => b + 1)
-    }
-  }, [value])
-  return (
-    <div className="attack-meter" role="status" aria-label={`${value} Attack Strength remaining`}>
-      <span className="am-icon" aria-hidden="true">⚔</span>
-      <span key={bump} className="am-value">
-        {value}
-      </span>
-      <span className="am-label">
-        Attack Strength
-        <br />
-        left to spend
-      </span>
-    </div>
-  )
-}
-
-/** The Attack Strength pill. When the value rises (e.g. Consuelo discards an Enemy and gains its
- *  Defense as Attack, or a Maquis banks its attack), it pulses and floats a green "+N" so the gain
- *  is unmistakable. Spends (which lower it) already read clearly on the board, so only gains flash. */
-function AttackStrengthPill({ value }: { value: number }) {
+/** The single Attack Strength object (Phase 6 — was a topbar pill AND a turn-tile meter, ~400px
+ *  apart, showing the same number with two different animations). Lives at the right end of the
+ *  committed lanes, the seam between where the number is generated (playing/using Maquis) and
+ *  where it's spent (striking). Dormant outside ATTACK (value always 0 then): quieter, no accent
+ *  border, and a sublabel explaining what fills it instead of "left to spend". */
+function AttackStrengthToken({
+  value,
+  phase,
+  spend,
+}: {
+  value: number
+  phase: GameState['phase']
+  spend: { missionUid: string; cost: number; seq: number } | null
+}) {
   const prev = useRef(value)
   const [gain, setGain] = useState(0)
   useEffect(() => {
@@ -784,13 +1064,48 @@ function AttackStrengthPill({ value }: { value: number }) {
       return () => clearTimeout(t)
     }
   }, [value])
+  const dormant = phase !== 'ATTACK'
   return (
-    <Tip below text="Attack Strength — points banked to spend defeating targets this Attack.">
-      <span className={`pill accent atk ${gain > 0 ? 'atk-bump' : ''}`}>
-        ⚔ {value}
-        {gain > 0 && <span className="atk-delta">+{gain}</span>}
+    <div className={`attack-token ${dormant ? 'dormant' : ''} ${gain > 0 ? 'gain' : ''}`} role="status" aria-label={`${value} Attack Strength left to spend`}>
+      <span className="at-label">Attack Strength</span>
+      <span key={`v${value}`} className="at-value">
+        {value}
       </span>
-    </Tip>
+      <span className="at-sub">{dormant ? 'builds as you commit Maquis' : 'left to spend'}</span>
+      {gain > 0 && <span className="at-gain">+{gain}</span>}
+      {spend && <span key={spend.seq} className="at-spend">−{spend.cost}</span>}
+    </div>
+  )
+}
+
+/** Hover-only expanded preview of a hand or committed art-mode Maquis card: both sides' printed
+ *  rules text as real HTML, lifted above the card the pointer is over. Answers "what does this do"
+ *  without the click the right-click zoom still requires for a closer look at the art itself
+ *  (Phase 6 — reading a card's rules text should never require a click). Positioned `fixed` from
+ *  the hovered card's measured rect (see the delegated listener in App()) rather than a CSS-only
+ *  `:hover` popover, since the committed lanes and hand both scroll/clip via `overflow` and a plain
+ *  `position: absolute` child would be cut off (the same lesson as the phase-help popover fix). */
+function HoverPeek({ dataId, x, y, width }: { dataId: string; x: number; y: number; width: number }) {
+  if (dataId === 'spy') return null
+  const name = nameOfMaquis(dataId)
+  const art = maquisArt(dataId)
+  const hidden = maquisSideAction(dataId, 'hidden')
+  const revealed = maquisSideAction(dataId, 'revealed')
+  return (
+    <div className="hover-peek" style={{ left: x, top: y, ['--peek-w' as string]: `${Math.max(width, 260)}px` }} aria-hidden="true">
+      {!art && <div className="hp-name">{name}</div>}
+      {art && <img className="hp-art" src={art} alt="" draggable={false} />}
+      <div className="hp-sides">
+        <div className="hp-side hidden">
+          <div className="hp-tag">HIDDEN · ⚔ {maquisAttack(dataId, 'hidden')}</div>
+          <p>{hidden ? <><span className="hp-type">{hidden.type}</span> {hidden.text}</> : 'No action'}</p>
+        </div>
+        <div className="hp-side revealed">
+          <div className="hp-tag">REVEALED · ⚔ {maquisAttack(dataId, 'revealed')}</div>
+          <p>{revealed ? <><span className="hp-type">{revealed.type}</span> {revealed.text}</> : 'No action'}</p>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -822,6 +1137,14 @@ function SeedControl({ seed }: { seed: number }) {
 
 function victoryPoints(state: GameState): number {
   return state.defeatedMissions.reduce((n, m) => n + (missionOf(m.dataId)?.victoryPoints ?? 0), 0)
+}
+
+/** Civilians-lost meter fill color: green while there's slack, amber as it gets close, red once the
+ *  5-civilian loss condition is one card away. */
+function civilianFillClass(civiliansLost: number): string {
+  if (civiliansLost >= 5) return 'filled-loss'
+  if (civiliansLost >= 3) return 'filled-warn'
+  return 'filled-win'
 }
 
 /** A defeated Mission (Cross the Border −1 / Attack Francoists in the Valley +1) can change the size

@@ -159,6 +159,21 @@ function lookDiscardReorder(
   }
 }
 
+/**
+ * Discard to Hidden discard, then draw n. If the Hidden deck and discard were already empty, skip
+ * the draw — otherwise the discarded card is shuffled in and drawn back immediately, and the
+ * rulebook's "draw as many as you can" exception for Celia/Antonio could never fire.
+ */
+function discardToHiddenThenDraw(
+  state: Draft<GameState>,
+  card: { uid: string; dataId: string },
+  n: number,
+): number {
+  const empty = state.hidden.deck.length === 0 && state.hidden.discard.length === 0
+  state.hidden.discard.push(card)
+  return empty ? 0 : drawHidden(state, n)
+}
+
 /** "Discard one Spy from your hand to the Hidden discard pile then draw a card." (Celia/Antonio hidden)
  *  Logs what was drawn — and flags the case where the replacement card is itself a Spy — so the
  *  player can see the swap happened even when a Spy remains in hand. */
@@ -166,9 +181,8 @@ const spyDiscardDraw: EffectHandler = ({ state }) => {
   const s = state as Draft<GameState>
   const i = s.hand.findIndex(isSpy)
   if (i === -1) return
-  s.hidden.discard.push(s.hand.splice(i, 1)[0])
-  const before = s.hand.length
-  drawHidden(s, 1)
+  const before = s.hand.length - 1
+  discardToHiddenThenDraw(s, s.hand.splice(i, 1)[0], 1)
   const drew = s.hand.length > before ? s.hand[s.hand.length - 1] : null
   s.log.push(
     drew === null
@@ -203,8 +217,7 @@ const discardMaquisDrawTwo: EffectHandler = ({ state, responses }): Decision | v
     }
   }
   const idx = s.hand.findIndex((c) => c.uid === responses[0][0])
-  if (idx !== -1) s.hidden.discard.push(s.hand.splice(idx, 1)[0])
-  drawHidden(s, 2)
+  if (idx !== -1) discardToHiddenThenDraw(s, s.hand.splice(idx, 1)[0], 2)
 }
 
 /** "Choose a card from the Revealed pile and place it [in your hand | on top of the Hidden deck]." */

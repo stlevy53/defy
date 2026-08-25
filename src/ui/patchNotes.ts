@@ -11,6 +11,24 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.0',
+    date: '2026-08-25',
+    title: 'A board that fits the window',
+    changes: [
+      'The board is rebuilt around fixed-height bands — status bar, phase guidance, Missions, committed lanes, hand — instead of one tall scrolling column, so a maximized window shows the whole table with far less scrolling.',
+      'Missions sit in a fixed four-across row at a readable 452px, with the era, keyword, Defense, VP, and Garrison overlaid on the art. Attacking one dims and outlines the other three so it’s unmistakable which Mission is live.',
+      'A Mission’s garrison is a fixed five-slot strip — enemies keep a constant tile height regardless of count, empty slots read as empty, and a Mission reinforced past five (Radio Operator, the Barracks) shows a “+N” instead of silently growing or hiding an Enemy.',
+      'Strike order is taught before you click: a legal target gets an accent ring and “Strike 1st/2nd/…” badge; an Enemy still gated by Grunts shows the same ordinal, quieter.',
+      'A face-down Enemy now shows its real printed card back instead of a placeholder.',
+      'One Attack Strength number — was a top-bar pill and a turn-tile meter showing the same figure twice. It now lives once, at the seam between your committed lanes and the board, and floats the exact cost on both itself and the struck target when you spend it.',
+      'One event line — the latest thing that happened shows as a single pill under the status bar. It no longer repeats what already animates on the board (a struck target, a reinforced Mission, a defeated Mission’s stamp), and the old bottom-left toast stack is gone.',
+      'Hover a hand or committed card to read both its Hidden and Revealed action text without right-clicking to zoom.',
+      'A decision that asks you to click cards on the board (discard one, flip one, etc.) now keeps its prompt and Confirm button pinned to the bottom of the window, so scrolling to see the board never loses track of what you’re choosing.',
+      'The phase/turn area is calmer: guidance sits in its own line under the status bar again, the “Done attacking” / “Continue” button pulses so it’s clear what to click next, and a card’s foot bar always names the actual action (no more a PLAN action reading “ATTACK”, or a card that was never used claiming “USED IN PLAN”).',
+      'Fix — the “?” phase-help popover works again (an earlier layout change was silently clipping it).',
+    ],
+  },
+  {
     version: '0.1.9',
     date: '2026-08-18',
     title: 'The table makes a sound',

@@ -26,15 +26,11 @@ body {
     url('/tabletop.jpg') center top / cover no-repeat fixed,
     var(--bg);
 }
-#root { max-width: 1260px; margin: 0 auto; padding: 1.25rem; }
-
-/* Board layout: main column + a right-side card-pile rail. Collapses to one column (rail below)
- *  on narrow screens so nothing overlaps. */
-.board-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
-.board-main { min-width: 0; }
-@media (min-width: 900px) {
-  .board-grid { grid-template-columns: minmax(0, 1fr) 178px; }
-}
+#root { display: flex; flex-direction: column; padding: 12px 20px 16px; gap: 12px; min-height: 100vh; }
+/* The single top-level div React renders into #root carries no layout role of its own — its
+ *  children (status bar, event line, missions, committed lanes, hand) are the fixed-rhythm bands,
+ *  so they need to be direct flex children of #root, not grandchildren of an unstyled wrapper. */
+.app { display: contents; }
 
 h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
 .muted { color: var(--muted); }
@@ -53,46 +49,28 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 }
 .seed-input:focus-visible { border-color: var(--accent-2); outline: none; }
 
-/* Top bar — sticky so critical controls (Undo, New game, status) stay reachable while scrolling. */
+/* Status bar — the top row, holding the controls the player needs to see at a glance on every turn:
+ *  title, the always-on loss-condition meters, pile chips, Undo, Settings. Sticky so it stays
+ *  reachable if a taller committed-lanes band ever forces a scroll. Fixed height keeps the row from
+ *  growing, but not `overflow: hidden` — that would clip the Piles / "?" popovers, which anchor off
+ *  elements inside this row and open below it. */
 .topbar {
+  flex: none; height: 48px; box-sizing: border-box;
   position: sticky; top: 0; z-index: 50;
-  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-  padding: 0.6rem 0.9rem; border-radius: 10px;
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: nowrap;
+  padding: 0 0.9rem; border-radius: 10px;
   background: rgba(20, 17, 14, 0.92); border: 1px solid rgba(122, 98, 62, 0.45);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
+.title { flex: none; }
 .title strong { color: var(--accent); letter-spacing: 0.12em; font-size: 1.15rem; }
-.status { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
-.controls { display: flex; gap: 0.4rem; align-items: center; }
-.pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.8rem; }
+.controls { flex: none; display: flex; gap: 0.4rem; align-items: center; }
+.pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.8rem; white-space: nowrap; }
 .pill.accent { color: #fff; background: var(--accent); border-color: var(--accent); }
-/* Attack Strength gain feedback: a pulse on the pill plus a floating "+N" that rises and fades. */
-.pill.accent.atk { position: relative; }
-.atk-bump { animation: atk-bump 0.5s ease-out; }
-@keyframes atk-bump {
-  0% { box-shadow: 0 0 0 0 var(--accent-2); }
-  30% { box-shadow: 0 0 0 3px var(--accent-2); transform: scale(1.14); }
-  100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
-}
-.atk-delta {
-  position: absolute; top: -0.7rem; right: -0.4rem; z-index: 5;
-  background: var(--win); color: #14110e; border-radius: 999px;
-  font-size: 0.62rem; font-weight: 800; padding: 0.02rem 0.32rem; pointer-events: none;
-  animation: atk-delta-rise 1.3s ease-out forwards;
-}
-@keyframes atk-delta-rise {
-  0% { opacity: 0; transform: translateY(5px) scale(0.8); }
-  20% { opacity: 1; transform: translateY(-2px) scale(1.1); }
-  70% { opacity: 1; transform: translateY(-7px) scale(1); }
-  100% { opacity: 0; transform: translateY(-13px) scale(1); }
-}
 .pill.warn { color: #fff; background: var(--warn); border-color: var(--warn); }
-.pill.phase-ATTACK { color: #fff; background: #7a2b20; border-color: #7a2b20; }
-.pill.phase-PLAN { color: #14110e; background: var(--accent-2); border-color: var(--accent-2); }
 
-/* Phase breadcrumb + guidance */
-.phase-guide { margin: 0.7rem 0; }
+/* Phase breadcrumb + guidance — lives inline inside the 56px status bar (see .phase-guide-row). */
 .breadcrumb { display: flex; flex-wrap: wrap; gap: 0.4rem; list-style: none; margin: 0; padding: 0; }
 .crumb {
   display: flex; align-items: center; gap: 0.4rem;
@@ -110,49 +88,153 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .crumb.current { color: #fff; background: var(--accent); border-color: var(--accent); }
 .crumb.current .crumb-num { background: #fff; color: var(--accent); border-color: #fff; }
 
-.phase-message {
-  margin-top: 0.55rem; padding: 0.6rem 0.85rem;
-  background: rgba(24, 19, 14, 0.78); border: 1px solid rgba(122, 98, 62, 0.4); border-left: 3px solid var(--accent);
-  border-radius: 8px; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-  display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+/* One-line guidance band: phase chip + the single "what to do now" instruction + the "?" that opens
+ *  the full breadcrumb/steps popover. Its own thin row directly under the status bar, not folded
+ *  into it — keeps the status bar's fixed controls (score, meters, piles, Undo, Settings) from being
+ *  crowded by copy whose length varies with the phase. */
+.phase-guide { flex: none; padding: 2px 0.9rem 0; }
+.phase-guide-row { display: flex; align-items: center; gap: 0.6rem; }
+.phase-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 4px 12px 4px 6px;
 }
-.phase-message-main { flex: 2 1 340px; min-width: 0; }
-/* A pending decision fills the tile's right half (its empty space) instead of a new section. */
-.phase-message-side { flex: 1 1 280px; min-width: 0; border-left: 1px solid var(--line); padding-left: 0.9rem; }
+.phase-chip-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 999px; background: #fff;
+  font-weight: 800; font-size: 0.72rem;
+}
+.phase-chip-label { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.phase-chip.phase-PLAN { background: var(--accent); color: #fff; }
+.phase-chip.phase-PLAN .phase-chip-num { color: var(--accent); }
+.phase-chip.phase-ATTACK { background: #7a2b20; color: #fff; }
+.phase-chip.phase-ATTACK .phase-chip-num { color: #7a2b20; }
+.phase-chip.phase-AFTERMATH, .phase-chip.phase-RECOVER {
+  background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
+}
+.phase-chip.phase-AFTERMATH .phase-chip-num, .phase-chip.phase-RECOVER .phase-chip-num {
+  background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+}
+.phase-now-line {
+  margin: 0; flex: 1 1 auto; min-width: 0;
+  font-size: 15px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.phase-now-hint { color: var(--muted); font-weight: 600; }
+.phase-help { position: relative; flex: none; }
+.phase-help-btn {
+  width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted); font-weight: 700; font-size: 0.8rem; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.phase-help-btn:hover, .phase-help-btn:focus-visible { color: var(--ink); border-color: var(--accent-2); outline: none; }
+.phase-help-popover {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  width: min(360px, 80vw); padding: 0.7rem 0.85rem;
+  background: rgba(20, 17, 14, 0.96); border: 1px solid rgba(122, 98, 62, 0.45);
+  border-radius: 10px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.phase-help-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
+.phase-help-goal { margin: 0.5rem 0 0; color: var(--ink); font-weight: 600; font-size: 0.86rem; }
+
+/* Status bar meters — SCORE / MISSIONS FAILED / CIVILIANS LOST. Always visible (even at zero) so
+ *  the two loss conditions are never a surprise; segments read at a glance without doing the math. */
+.status-meters { flex: none; display: flex; align-items: center; gap: 14px; height: 100%; padding: 0 12px; margin-left: auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.meter { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.meter-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+.meter-score-value { font-size: 17px; font-weight: 800; color: var(--accent-2); white-space: nowrap; }
+.meter-segments { display: flex; gap: 3px; }
+.meter-seg { height: 7px; border-radius: 2px; background: #2f2820; border: 1px solid #4a3d2c; }
+.meter-seg.mf { width: 26px; }
+.meter-seg.mf.filled { background: var(--loss); border-color: var(--loss); }
+.meter-seg.cl { width: 14px; }
+.meter-seg.cl.filled-win { background: var(--win); border-color: var(--win); }
+.meter-seg.cl.filled-warn { background: var(--warn); border-color: var(--warn); }
+.meter-seg.cl.filled-loss { background: var(--loss); border-color: var(--loss); }
+
+/* Undo — the most-used control in a solitaire game, promoted out of the ghost-button row so it
+ *  doesn't compete visually with New game / Settings for attention. */
+.undo-btn {
+  flex: none; font-family: inherit; cursor: pointer;
+  background: rgba(217, 154, 36, 0.14); color: var(--accent-2);
+  border: 1px solid rgba(217, 154, 36, 0.55); border-radius: 8px;
+  padding: 7px 16px; font-size: 14px; font-weight: 700; white-space: nowrap;
+}
+.undo-btn:hover:not(:disabled), .undo-btn:focus-visible:not(:disabled) { background: rgba(217, 154, 36, 0.26); outline: none; }
+.undo-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Turn actions / pending-decision panel: its own thin band directly under the status bar, so a
+ *  taller decision (prompt + several candidate chips + Confirm) can grow without stealing space
+ *  from the fixed bar above it. Not one of the five named bands in the layout table — it only
+ *  renders when there's something to act on — but it needs a home, and this is the least disruptive
+ *  one: right where the old inline choices box used to sit, just promoted to full width. */
+.turn-row {
+  flex: none; min-height: 0;
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(24, 19, 14, 0.78); border: 1px solid rgba(122, 98, 62, 0.4);
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+}
 .phase-decision { border-radius: 8px; animation: decision-flash 0.5s ease-out; }
 @keyframes decision-flash {
   0% { box-shadow: 0 0 0 2px var(--accent-2); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-/* Live Attack Strength readout in the turn tile during ATTACK. */
-.attack-meter {
-  display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.6rem;
-  padding: 0.45rem 0.7rem; border-radius: 10px;
-  background: rgba(200, 69, 47, 0.14); border: 1px solid var(--accent);
+/* Event line — one transient message, centred, in normal flow (replaces the old fixed
+ *  bottom-left toast stack so the fixed-band rhythm holds even while a message is showing). Only
+ *  the newest message is shown, and useLogToasts filters out anything that already animates on a
+ *  card (a strike's cost floats on the target and the Attack Strength token instead; a
+ *  reinforcement flashes the garrison strip) — see the .toast rule below for the pill itself. */
+.event-line { flex: none; height: 29px; display: flex; align-items: center; justify-content: center; }
+
+/* The single Attack Strength object (Phase 6) — was a topbar pill AND a turn-tile meter showing the
+ *  same number twice. Lives at the right end of the committed lanes (.play-area), the seam between
+ *  where the number is generated and where it's spent. Dormant outside ATTACK: quieter, no accent
+ *  border, sublabel explains what fills it instead of claiming there's something to spend yet. */
+.attack-token {
+  flex: none; width: 190px; align-self: stretch;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  position: relative; text-align: center; padding: 10px;
+  border-radius: 10px; background: rgba(200, 69, 47, 0.16); border: 2px solid var(--accent);
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
-.attack-meter .am-icon { font-size: 1.3rem; color: var(--accent-2); }
-.attack-meter .am-value {
-  font-size: 1.9rem; font-weight: 800; line-height: 1; color: #fff; min-width: 1.4ch; text-align: center;
-  display: inline-block; animation: am-bump 0.35s ease-out;
+.attack-token.dormant { opacity: 0.5; background: rgba(122, 98, 62, 0.12); border: 2px solid transparent; }
+.at-label { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #e0a58f; }
+.attack-token.dormant .at-label { color: var(--muted); }
+.at-value {
+  font-size: 52px; font-weight: 800; line-height: 1; color: #fff; min-width: 1.2ch;
+  display: inline-block; animation: at-bump 0.32s ease-out;
 }
-.attack-meter .am-label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2; }
-@keyframes am-bump {
-  0% { transform: scale(1.35); color: var(--accent-2); }
+@keyframes at-bump {
+  0% { transform: scale(1.22); color: var(--accent-2); }
   100% { transform: scale(1); color: #fff; }
 }
-.phase-goal { color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.phase-name { color: var(--accent-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }
+.at-sub { font-size: 11px; color: var(--muted); }
+.at-gain {
+  position: absolute; top: 6px; right: 10px; z-index: 2;
+  background: var(--win); color: #14110e; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 800; padding: 0.05rem 0.4rem; pointer-events: none;
+  animation: at-delta-rise 1.3s ease-out forwards;
+}
+/* Spend: a red "-{cost}" at the token's top right — mirrored on the struck target's Mission tile
+ *  (.strike-cost-flash, defined with the garrison strip) so the number reads at both ends. */
+.at-spend {
+  position: absolute; top: 6px; left: 10px; z-index: 2;
+  color: var(--loss); font-size: 0.9rem; font-weight: 800; pointer-events: none;
+  animation: at-delta-rise 1.1s ease-out forwards;
+}
+@keyframes at-delta-rise {
+  0% { opacity: 0; transform: translateY(5px) scale(0.85); }
+  20% { opacity: 1; transform: translateY(-2px) scale(1.1); }
+  70% { opacity: 1; transform: translateY(-8px) scale(1); }
+  100% { opacity: 0; transform: translateY(-15px) scale(1); }
+}
 .phase-auto {
+  margin-left: 0.4em;
   color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
   padding: 0.02rem 0.45rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
 }
-.phase-now {
-  margin: 0.4rem 0 0; padding-left: 0.9rem; position: relative;
-  color: var(--ink); font-size: 0.92rem; font-weight: 600;
-}
-.phase-now::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
 .phase-steps { margin: 0.45rem 0 0; padding-left: 1.25rem; color: var(--muted); font-size: 0.84rem; }
 .phase-steps li { margin: 0.12rem 0; opacity: 0.5; }
 .phase-steps li.active { opacity: 1; color: var(--ink); }
@@ -167,13 +249,19 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .banner .confirm { margin-left: auto; }
 
 /* Missions */
-.missions { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
+.missions { flex: none; }
+.missions-row { display: flex; gap: 16px; justify-content: space-between; margin-top: 0.4rem; }
 .card {
   background: var(--panel); border: 1px solid #4a3d2c; border-radius: 10px; padding: 0.6rem 0.7rem;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 236, 200, 0.04) inset;
 }
 .card.mission { position: relative; }
 .card.mission.chosen { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+/* During ATTACK, the chosen Mission is the only one that matters this round — call it out plainly
+ *  (border order after .chosen so it wins the ATTACK-phase-chosen case at equal specificity) and
+ *  dim the other three so it's unmistakable which one is live. */
+.card.mission.under-attack { border: 2px solid var(--accent); box-shadow: 0 0 0 4px rgba(200, 69, 47, 0.22); }
+.card.mission.attack-dimmed { opacity: 0.42; border-color: var(--line); }
 /* A clickable Mission — choose it to attack (PLAN) or strike it (ATTACK). */
 .card.mission.actionable { cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
 .card.mission.actionable:hover,
@@ -190,7 +278,7 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 .card.mission .click-hint { top: 0.45rem; bottom: auto; }
 .card.mission.actionable:hover .click-hint,
 .card.mission.actionable:focus-visible .click-hint { opacity: 1; }
-.card.mission.failed { opacity: 0.5; }
+.card.mission.failed:not(.has-art) { opacity: 0.5; }
 .card.mission.defeated { border-color: var(--win); }
 
 /* Victory feedback: a stamp that pops onto a Mission the moment it's defeated (it leaves the board
@@ -292,6 +380,28 @@ button.enemy.faceup.strikeable:focus-visible {
   border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; outline: none;
 }
 
+/* Order-blocked Enemy (Guard etc. while Grunts remain): looks inert, but a click pulses the gate. */
+button.enemy.faceup.order-blocked {
+  font-family: inherit; text-align: left; color: var(--ink); cursor: default;
+  appearance: none;
+}
+button.enemy.faceup.order-blocked.has-art { padding: 0; border: none; background: transparent; }
+
+/* A blocked click (Guard, other Enemy, or the Mission) pulses the Grunt/Guard that must fall first. */
+.must-strike-host { position: relative; }
+.must-strike-ring {
+  position: absolute; inset: -4px; border-radius: 8px; pointer-events: none; z-index: 5;
+  animation: must-strike-pulse 0.45s ease-in-out 3;
+}
+.enemy.has-art .must-strike-ring { inset: 0; border-radius: 5px; }
+@keyframes must-strike-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(224, 74, 58, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(224, 74, 58, 1), 0 0 16px 4px rgba(224, 74, 58, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .must-strike-ring { animation: none; box-shadow: 0 0 0 3px rgba(224, 74, 58, 0.95); }
+}
+
 /* Pending-decision "pick this card" affordance (mirrors the strike/choose idiom, in ochre). */
 .card.pickable { position: relative; cursor: pointer; transition: border-color 0.1s, box-shadow 0.1s, transform 0.1s; }
 .card.pickable:hover, .card.pickable:focus-visible {
@@ -341,27 +451,60 @@ button.enemy.pickable.picked::after {
   font-size: 0.7rem; line-height: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .board-hint {
-  margin: 0 0 0.4rem; padding-left: 0.9rem; position: relative; color: var(--accent-2); font-weight: 600; font-size: 0.86rem;
+  padding-left: 0.9rem; position: relative; color: var(--accent-2); font-weight: 600; font-size: 12.5px;
+  text-transform: none; letter-spacing: normal; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 .board-hint::before { content: '▸'; position: absolute; left: 0; }
-
-/* Play area + hand */
-.play-area { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.6rem 0; }
-/* Play zones read as marked-out areas on the table: faintly translucent so the wood shows through,
- *  with the cards inside lifting off them via their own shadow. */
-.zone, .hand {
-  background: rgba(24, 19, 14, 0.5); border: 1px solid rgba(122, 98, 62, 0.32); border-radius: 10px;
-  padding: 0.6rem 0.75rem; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+.board-hint.attack { color: #e0a58f; }
+/* Sits directly on the tabletop photo (no panel behind it, unlike the hand/zone headers), so the
+ *  default muted heading color is unreadable against light wood — brighten it and add a shadow. */
+.missions-head {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  color: var(--ink); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 1px 8px rgba(0, 0, 0, 0.5);
 }
+
+/* Committed lanes — one panel (not two side-by-side boxes), split by a single divider, so the two
+ *  halves read as one "board" region and the panel can flex to absorb whatever vertical surplus a
+ *  round leaves, instead of an empty rectangle sitting under a fixed-height pair of boxes. This is
+ *  the band that genuinely grows during a round, so it — not the hand — takes flex: 1 1 auto. */
+.play-area {
+  flex: 1 1 auto; min-height: 0; display: flex;
+  border-radius: 10px; background: rgba(20, 16, 12, 0.55); border: 1px solid rgba(122, 98, 62, 0.32);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); overflow: hidden;
+}
+.zone {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+  padding: 0.6rem 0.75rem; overflow: auto;
+}
+.zone + .zone { border-left: 1px solid rgba(122, 98, 62, 0.32); }
 .zone.drop-ok {
-  border-color: var(--accent-2);
-  box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.45) inset, 0 0 18px rgba(217, 154, 36, 0.18);
+  box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.45) inset, 0 0 18px rgba(217, 154, 36, 0.18) inset;
   background: rgba(217, 154, 36, 0.12);
 }
-.hand { margin: 0.6rem 0; }
+/* Lane header: an 8x8 side swatch (matches the Hidden/Revealed portrait duotones), the side name,
+ *  and a one-line hint — replaces the plain "Hidden Maquis" / "Revealed Maquis" <h4>. */
+.zone-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 0.35rem; }
+.zone-swatch { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+.zone-swatch.hidden { background: #7a2b20; }
+.zone-swatch.revealed { background: #4f2f74; }
+.zone-name { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.zone-hint { font-size: 11.5px; color: #6f6558; }
+.zone-empty {
+  flex: 1 1 auto; min-height: 60px; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed rgba(122, 98, 62, 0.4); border-radius: 8px; color: #6f6558; font-size: 0.78rem;
+}
+.zone .cards { flex: 1 1 auto; }
+/* Hand — sized to its content (flex: none), never to fill leftover space: an empty rectangle under
+ *  a full-height hand was the flaw this rebuild removes. */
+.hand {
+  flex: none;
+  border-radius: 10px; background: rgba(20, 16, 12, 0.62); border: 1px solid rgba(122, 98, 62, 0.38);
+  padding: 9px 14px 12px;
+}
 /* Header note: a defeated Mission (Cross the Border / Valley) changes the size of the next hand.
  * Shown inline with the "Your hand" title so the player is warned before clicking Continue. */
 .hand-head { display: flex; align-items: center; gap: 0.5rem; }
+.hand-hint { margin: 0 0 0.3rem; font-size: 11.5px; color: #6f6558; }
 .hand-draw-note {
   text-transform: none; letter-spacing: 0; font-weight: 700; font-size: 0.72rem;
   padding: 0.05rem 0.45rem; border-radius: 999px; border: 1px solid;
@@ -369,9 +512,10 @@ button.enemy.pickable.picked::after {
 .hand-draw-note.warn { color: #ff9a86; background: rgba(150, 25, 20, 0.35); border-color: rgba(240, 120, 100, 0.6); }
 .hand-draw-note.good { color: #bfe3a6; background: rgba(45, 110, 40, 0.32); border-color: rgba(150, 220, 130, 0.55); }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
-.card.played { width: 192px; padding: 0; overflow: hidden; }
+.hand .cards { flex-wrap: nowrap; overflow-x: auto; }
+.card.played { width: 230px; padding: 0; overflow: hidden; }
 .card.played.mcard { padding-bottom: 0.45rem; }
-.hand-card { width: 250px; padding: 0; overflow: hidden; }
+.hand-card { width: 230px; padding: 0; overflow: hidden; }
 .card.played.mcard.hidden { border-color: #7a2b20; }
 .card.played.mcard.revealed { border-color: #4f2f74; }
 .card-sub { font-size: 0.72rem; color: var(--muted); }
@@ -476,7 +620,7 @@ button.enemy.pickable.picked::after {
 .card-art { display: block; width: 100%; height: auto; }
 
 /* Hand Maquis: invisible "play this side" hotspots over the Hidden (left) / Revealed (right) halves. */
-.hand-card.has-art { width: 250px; }
+.hand-card.has-art { width: 230px; }
 .play-hotspots { position: absolute; inset: 0; display: flex; }
 .play-hotspots .hot {
   flex: 1 1 0; background: transparent; border: none; cursor: pointer; position: relative;
@@ -496,10 +640,27 @@ button.enemy.pickable.picked::after {
 .play-hotspots .hot:not(:disabled):focus-visible .hot-label { opacity: 1; }
 .card.hand-card.pickable .play-hotspots { pointer-events: none; }
 
-/* Played Maquis: dim the half not in play. Use sits under the card so printed text stays readable. */
-.played-wrap { display: flex; flex-direction: column; align-items: stretch; width: 192px; }
+/* Readable strip along the foot of an arted hand card, matching the printed Hidden/Revealed split —
+ *  the phase tag is the key scannable fact: which side is useful *this* phase, without reading the
+ *  fine print. Purely informational (pointer-events: none) — the hotspots above still take the click. */
+.hand-side-plates { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; display: flex; pointer-events: none; }
+.hand-side-plate { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 4px 8px; overflow: hidden; }
+.hand-side-plate.hidden { background: rgba(122, 43, 32, 0.92); }
+.hand-side-plate.revealed { background: rgba(79, 47, 116, 0.92); }
+.hsp-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.hand-side-plate.hidden .hsp-label { color: #ffcfc4; }
+.hand-side-plate.revealed .hsp-label { color: #dcc9ff; }
+.hsp-value { font-size: 12.5px; font-weight: 800; color: #fff; white-space: nowrap; }
+.hsp-phase {
+  margin-left: auto; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Played Maquis: dim the half not in play. The foot bar sits under the card so printed text stays
+ *  readable, and — unlike the old use-under button — is always present, not just while firable. */
+.played-wrap { display: flex; flex-direction: column; align-items: stretch; width: 230px; }
 .played-wrap.is-sliding { opacity: 0.35; }
-.card.played.has-art { width: 192px; }
+.card.played.has-art { width: 230px; }
 .played-wrap .card.played.has-art { width: 100%; }
 .side-dim { position: absolute; top: 0; bottom: 0; width: 50%; background: rgba(10, 8, 6, 0.62); pointer-events: none; }
 .side-dim.left { left: 0; }
@@ -527,41 +688,116 @@ button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
   border: 1px solid rgba(217, 154, 36, 0.45); border-radius: 6px; padding: 0.22rem 0.4rem;
 }
 .move-side:hover, .move-side:focus-visible { background: rgba(217, 154, 36, 0.32); outline: none; }
-.use-under {
-  margin-top: 0.28rem; border: 1px solid rgba(217, 154, 36, 0.55); cursor: pointer; font-family: inherit;
-  background: rgba(217, 154, 36, 0.88); color: #14110e; font-weight: 800; font-size: 0.58rem;
-  letter-spacing: 0.06em; text-transform: uppercase; padding: 0.16rem 0.4rem; border-radius: 6px;
+.card-foot-bar {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  margin: 0; border: none; font-family: inherit; padding: 4px 8px;
+  background: rgba(20, 16, 12, 0.9); cursor: default;
 }
-.use-under:hover, .use-under:focus-visible { background: var(--accent-2); outline: none; }
+.card-foot-bar .cfb-attack { font-size: 14px; font-weight: 800; color: #fff; }
+.card-foot-bar .cfb-state {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: #6f6558;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;
+}
+.card-foot-bar.firable { background: rgba(217, 154, 36, 0.92); cursor: pointer; }
+.card-foot-bar.firable .cfb-state { color: #14110e; }
+.card-foot-bar.firable:hover, .card-foot-bar.firable:focus-visible { background: var(--accent-2); outline: none; }
 .action-live.art { position: absolute; top: 6px; right: 6px; margin: 0; }
 
 /* Mission art: image on top, Enemies guarding it below; Defense pill only when modified this round. */
-.card.mission.has-art { width: 260px; }
+.card.mission.has-art { width: 452px; }
+.card.mission.failed.has-art { padding: 0; overflow: hidden; }
+.card.mission.failed.has-art .card-art { display: block; width: 100%; height: auto; }
 .mission.has-art .mission-body { padding: 0.4rem 0.5rem 0.5rem; }
 .mission.has-art .mission-body .enemies { margin: 0; }
-.def-override {
-  position: absolute; top: 6px; left: 6px; background: var(--accent); color: #fff;
-  font-weight: 800; font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 6px;
-}
-.era-chip-host { position: absolute; top: 6px; right: 6px; z-index: 2; }
-.era-chip {
-  display: block; background: rgba(20, 17, 14, 0.88); color: var(--accent-2);
-  font-weight: 800; font-size: 0.68rem; letter-spacing: 0.04em;
-  padding: 0.12rem 0.4rem; border-radius: 6px;
-  border: 1px solid rgba(217, 154, 36, 0.45);
+.mission-failed-fallback {
+  min-height: 9rem; display: grid; place-items: center;
+  font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
 }
 .era-inline { font-size: 0.72rem; color: var(--accent-2); font-weight: 700; }
 
-/* Enemy art: small portrait token with this copy's Defense overlaid (full text on hover). */
-.enemy.has-art { flex: 0 0 auto; padding: 0; border: none; background: transparent; overflow: visible; position: relative; }
-.enemy-art { display: block; width: 58px; height: auto; border-radius: 5px; border: 1px solid var(--line); }
-button.enemy.faceup.has-art { width: auto; }
-.enemy-def-pill {
-  position: absolute; top: -6px; right: -6px; background: var(--accent); color: #fff;
-  font-size: 0.6rem; font-weight: 800; padding: 0.05rem 0.3rem; border-radius: 999px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+/* Mission art overlay: the photo carries no legible stats at board scale, so the era, keyword and
+ *  Defense/VP/Garrison figures are overlaid as real text — an era plate top-left and a stat rail
+ *  across the foot of the art. Positioned relative to the art only (not the whole tile), since real
+ *  name/effect text now sits below the image as normal flow content. */
+.mission-art { position: relative; }
+.mission-stat-rail {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  padding: 26px 12px 9px;
+  background: linear-gradient(rgba(16, 13, 10, 0), rgba(14, 11, 9, 0.94) 62%);
+  display: flex; align-items: center; gap: 12px;
 }
-.enemy.facedown.has-art { padding: 0; border: none; background: transparent; }
+.stat-rail-badge {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px; white-space: nowrap;
+}
+.stat-rail-badge.kw-DEFEND { color: #9fbede; background: rgba(56, 80, 101, 0.4); }
+.stat-rail-badge.kw-DEFEAT { color: #e0a58f; background: rgba(107, 58, 44, 0.4); }
+.stat-rail-badge.kw-SURVIVE { color: #cdb98f; background: rgba(107, 91, 50, 0.4); }
+.mission-stat-rail-figures { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 17px; font-weight: 800; white-space: nowrap; }
+.mission-stat-rail-figures .ms-def { color: var(--ink); }
+.mission-stat-rail-figures .ms-vp { color: var(--accent-2); }
+.mission-stat-rail-figures .ms-garrison { color: #e0a58f; }
+
+/* Name + effect as real text below the art (was pixels-in-the-photo). Fixed effect height keeps
+ *  tile heights identical across the row regardless of copy length — full text stays in zoom. */
+.mission-text { padding: 9px 12px 8px; }
+.mission-text .mission-name { font-size: 16px; font-weight: 700; color: var(--ink); }
+.mission-text .mission-effect {
+  margin: 2px 0 0; font-size: 12.5px; line-height: 1.35; color: #b6ab97;
+  height: 30px; overflow: hidden; text-wrap: pretty;
+}
+
+/* Enemy art: small portrait token with this copy's Defense overlaid (full text on hover). */
+.enemy.has-art { flex: 1 1 0; min-width: 0; aspect-ratio: 750 / 1050; padding: 0; border: none; background: transparent; overflow: visible; position: relative; }
+.enemy-art { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 5px; border: 1px solid var(--line); }
+button.enemy.faceup.has-art { width: auto; }
+/* Defense reads as a footer strip across the token rather than a corner pill — legible at the
+ *  smaller fixed-slot size and consistent whether or not the token is also carrying a strike badge. */
+.enemy-def-pill {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  background: rgba(14, 11, 9, 0.88); color: #fff; text-align: center;
+  font-size: 12px; font-weight: 800; padding: 2px 0; border-radius: 0 0 5px 5px;
+}
+
+/* Fixed five-slot garrison strip: never wraps, so the tile height stays constant regardless of how
+ *  many Enemies are actually present (see GARRISON_SLOTS in Card.tsx). */
+.garrison-strip { display: flex; flex-wrap: nowrap; gap: 6px; position: relative; }
+/* The struck target's half of the strike-cost floater (see .at-spend on the Attack Strength token
+ *  for the other half). Anchored to the strip, not a specific chip — a defeated Enemy is already
+ *  gone from the DOM by the time this renders, so only the Mission it was on can host this. */
+.strike-cost-flash {
+  position: absolute; top: -4px; left: 50%; transform: translateX(-50%); z-index: 6;
+  color: var(--loss); font-size: 15px; font-weight: 800;
+  background: rgba(14, 11, 9, 0.85); border-radius: 6px; padding: 1px 6px; pointer-events: none;
+  animation: strike-flash-rise 1.1s ease-out forwards;
+}
+@keyframes strike-flash-rise {
+  0% { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.85); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.08); }
+  70% { opacity: 1; transform: translateX(-50%) translateY(-8px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-16px) scale(1); }
+}
+
+/* Empty garrison slot: a quiet placeholder so five slots always read as five slots, not a partial row. */
+.enemy.enemy-slot-empty {
+  border: 1px dashed rgba(122, 98, 62, 0.3); border-radius: 5px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
+}
+.enemy-slot-hint { font-size: 11px; color: #5c5348; text-align: center; padding: 0 2px; }
+
+/* Overflow slot: garrison can exceed the printed 5 via uncapped reinforcement (Radio Operator, the
+ *  Barracks) on a Mission left unattacked — shown as a "+N" tally rather than silently truncating. */
+.enemy.enemy-overflow {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(30, 24, 19, 0.9); border: 1px solid #4a3d2c; border-radius: 5px;
+  font-size: 15px; font-weight: 800; color: var(--accent-2);
+}
+
+.enemy.facedown.has-art {
+  padding: 0; border: 1px solid #4a3d2c; background: rgba(30, 24, 19, 0.9);
+  display: flex; align-items: center; justify-content: center;
+}
+.enemy-backfill { font-size: 22px; font-weight: 700; color: #6f6558; }
 /* A face-down Enemy offered as a pick target (e.g. Railroad Bridge's "discard an Enemy from another
  *  Mission"): click it right on its Mission. Ochre affordance, identity still concealed. */
 button.enemy.facedown.pickable {
@@ -572,7 +808,9 @@ button.enemy.facedown.pickable:hover,
 button.enemy.facedown.pickable:focus-visible {
   border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2) inset; outline: none; transform: translateY(-2px);
 }
-button.enemy.facedown.pickable.has-art { padding: 0; border: none; background: transparent; box-shadow: none; }
+/* Keep the face-down placeholder's own background/border (set above) — only drop the extra
+ *  pick-affordance box-shadow so it doesn't double up with the hover ring below. */
+button.enemy.facedown.pickable.has-art { box-shadow: none; }
 button.enemy.facedown.pickable.has-art:hover .enemy-art,
 button.enemy.facedown.pickable.has-art:focus-visible .enemy-art {
   box-shadow: 0 0 0 2px var(--accent-2); outline: none;
@@ -582,6 +820,25 @@ button.enemy.faceup.has-art.strikeable:focus-visible .enemy-art,
 button.enemy.faceup.has-art.pickable:hover .enemy-art,
 button.enemy.faceup.has-art.pickable:focus-visible .enemy-art {
   box-shadow: 0 0 0 2px var(--accent-2); outline: none;
+}
+/* Strike order taught up front: a legal-now target gets an accent ring + "STRIKE Nth" badge, an
+ *  order-blocked target gets a muted ring + quiet ordinal, so the sequence is clear before any click. */
+button.enemy.faceup.strikeable.has-art .enemy-art {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px rgba(200, 69, 47, 0.35);
+}
+button.enemy.faceup.order-blocked.has-art .enemy-art { opacity: 0.5; border-color: var(--line); }
+.strike-rank {
+  position: absolute; top: 0; left: 0; z-index: 3;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #14110e; background: var(--accent); padding: 2px 6px; border-bottom-right-radius: 5px;
+}
+.strike-rank.quiet { color: var(--muted); background: rgba(14, 11, 9, 0.85); }
+
+/* Small accent plate marking the chosen Mission's art during ATTACK — see .card.mission.under-attack. */
+.under-attack-plate {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  background: var(--accent); color: #14110e; text-transform: uppercase;
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; padding: 3px 7px; border-radius: 4px;
 }
 
 /* Maquis action text — badge on its own line, text full-width below (avoids squeezed wrapping). */
@@ -615,7 +872,10 @@ button.card-action .action-text { color: var(--ink); }
 
 /* Actions / decisions */
 .actions { display: flex; flex-direction: column; gap: 0.5rem; }
-.action-group h4 { margin-bottom: 0.2rem; }
+/* Single-line by design — this is the common case shown in .turn-row: a short "Your turn"
+ *  label beside its chip(s), not a stacked title. */
+.action-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.action-group h4 { margin: 0; white-space: nowrap; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 button { font: inherit; cursor: pointer; }
 .chip {
@@ -625,6 +885,39 @@ button { font: inherit; cursor: pointer; }
 .chip:hover { border-color: var(--accent-2); }
 .chip.action { background: #2c241c; }
 .chip.chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* The "Your turn" action group is always the next thing the player needs to click (AdvancePhase /
+ *  EndResistance / Continue) — a pulsing ring calls it out so it doesn't blend into the other chips
+ *  scattered around the board. */
+.action-group .chip.action {
+  border-color: var(--accent-2);
+  animation: chip-pulse 1.8s ease-in-out infinite;
+}
+@keyframes chip-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 154, 36, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(217, 154, 36, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-group .chip.action { animation: none; box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.6); }
+}
+/* Floating pick bar — fixed to the bottom of the viewport whenever an on-board decision is pending,
+ *  so the prompt / running count / Confirm stay reachable no matter how far the player has scrolled
+ *  to reach the cards they're clicking. See FloatingPickBar in App.tsx. */
+.floating-pick-bar {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 65;
+  display: flex; align-items: center; gap: 0.7rem; max-width: min(720px, 92vw);
+  padding: 10px 16px; border-radius: 12px;
+  background: rgba(20, 17, 14, 0.96); border: 1px solid rgba(217, 154, 36, 0.55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.floating-pick-bar .fpb-prompt {
+  font-size: 0.86rem; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.floating-pick-bar .fpb-hint { font-size: 0.78rem; color: var(--accent-2); white-space: nowrap; }
+.floating-pick-bar .fpb-count { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.floating-pick-bar .fpb-count.ok { color: var(--win); }
+.floating-pick-bar .confirm, .floating-pick-bar .ghost { flex: none; white-space: nowrap; }
+
 .confirm { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 0.4rem 0.8rem; font-weight: 600; }
 .confirm:disabled { opacity: 0.4; cursor: not-allowed; }
 .ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 0.3rem 0.6rem; }
@@ -726,6 +1019,35 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .zoom-side p { margin: 0; font-size: 0.95rem; line-height: 1.45; }
 .zoom-action-type { color: var(--accent-2); font-weight: 700; }
 @media (max-width: 520px) { .zoom-sides { grid-template-columns: 1fr; } }
+
+/* Hover-peek (Phase 6) — a large read-only copy lifted above whichever hand/committed art-mode card
+ *  the pointer is over, both sides' printed rules text as real HTML below the art, so reading a
+ *  card never requires the click right-click zoom still does. `position: fixed`, coordinates set
+ *  inline from the hovered card's measured rect (see App's delegated listener) rather than a plain
+ *  `position: absolute` popover, since the committed lanes and hand both scroll/clip via `overflow`
+ *  and would cut a CSS-anchored one off — the same fix as the phase-help popover. */
+.hover-peek {
+  position: fixed; z-index: 70; width: var(--peek-w, 320px);
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--panel-2); border: 2px solid var(--accent-2); border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); overflow: hidden; pointer-events: none;
+  animation: peek-in 0.12s ease-out;
+}
+@keyframes peek-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% - 6px)); }
+  to { opacity: 1; transform: translate(-50%, calc(-100% - 12px)); }
+}
+.hp-art { display: block; width: 100%; height: auto; }
+.hp-name { padding: 10px 12px 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.hp-sides { display: flex; flex-direction: column; }
+.hp-side { padding: 8px 12px; }
+.hp-side + .hp-side { border-top: 1px solid rgba(122, 98, 62, 0.32); }
+.hp-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
+.hp-side.hidden .hp-tag { color: #e0a58f; }
+.hp-side.revealed .hp-tag { color: #cdb0ff; }
+.hp-side p { margin: 3px 0 0; font-size: 12px; line-height: 1.35; color: var(--ink); }
+.hp-type { font-weight: 800; color: var(--accent-2); }
+@media (prefers-reduced-motion: reduce) { .hover-peek { animation: none; } }
 
 /* Game-over modal — a full-screen, animated end-of-game state. */
 .gameover-overlay {
@@ -930,19 +1252,58 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
   .confetti, .win-rays { display: none; }
 }
 
-/* Card-pile rail: labeled mini-deck tiles. A wrapping row on narrow screens; a sticky vertical
- *  rail down the right side on wide ones. */
-.piles { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
-.piles-head { width: 100%; margin: 0 0 0.15rem; }
-@media (min-width: 900px) {
-  .piles { flex-direction: column; flex-wrap: nowrap; gap: 0.4rem; position: sticky; top: 5rem; align-self: start; }
+/* Card piles: four high-frequency piles sit inline in the status bar as compact chips; the rest
+ *  live behind an "All piles" disclosure popover. Both share the tile styling below — the popover
+ *  reuses full-size `.pile` tiles, the status bar uses the compact `.status-pile` variant. The
+ *  popover panel itself stays mounted (visibility, not display:none) even while closed, so
+ *  useCardFlights can still measure its tiles as flight targets (see Phase 6, which repoints all
+ *  flights at the inline chips and makes this moot). */
+.status-piles { flex: none; display: flex; align-items: center; gap: 0.5rem; }
+.status-pile {
+  display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
 }
+.status-pile.empty { opacity: 0.5; }
+.status-pile .deck-ico-sm {
+  position: relative; flex: none; width: 20px; height: 27px; border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 0.68rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 1.2px 1.2px 0 var(--d2), 2.4px 2.4px 0 var(--d3);
+}
+.status-pile .status-pile-count { position: relative; z-index: 1; font-size: 11px; font-weight: 800; }
+.status-pile .status-pile-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.status-pile.flight-land .deck-ico-sm { animation: pile-catch 0.85s ease-out; }
+
+.piles-disclosure { position: relative; }
+.piles-toggle { font-size: 0.72rem; padding: 0.22rem 0.6rem; }
+.popover-backdrop { position: fixed; inset: 0; z-index: 55; background: transparent; }
+.piles-popover {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  display: flex; flex-direction: column; gap: 0.4rem;
+  width: 220px; padding: 0.6rem; border-radius: 10px;
+  background: rgba(20, 17, 14, 0.96); border: 1px solid rgba(122, 98, 62, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.piles-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
+.piles-popover-head { margin: 0 0 0.15rem; }
+
 .pile {
   display: flex; align-items: center; gap: 0.6rem;
   padding: 0.32rem 0.5rem; border-radius: 9px;
   background: rgba(20, 17, 14, 0.62); border: 1px solid rgba(122, 98, 62, 0.32);
 }
 .pile.empty { opacity: 0.42; }
+.pile.flight-land { animation: pile-catch 0.85s ease-out; }
+@keyframes pile-catch {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 154, 36, 0); }
+  20%  { box-shadow: 0 0 0 4px rgba(217, 154, 36, 0.9); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 154, 36, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pile.flight-land { animation: none; box-shadow: 0 0 0 3px rgba(217, 154, 36, 0.85); }
+}
 .pile-label { font-size: 0.8rem; color: var(--ink); line-height: 1.15; }
 
 /* Mini deck: a front card face with two solid-colour box-shadow layers faking a stack behind it,
@@ -964,7 +1325,7 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .tone-removed { background: #4a4038; --d2: #3a322c; --d3: #2a241f; }
 
 /* Log */
-.log { margin-top: 0.6rem; color: var(--muted); font-size: 0.8rem; }
+.log { flex: none; color: var(--muted); font-size: 0.8rem; }
 .log summary { cursor: pointer; }
 .log ol { margin: 0.4rem 0; padding-left: 1.2rem; }
 
@@ -1173,8 +1534,10 @@ body.sliding-card .card.slidable { cursor: grabbing; }
   color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
   will-change: transform, opacity;
-  transition: transform 0.55s cubic-bezier(0.34, 0.1, 0.2, 1), opacity 0.55s ease-in;
+  transition: transform 0.65s cubic-bezier(0.34, 0.1, 0.2, 1), opacity 0.65s ease-in;
 }
+.flying-card.has-art { padding: 0; background: #1a1410; overflow: hidden; }
+.flying-card.has-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .flying-card.maquis {
   background: linear-gradient(150deg, #d5533b, #8f2c1a);
   border: 1px solid #e77b64;
@@ -1190,21 +1553,23 @@ body.sliding-card .card.slidable { cursor: grabbing; }
   .flying-card { transition: opacity 0.2s ease; transform: none !important; }
 }
 
-/* Transient log toasts — a bottom-LEFT stack mirroring fresh log lines. Bottom-left keeps them off
-   the card-pile rail on the right (which they used to cover), and they're fully non-blocking
-   (pointer-events: none) so they never sit over a clickable card; they expire on a timer. The stack
-   is height-capped so a burst of log lines can't fill the screen. */
-.toasts {
-  position: fixed; left: 0.9rem; bottom: 0.9rem; z-index: 70;
-  display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start;
-  max-width: min(360px, 80vw); max-height: 42vh; overflow: hidden; pointer-events: none;
-}
+/* Transient log toast — one message at a time, a centred pill in the in-flow .event-line band (see
+ *  above) rather than a floating stack, so it never competes with the board or breaks the
+ *  fixed-band layout. useLogToasts also excludes anything already visible on the board (a strike's
+ *  cost floats on the struck target and the Attack Strength token; a reinforcement flashes the
+ *  garrison strip) — this is genuinely the one place an event still needs to be *said*. Still
+ *  click-to-dismiss and still expires on its own timer. */
 .toast {
-  pointer-events: none; text-align: left; font: inherit; font-size: 0.82rem;
-  color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
-  border-left: 3px solid var(--accent-2); border-radius: 8px; padding: 0.4rem 0.6rem;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); max-width: 100%;
+  pointer-events: auto; cursor: pointer; text-align: center; font: inherit; font-size: 13px;
+  color: var(--ink); background: rgba(20, 16, 12, 0.92); border: 1px solid rgba(217, 154, 36, 0.45);
+  border-radius: 999px; padding: 5px 16px 5px 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); max-width: min(520px, 90vw);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   animation: toast-in 0.22s ease-out;
+}
+.toast::before {
+  content: ''; flex: none; width: 7px; height: 7px; border-radius: 999px; background: var(--accent-2);
 }
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px); }

@@ -10,7 +10,7 @@ import { useEffect, useState, type MouseEvent } from 'react'
 import type { Decision, GameState } from '../engine'
 import { DRAFT_FROM } from '../engine'
 import { classifyCandidate, maquisOf, enemyOf, missionOf } from './format'
-import { maquisArt, enemyArt, missionArt, spyArt } from './cardArt'
+import { maquisArt, enemyArt, missionArt, missionBackArt, spyArt } from './cardArt'
 import { zoomNodeFor } from './Card'
 import { useZoom } from './Zoom'
 
@@ -301,6 +301,10 @@ function DecisionCard({
       }
       case 'mission': {
         const m = missionOf(c.slot.dataId)
+        if (c.slot.faceDown) {
+          const back = missionBackArt()
+          if (back) return <img className="dm-art" src={back} alt="Failed Mission" draggable={false} />
+        }
         const art = missionArt(c.slot.dataId)
         if (art) return <img className="dm-art" src={art} alt={m?.name ?? c.slot.dataId} draggable={false} />
         return (

@@ -6,10 +6,9 @@ without an image keeps the themed text frame as a fallback, so you can add art i
 
 Accepted extensions: `.jpg`, `.jpeg`, `.png`, `.webp`.
 
-**The full set is already in** — 61 images (24 Maquis, 20 Missions, 8 Enemy types, 8 Civilians, the
-Spy), sliced from the playmat photos in `Card Assets/`. What follows is how to redo or extend it. The
-only image still missing is the optional face-down Enemy back (`enemy/back.jpg`); no photo of a card
-back exists yet, so face-down Enemies still draw as plain chips.
+**The full set is already in** — 62 images (24 Maquis, 20 Missions + Mission back, 8 Enemy types, 8
+Civilians, the Spy), sliced from the playmat photos in `Card Assets/`. What follows is how to redo or
+extend it. The only image still missing is the optional face-down Enemy back (`enemy/back.jpg`).
 
 ---
 
@@ -77,10 +76,11 @@ the ID as the filename, e.g. `crop_00_02.jpg` → `src/assets/cards/maquis/soled
 carlos, adolfo, marcelino, adela, sagrario, consuelo, antonio, jacinto, manuel, ramona, paquita,
 ricardo, juana`
 
-### mission/ (20)
+### mission/ (20 + back)
 - Era 1: `barracks, border, mountain_pass, valley, railroad_bridge, officer, villa, bunker`
 - Era 2: `supply_convoy, prison, cg_headquarters, caves, farmhouse_e2, train_depot_e2`
 - Era 3: `farmhouse_e3, train_depot_e3, crossroads, police_station, mayor_house, franco_hq`
+- `back` — the printed Mission card back, shown when a Mission fails and stays in the row face-down.
 
 ### enemy/ (8 — one per *type*; copies differ only in the Defense number, which the app overlays)
 `counter_guerrilla, military, guard, grunt, spy_master, jailor, engineer, radio_operator`

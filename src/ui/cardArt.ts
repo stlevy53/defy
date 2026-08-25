@@ -9,6 +9,7 @@
 //   civilian/<civilian id>   e.g. civ_1a.jpg
 //   spy/spy.(jpg|png|webp)
 //   enemy/back.(jpg|png|webp)   optional face-down Enemy card back
+//   mission/back.(jpg|png|webp)  face-down / failed Mission card back
 
 type UrlMap = Record<string, string>
 
@@ -36,5 +37,6 @@ export const maquisArt = (id: string): string | undefined => maquis[id]
 export const enemyArt = (typeId: string): string | undefined => enemy[typeId]
 export const enemyBackArt = (): string | undefined => enemy['back']
 export const missionArt = (id: string): string | undefined => mission[id]
+export const missionBackArt = (): string | undefined => mission['back']
 export const civilianArt = (id: string): string | undefined => civilian[id]
 export const spyArt = (): string | undefined => spy['spy']

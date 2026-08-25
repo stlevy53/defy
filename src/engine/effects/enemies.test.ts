@@ -4,12 +4,12 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createGame } from '../setup'
-import { applyAction, legalActions } from '../actions'
+import { applyAction, legalActions, gatingStrikeUids } from '../actions'
 import { assertConservation } from '../zones'
 import { unregisterEffect } from './registry'
 import { registerEnemyEffects, ENEMY_EFFECTS } from './enemies'
 import { missions as missionsData } from '../../data'
-import type { Action, GameState, MissionSlot } from '../types'
+import type { Action, EnemyInstance, GameState, MissionSlot } from '../types'
 
 beforeAll(() => registerEnemyEffects())
 afterAll(() => {
@@ -180,5 +180,39 @@ describe('Guard/Grunt ordering constraints', () => {
     const slot = chosen(g)
     expect(legalActions(g).some((a) => a.type === 'SpendAttackOn' && a.targetUid === slot.uid)).toBe(false)
     expect(() => applyAction(g, { type: 'SpendAttackOn', targetUid: slot.uid })).toThrow(/blocked/)
+  })
+})
+
+describe('gatingStrikeUids (what the UI pulses on a blocked click)', () => {
+  const enemy = (uid: string, typeId: string): EnemyInstance => ({
+    uid,
+    typeId,
+    defense: 1,
+    baseDefense: 1,
+    faceUp: true,
+  })
+  const slot = (enemies: EnemyInstance[]): MissionSlot => ({
+    uid: 'mission',
+    dataId: 'valley',
+    faceDown: false,
+    defeated: false,
+    enemies,
+  })
+
+  it('points at remaining Grunts when another Enemy is clicked', () => {
+    const s = slot([enemy('grunt-1', 'grunt'), enemy('grunt-2', 'grunt'), enemy('guard-1', 'guard')])
+    expect(gatingStrikeUids(s, 'guard-1')).toEqual(['grunt-1', 'grunt-2'])
+  })
+
+  it('points at remaining Guards when the Mission is clicked', () => {
+    const s = slot([enemy('grunt-1', 'grunt'), enemy('guard-1', 'guard')])
+    expect(gatingStrikeUids(s, 'mission')).toEqual(['guard-1'])
+  })
+
+  it('is empty for a Grunt, and for the Mission once Guards are gone', () => {
+    const s = slot([enemy('grunt-1', 'grunt'), enemy('military-1', 'military')])
+    expect(gatingStrikeUids(s, 'grunt-1')).toEqual([])
+    expect(gatingStrikeUids(s, 'mission')).toEqual([])
+    expect(gatingStrikeUids(s, 'military-1')).toEqual(['grunt-1'])
   })
 })

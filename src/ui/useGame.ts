@@ -9,6 +9,7 @@ import { APP_VERSION } from './patchNotes'
 import { useDebugHook } from './debugHook'
 import { canPopUndo, popUndo } from './undo'
 import { actionSfx, flightSfx, playSfx } from './audio'
+import { handFlightMoves } from './cardFlights'
 
 ensureEffectsRegistered()
 
@@ -297,21 +298,8 @@ export interface CardFlight {
   toX: number
   toY: number
   delay: number
-}
-
-/** Card zones that (a) can exchange cards with the hand and (b) have a tile in the pile rail we can
- *  fly to/from. Keys match the `data-pile-key` attributes rendered by the Piles component. */
-const FLIGHT_ZONES: { key: string; get: (s: GameState) => { uid: string }[] }[] = [
-  { key: 'hidden.deck', get: (s) => s.hidden.deck },
-  { key: 'hidden.discard', get: (s) => s.hidden.discard },
-  { key: 'recruit.deck', get: (s) => s.recruit.deck },
-  { key: 'recruit.revealed', get: (s) => s.recruit.revealed },
-  { key: 'removed', get: (s) => s.removedFromGame },
-]
-
-function zoneOfUid(s: GameState, uid: string): string | null {
-  for (const z of FLIGHT_ZONES) if (z.get(s).some((c) => c.uid === uid)) return z.key
-  return null
+  /** Pile-rail key the token lands on (outbound) or leaves from (inbound) — used to pulse the tile. */
+  pileKey: string
 }
 
 /** Measured coordinates need no correction for the board-size setting: CSS `zoom` on the root scales
@@ -327,41 +315,63 @@ function centerOf(el: Element | null): { x: number; y: number } | null {
 const handCenter = () => centerOf(document.querySelector('[data-flight-hand]'))
 const pileCenter = (key: string) => centerOf(document.querySelector(`[data-pile-key="${CSS.escape(key)}"]`))
 
+function snapshotCardCenters(): Map<string, { x: number; y: number }> {
+  const map = new Map<string, { x: number; y: number }>()
+  if (typeof document === 'undefined') return map
+  for (const el of document.querySelectorAll('[data-card-uid]')) {
+    const uid = el.getAttribute('data-card-uid')
+    const c = centerOf(el)
+    if (uid && c) map.set(uid, c)
+  }
+  return map
+}
+
 /**
  * Detects cards moving in/out of the hand between two committed states and emits short-lived
  * "flights" — a card token animated from the hand to the destination pile tile (a discard) or from
  * a source pile tile back to the hand (a draw). Gives the player a visual cue for actions like
- * Antonio's spy swap, where the discard-then-draw can otherwise look like nothing happened.
+ * Celia/Antonio's spy dump, including the empty-pool case where the Spy leaves and nothing is drawn.
  *
  * Uses the same guards as useReinforcements: a `gameId` change adopts the new state without
  * animating (uids are reused across games), and a non-forward `step` (undo) is ignored so cards
  * never fly backwards. Positions are measured from the live DOM in a layout effect, so the pile
- * rail must render the `data-pile-key` tiles and the hand must carry `data-flight-hand`.
+ * rail must render the `data-pile-key` tiles and the hand must carry `data-flight-hand`. Outbound
+ * tokens launch from the departing card's last measured slot (`data-card-uid`) so a Spy dump is
+ * not buried under the cards that remain.
  */
 export function useCardFlights(state: GameState, gameId: number, step: number) {
   const prev = useRef<GameState | null>(null)
   const gameRef = useRef(gameId)
   const stepRef = useRef(step)
+  const posRef = useRef<Map<string, { x: number; y: number }>>(new Map())
   const [flights, setFlights] = useState<CardFlight[]>([])
 
   useLayoutEffect(() => {
+    const snap = () => {
+      posRef.current = snapshotCardCenters()
+    }
     // New game: reuse of uids across games makes a cross-game diff meaningless — adopt & skip.
     if (gameRef.current !== gameId) {
       gameRef.current = gameId
       stepRef.current = step
       prev.current = state
+      snap()
       return
     }
     // Only animate forward moves; undo (step decreases) or a no-op re-render is adopted silently.
     if (step <= stepRef.current) {
       stepRef.current = step
       prev.current = state
+      snap()
       return
     }
     const before = prev.current
     stepRef.current = step
     prev.current = state
-    if (!before) return
+    if (!before) {
+      snap()
+      return
+    }
 
     const next: CardFlight[] = []
     let idx = 0
@@ -379,30 +389,40 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
           toX: to.x,
           toY: to.y,
           delay: 0,
+          pileKey: 'recruit.deck',
         })
         idx++
       }
     }
 
-    const beforeHand = new Map(before.hand.map((c) => [c.uid, c.dataId]))
-    const afterHand = new Map(state.hand.map((c) => [c.uid, c.dataId]))
     const hand = handCenter()
-    if (hand) {
-      for (const [uid, dataId] of beforeHand) {
-        if (afterHand.has(uid)) continue
-        const z = zoneOfUid(state, uid)
-        if (!z) continue
-        const to = pileCenter(z)
-        if (!to) continue
-        next.push({ id: `${step}-out-${uid}`, dataId, fromX: hand.x, fromY: hand.y, toX: to.x, toY: to.y, delay: idx++ * 70 })
-      }
-      for (const [uid, dataId] of afterHand) {
-        if (beforeHand.has(uid)) continue
-        const z = zoneOfUid(before, uid)
-        if (!z) continue
-        const from = pileCenter(z)
+    for (const move of handFlightMoves(before, state)) {
+      const pile = pileCenter(move.zone)
+      if (!pile) continue
+      if (move.dir === 'out') {
+        const from = posRef.current.get(move.uid) ?? hand
         if (!from) continue
-        next.push({ id: `${step}-in-${uid}`, dataId, fromX: from.x, fromY: from.y, toX: hand.x, toY: hand.y, delay: idx++ * 70 })
+        next.push({
+          id: `${step}-out-${move.uid}`,
+          dataId: move.dataId,
+          fromX: from.x,
+          fromY: from.y,
+          toX: pile.x,
+          toY: pile.y,
+          delay: idx++ * 70,
+          pileKey: move.zone,
+        })
+      } else if (hand) {
+        next.push({
+          id: `${step}-in-${move.uid}`,
+          dataId: move.dataId,
+          fromX: pile.x,
+          fromY: pile.y,
+          toX: hand.x,
+          toY: hand.y,
+          delay: idx++ * 70,
+          pileKey: move.zone,
+        })
       }
     }
     if (next.length) {
@@ -415,6 +435,7 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
       })
       if (cue) playSfx(cue)
     }
+    snap()
   }, [state, gameId, step])
 
   const remove = useCallback((id: string) => setFlights((f) => f.filter((x) => x.id !== id)), [])
@@ -425,6 +446,36 @@ export function useCardFlights(state: GameState, gameId: number, step: number) {
 export interface LogToast {
   id: string
   text: string
+}
+
+/** The engine marks its own phase-machinery lines with a "; -> NEXTPHASE" suffix (e.g. "ATTACK:
+ *  resolved undefeated enemies; -> AFTERMATH") — bookkeeping for the full Log panel, not something a
+ *  player reads as a game event, and it fires every round whether or not anything happened. */
+const isInternalLogLine = (text: string): boolean => / -> [A-Z]+/.test(text)
+
+/** A strike already animates on the board — the struck target's Mission tile and the Attack
+ *  Strength token both flash the same "-{cost}" (see App's strikeFlash) — so saying it again as a
+ *  toast would just repeat what the player already watched happen. Phase 6: "anything that happened
+ *  to a card animates on that card instead", filtered out of the one-line event feed accordingly. */
+const isStrikeLogLine = (text: string): boolean => text.startsWith('ATTACK: defeated ')
+
+/** Log lines whose outcome is already shown on the board through its own dedicated UI, so a toast
+ *  would just repeat what the player is already looking at: a defeated Mission gets the
+ *  "DEFEATED +N VP" stamp (or, on failure, flips face-down) the instant AFTERMATH resolves it, and
+ *  a game-ending line is immediately followed by the win/loss overlay explaining the same result. */
+const REDUNDANT_LOG_PREFIXES = [
+  'AFTERMATH: mission ', // .defeated-stamp / face-down flip on the Mission tile
+  'AFTERMATH: 5+ civilians', // LossOverlay follows immediately
+  'RECOVER: drew an all-Spy hand', // LossOverlay follows immediately
+  'END: ', // WinOverlay already states the tier and points
+]
+const isRedundantLogLine = (text: string): boolean => REDUNDANT_LOG_PREFIXES.some((p) => text.startsWith(p))
+
+/** Toasts should only ever surface something not already visible elsewhere on the board — a played
+ *  card, a used action, a card moved between Hidden/Revealed — not the engine's internal
+ *  state-machine trace or an event that already has its own on-card animation or overlay. */
+function shouldToast(text: string): boolean {
+  return !isInternalLogLine(text) && !isStrikeLogLine(text) && !isRedundantLogLine(text)
 }
 
 /**
@@ -449,7 +500,7 @@ export function useLogToasts(state: GameState, gameId: number, step: number, max
       return
     }
     stepRef.current = step
-    const added = state.log.slice(lenRef.current)
+    const added = state.log.slice(lenRef.current).filter(shouldToast)
     lenRef.current = state.log.length
     if (added.length === 0) return
     const fresh = added.slice(-max).map((text) => ({ id: `t${seqRef.current++}`, text }))

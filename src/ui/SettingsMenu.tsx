@@ -22,6 +22,8 @@ interface Props {
   ui: UiScale
   /** Close Settings and run the first-run table tour. */
   onReplayCoach: () => void
+  /** Close Settings and open the "What's New" modal for this build. */
+  onShowWhatsNew: () => void
 }
 
 /** Compact local date+time for the save's timestamp (e.g. "Jul 27, 2:14 PM"). */
@@ -40,7 +42,18 @@ function formatWhen(ts: number): string {
 
 type Status = { tone: 'ok' | 'warn' | 'err'; text: string }
 
-export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, savedMeta, appVersion, ui, onReplayCoach }: Props) {
+export function SettingsMenu({
+  onClose,
+  onNewGame,
+  onPlaySeed,
+  onSave,
+  onLoad,
+  savedMeta,
+  appVersion,
+  ui,
+  onReplayCoach,
+  onShowWhatsNew,
+}: Props) {
   const [status, setStatus] = useState<Status | null>(null)
   // Track the save locally so the Load button + description update the moment a save is written.
   const [meta, setMeta] = useState<SaveMeta | null>(savedMeta)
@@ -136,6 +149,10 @@ export function SettingsMenu({ onClose, onNewGame, onPlaySeed, onSave, onLoad, s
           <button className="settings-item" onClick={onReplayCoach}>
             <span className="si-title">How to play this table</span>
             <span className="si-sub">A short tour of the controls. You can skip it any time.</span>
+          </button>
+          <button className="settings-item" onClick={onShowWhatsNew}>
+            <span className="si-title">What's new — v{appVersion}</span>
+            <span className="si-sub">See what changed in this build.</span>
           </button>
           <div className="settings-scale">
             <span className="si-title">Board size</span>

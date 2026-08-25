@@ -12,6 +12,23 @@ _Work in progress toward the next version — add changes here as we make them, 
 
 ---
 
+## v0.2.0 — 2026-08-25
+
+A board that fits the window.
+
+- **Board rebuild** — the layout is now fixed-height bands (status bar, phase guidance, Missions, committed lanes, hand) instead of one tall scrolling column, so a maximized window shows the whole table with far less scrolling. Missions sit in a fixed four-across row at a readable 452px, with era/keyword/Defense/VP/Garrison overlaid on the art; attacking one dims and outlines the other three.
+- **Garrison strips** — a Mission's garrison is a fixed five-slot strip: constant tile height regardless of count, empty slots read as empty, and a Mission reinforced past five (Radio Operator, the Barracks) shows a "+N" instead of silently growing or hiding an Enemy. Strike order is taught before you click — a legal target gets an accent ring and "Strike 1st/2nd/…" badge; a target still gated by Grunts shows the same ordinal, quieter.
+- **Enemy card back** — a face-down Enemy now shows its real printed card back instead of a placeholder.
+- **One Attack Strength number** — was a top-bar pill and a turn-tile meter showing the same figure twice. It now lives once, at the seam between your committed lanes and the board, and floats the exact cost on both itself and the struck target when you spend it.
+- **One event line** — the latest thing that happened shows as a single pill under the status bar, and no longer repeats what already animates on the board (a struck target, a reinforced Mission, a defeated Mission's stamp). Replaces the old bottom-left toast stack.
+- **Hover-peek** — point at a hand or committed card to read both its Hidden and Revealed action text without right-clicking to zoom.
+- **Floating decision bar** — a decision that asks you to click cards on the board (discard one, flip one, etc.) keeps its prompt and Confirm button pinned to the bottom of the window, so scrolling to see the board never loses track of what you're choosing.
+- **Calmer turn area** — phase guidance sits in its own line under the status bar again; the "Done attacking" / "Continue" button pulses so it's clear what to click next; a card's foot bar always names the actual action (no more a PLAN action reading "ATTACK", or a never-used card claiming "USED IN PLAN").
+- **Fix** — the "?" phase-help popover works again (an earlier layout change was silently clipping it).
+- **Fix** — the event pill no longer repeats a Mission's success/failure, a 5-civilians-lost or all-Spy-hand loss, or an END-of-round line — each of those is already stated by the on-card stamp or the win/loss overlay that follows it.
+
+---
+
 ## v0.1.9 — 2026-08-18
 
 The table makes a sound.
