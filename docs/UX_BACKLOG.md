@@ -8,21 +8,7 @@ here under **Resolved**, so the screenshot and the reasoning remain findable.
 
 ## Open
 
-### A big window still doesn't pay off — the board is capped at 1260px
-
-The last piece of the board-scale work (see **Resolved** below for the measurements, and note that the
-window-behaviour half of this item shipped in v0.1.5: the app now opens maximized and remembers its
-size and position).
-
-**Raise the `#root { max-width: 1260px }` cap and change the mission and hand grids so extra width
-makes cards *bigger* instead of adding empty columns.** They use `repeat(auto-fill, minmax(210px, 1fr))`,
-and `auto-fill` spends surplus width on more columns: measured at a 1920 window, removing the cap alone
-*shrank* the mission tile from 249px to 230px. Likely `auto-fit` plus a max on the track, or a fixed
-column count per breakpoint.
-
-Re-measure at 125% scale rather than 100%, since that is where players are likely to sit now, and on a
-maximized window rather than 1440×900. Worth judging after playtest feedback on the scale setting —
-whether players reach for a bigger window at all tells you how much this is worth.
+_(none currently — the next playtest round is what will surface the next entries here)_
 
 ---
 
@@ -75,6 +61,24 @@ art lands than it does now — worth a look at the same time.
 ---
 
 ## Resolved
+
+### A big window didn't pay off — the board was capped at 1260px
+
+**Found:** the packaged `.exe`, confirmed by measurement (see the zoom-140 entry below): removing the
+`#root { max-width: 1260px }` cap alone *shrank* the mission tile (249px → 230px at a 1920 window)
+because the mission/hand grids used `repeat(auto-fill, minmax(210px, 1fr))`, which spends surplus
+width on more columns instead of wider cards.
+
+**Fixed (v0.2.0):** the whole board layout was rebuilt around fixed-height bands — status bar, phase
+guidance, a **fixed four-across Mission row** at a readable 452px, committed lanes, hand — instead of
+one tall auto-flowing column, so a maximized window shows the whole table with far less scrolling and
+extra width goes to genuinely bigger cards rather than more columns or empty tabletop. Each Mission's
+garrison is now a **fixed five-slot strip** (constant tile height regardless of enemy count, a "+N"
+badge past five) with strike order taught via an accent ring + "Strike 1st/2nd/…" badge. See
+`HANDOFF.md`'s v0.2.0 summary and `src/ui/patchNotes.ts` for the full change list.
+
+Whether players still reach for a bigger window, and any layout rough edges the new bands introduce,
+is now a question for the next playtest round rather than an open design question.
 
 ### Draft setup is in — offer at new game, Settings can turn it off
 

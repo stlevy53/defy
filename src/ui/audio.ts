@@ -200,6 +200,15 @@ function warmup(): void {
   }
 }
 
+/** Start every cue file loading from disk right away, independent of the autoplay-unlock gesture.
+ *  These are bundled local assets — no network round trip — so there's no reason to wait for a
+ *  click before decoding them. Call this once at app mount; `unlock()` still calls `warmup()` too
+ *  (idempotent — `voices` skips a url it already holds), so a table opened and clicked before this
+ *  finishes still warms up correctly, this just gets a head start. */
+export function preloadAudio(): void {
+  warmup()
+}
+
 export function unlock(): void {
   unlocked = true
   warmup()

@@ -27,7 +27,7 @@ import {
   markCoachFinished,
 } from './ui/coachLaunch'
 import { isDraftPromptEnabled } from './ui/draftPref'
-import { installUnlock, playEndgameSfx } from './ui/audio'
+import { installUnlock, preloadAudio, playEndgameSfx } from './ui/audio'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis, graveyardCivilians } from './ui/format'
 import { isDraftDecision, isDrafting, gatingStrikeUids } from './engine'
 import type { Action, Decision, GameResult, GameState } from './engine'
@@ -128,7 +128,14 @@ export function App() {
   // whether or not Settings is open, and so the scale survives closing it.
   const ui = useUiScale()
 
-  useEffect(() => installUnlock(), [])
+  // Every cue file starts loading at launch (bundled local assets, no network wait needed) so the
+  // first sound the player triggers doesn't stall on decode; `installUnlock` separately arms
+  // playback on the first click, since autoplay policy blocks .play() until a user gesture even
+  // once a file is warmed.
+  useEffect(() => {
+    preloadAudio()
+    return installUnlock()
+  }, [])
 
   // Escape opens Settings, or closes it if already open. Yields to other overlays: WhatsNew, the
   // coach, and the card zoom bind their own Escape handlers, so we don't also pop Settings.

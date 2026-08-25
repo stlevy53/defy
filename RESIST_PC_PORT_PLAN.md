@@ -53,7 +53,7 @@ Built in verified slices, each with tests:
 ### Phase 3 — Playable prototype UI 🔨 IN PROGRESS (functional, polished, themed)
 The tableau is built and a full game is clickable start to finish: play cards hidden/revealed by clicking a card's side, use actions and choose/strike missions and enemies by clicking them on the board, run the attack, see outcomes and score. Polished with a single `Card` rendering seam, a round-phase breadcrumb with new-player guidance, all player choices consolidated into the guidance tile, auto-resolved trivial decisions, feedback aids (defeated stamp, Attack-Strength pulse, live count-bonus badges), and CSS hover tooltips. Themed with a wooden tabletop background and, via the `Card` seam, **real per-card art when present with a themed frame fallback**. Undo + new-game via a state-history stack. `ui/playthrough.test.ts` drives full games to an ending across 40 seeds through the UI path.
 
-*Deliverable:* a full game of Resist! playable in the browser — **achieved.** Remaining: drop in the real card art (reshoot + slice; pipeline in `tools/`), then minor polish.
+*Deliverable:* a full game of Resist! playable in the browser — **achieved.** Real card art (all 61 faces + the Enemy back) and a ground-up board-layout redesign (fixed-height bands, a fixed Mission row with garrison strips and taught strike order, consolidated Attack Strength/event feedback, hover-peek — v0.2.0) are both in. Remaining: minor polish.
 
 ### Phase 4 — Polish & packaging 🔨 IN PROGRESS
 Iteration pass: animations/transitions, undo (state-history stack, approved), save/resume, edge-case handling, and a rules/help overlay.
@@ -72,7 +72,7 @@ Iteration pass: animations/transitions, undo (state-history stack, approved), sa
 | M1 — Data complete | All cards in JSON, counts reconciled to rulebook | ✅ |
 | M2 — Engine correct | Worked-example test passes headless | ✅ |
 | M3 — Playable prototype | A full game is completable in-browser | ✅ |
-| M4 — Shippable | Polished, packaged desktop/web build | 🔨 (Windows portable `.exe` builds; polish ongoing) |
+| M4 — Shippable | Polished, packaged desktop/web build | 🔨 (Windows portable `.exe` builds; board layout redesign shipped in v0.2.0; polish ongoing) |
 
 M2 was the most important gate — everything visual rested on it, and it passes. M3 (a full game is completable in-browser) is met; polish toward M4 continues.
 
@@ -96,4 +96,4 @@ Rules-fidelity items surfaced during data transcription and design review — ea
 
 ## 6. Immediate next step
 
-**Phase 3 (continue).** The engine is done (including optional draft setup), the UI is playable end-to-end, real card art is in, and the first-run coach + draft offer have shipped. Next: playtest and minor niceties. See `HANDOFF.md` §8.
+**Phase 3 (continue).** The engine is done (including optional draft setup), the UI is playable end-to-end, real card art is in (including the Enemy back), the first-run coach + draft offer have shipped, and the board-layout redesign (v0.2.0) has closed out the last open item in `docs/UX_BACKLOG.md`. Next: playtest and minor niceties. See `HANDOFF.md` §8.
