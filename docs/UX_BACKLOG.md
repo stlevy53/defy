@@ -8,59 +8,41 @@ here under **Resolved**, so the screenshot and the reasoning remain findable.
 
 ## Open
 
-_(none currently — the next playtest round is what will surface the next entries here)_
-
----
-
-### Mission Eras are invisible in the UI — evaluate now that real card art has landed
-
-**Largely answered by the Board size setting** (see **Resolved**). The printed era subtitle ("Era 1:
-Re-invasion of Spain") is on every Mission image, and at 125–140% it reads at board size — so
-"**Nothing**" is now a real option and the cheapest one. What is left to decide is whether the era
-should be legible at 100% too, which is the only case an overlay chip would serve; a badge in the
-themed-frame branch is moot either way, since every Mission has art.
-
-**The rules are correct — this is presentation only.** Eras are not a mechanic. The rulebook
-mentions "Era" in exactly two places: the Mission card anatomy diagram, and setup step 3 ("Sort the
-20 Mission cards by the Era… Stack the 3 Mission cards from the second era on top of the 3 from the
-third era to form a face-down Mission deck"). There is no era track, no era phase, and no era
-trigger — the escalation is delivered entirely by that deck ordering, per the overview's
-"increasingly difficult missions". `setup.ts` implements it exactly, and `setup.test.ts` asserts the
-row is all Era 1 and the deck is Era 2 over Era 3.
-
-**Why it's worth surfacing.** The stat ramp is real (avg Defense 5.25 → 6.67 → 6.83; avg VP 1.6 →
-3.0 → 4.2), and the win table is calibrated around reaching the later eras: four Era-1 missions cap
-out around 9 VP even in the best case, while a Minor Victory needs 15 — so a player who never gets
-past Era 1 cannot beat a Draw, and Epic Victory (all 10 missions) requires clearing Era 3. A deck
-mission only enters the row on a SUCCESS, so era depth equals missions defeated: three successes to
-exhaust Era 2, four before the first Era-3 card appears. Measured over 2000 self-played games with
-the greedy policy, an Era-2 mission reached the row in 96.7% of games but Era 3 in only 1.1%.
-
-**What's missing today.** Nothing renders a mission's era: `ui/Card.tsx` draws name, keyword,
-Defense, VP, Garrison and effect but never era, and neither does `ZoomMissionCard`. The `era` field
-is loaded and typed; `eraNames` in `data/missions.json` ("Re-invasion of Spain", "Splintering of the
-Maquis", "Hunting the Maquis" — verbatim from the cards) is never exported by `src/data/index.ts`.
-The only hint anywhere is the Mission-deck tooltip in the pile rail.
-
-**What to evaluate once art is in.** The physical card prints the era as a small italic subtitle
-under the title banner ("Era 1: Re-invasion of Spain"), and mission tiles render ~180px wide, so
-that line will likely be a couple of pixels tall — legible in right-click zoom, probably not on the
-board. So decide between:
-- **Nothing** — if the art reads well enough and zoom is sufficient for fidelity.
-- **An overlay chip in the art branch** of the mission face, alongside the modified-Defense pill and
-  the Defeated stamp (the existing pattern for "must beat the photo"). This is the only option that
-  survives art; a badge in the themed-frame branch would be dropped per card as art lands.
-- **Non-card options, unaffected by art either way**: show the Mission deck's remaining era
-  composition in the pile rail, and/or explain why pressing on matters (Era-1-only caps you at a
-  Draw).
-
-**Related, same evaluation moment.** Effect text is also frame-only, so at board scale art replaces
-all readable mission text with pixels. Not era-specific, but the zoom view carries more weight after
-art lands than it does now — worth a look at the same time.
+_(none currently — playtest of the v0.2.0 bands on 2026-08-25 found one click-blocker, now Resolved.)_
 
 ---
 
 ## Resolved
+
+### “Done attacking” sat under the sticky status bar
+
+**Found:** 2026-08-25 playtest, seed 2117291164, ATTACK. After striking a Grunt the page had scrolled
+~135px (the click helper brought the chip toward the top). “Done attacking” was at y=28, inside the
+48px sticky `.topbar` (z-index 50). The click landed on the header: *Click target intercepted by
+`<header class="topbar">`*. Same shape for Continue at AFTERMATH.
+
+**Where.** `.topbar` was `position: sticky` alone. `.turn-row` (the pulsing chip) and `.phase-guide`
+scrolled in normal flow, so they tucked under the header.
+
+**Fixed:** wrap status + guidance + event line + turn-row in `.board-chrome` and stick *that*. The
+status bar is just a row inside the chrome. Coach stage clamp also moved from the deleted
+`.board-main` to `#root`.
+
+### Mission Eras are invisible in the UI
+
+**Found:** after real card art landed, Mission tiles drew name/keyword/Defense/VP/Garrison but never
+era. The printed subtitle ("Era 1: Re-invasion of Spain") was a few pixels tall at the old ~250px
+tile size. Eras are not a mechanic — they only order the Mission deck — but they matter for scoring:
+four Era-1 missions cap around 9 VP, and a Minor Victory needs 15.
+
+**Fixed (v0.1.9 / v0.2.0):** v0.1.9 put an Era chip on the tile. v0.2.0's 452px Mission row makes the
+printed era line on the photo readable at board size, so the arted branch dropped a separate era
+plate (it's already under the name banner on the card). The themed-frame fallback still prints
+`eraLabel`. Failed (face-down) Missions show the printed back, no era.
+
+The evaluation write-up (stat ramp, Era-3 rarity under greedy self-play, overlay vs nothing) lived
+here while art was landing; the decision was **nothing extra on the photo**, plus the overlay stats
+rail for Defense/VP/Garrison/keyword.
 
 ### A big window didn't pay off — the board was capped at 1260px
 

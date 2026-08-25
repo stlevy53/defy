@@ -405,6 +405,7 @@ export function App() {
 
   return (
     <div className="app" ref={appRef}>
+      <div className="board-chrome">
       <header className="topbar">
         <div className="title">
           <strong>RESIST!</strong>
@@ -454,6 +455,21 @@ export function App() {
       </header>
 
       <PhaseGuide state={state} actions={actions} />
+
+      <div className="event-line" role="status" aria-live="polite">
+        {toasts.length > 0 &&
+          (() => {
+            const latest = toasts[toasts.length - 1]
+            return <Toast key={latest.id} toast={latest} onDone={() => dismissToast(latest.id)} />
+          })()}
+      </div>
+
+      {sideContent && (
+        <div className="turn-row" data-coach="turn">
+          {sideContent}
+        </div>
+      )}
+      </div>
 
       {modalDecision && <DecisionModal decision={modalDecision} state={state} onRespond={respond} />}
 
@@ -509,20 +525,6 @@ export function App() {
           {flights.map((f) => (
             <FlyingCard key={f.id} flight={f} onDone={() => removeFlight(f.id)} />
           ))}
-        </div>
-      )}
-
-      <div className="event-line" role="status" aria-live="polite">
-        {toasts.length > 0 &&
-          (() => {
-            const latest = toasts[toasts.length - 1]
-            return <Toast key={latest.id} toast={latest} onDone={() => dismissToast(latest.id)} />
-          })()}
-      </div>
-
-      {sideContent && (
-        <div className="turn-row" data-coach="turn">
-          {sideContent}
         </div>
       )}
 

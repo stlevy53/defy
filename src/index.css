@@ -49,14 +49,19 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 }
 .seed-input:focus-visible { border-color: var(--accent-2); outline: none; }
 
-/* Status bar — the top row, holding the controls the player needs to see at a glance on every turn:
- *  title, the always-on loss-condition meters, pile chips, Undo, Settings. Sticky so it stays
- *  reachable if a taller committed-lanes band ever forces a scroll. Fixed height keeps the row from
- *  growing, but not `overflow: hidden` — that would clip the Piles / "?" popovers, which anchor off
- *  elements inside this row and open below it. */
+/* Chrome at the top of the table: status bar + guidance + event line + "Your turn" chip.
+ *  Sticky as a group so Done attacking / Continue cannot slide under the status bar (v0.2.0 had
+ *  `.topbar` sticky on its own and `.turn-row` in normal flow). Do not `overflow: hidden` on this
+ *  wrapper — Piles / "?" popovers anchor inside it and open below. */
+.board-chrome {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-direction: column; gap: 12px;
+  padding-bottom: 4px;
+  background: rgba(15, 12, 9, 0.9);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
 .topbar {
   flex: none; height: 48px; box-sizing: border-box;
-  position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 0.8rem; flex-wrap: nowrap;
   padding: 0 0.9rem; border-radius: 10px;
   background: rgba(20, 17, 14, 0.92); border: 1px solid rgba(122, 98, 62, 0.45);

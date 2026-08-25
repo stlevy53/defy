@@ -183,9 +183,9 @@ when it is "correct" to End vs Continue. AFTERMATH's own prompt handles that mom
 ## Overlay behavior
 
 **Shape.** A dimmed full-window overlay (`position: fixed`) with a rounded hole around the
-spotlight target, a small copy card, and Next / Skip. The copy card stays inside `.board-main`
-(the table column: Missions, played Maquis, hand) intersected with the visible window, including
-when Board size zoom is >100%. Do not park it on the pile rail or past the right edge — Skip /
+spotlight target, a small copy card, and Next / Skip. The copy card stays inside `#root`
+(the full table: status, Missions, committed lanes, hand) intersected with the visible window, including
+when Board size zoom is >100%. Do not park it past the right edge — Skip /
 Start playing must remain clickable. Same overlay family as What's New / Settings.
 
 **Measuring the hole.** Read `getBoundingClientRect()` on a `data-coach="…"` marker on each

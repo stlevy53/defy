@@ -8,7 +8,8 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## Unreleased
 
-_Work in progress toward the next version — add changes here as we make them, then stamp a version + date when we cut a release._
+- **Sound** — cue files now start loading when the app opens, so the first card flip or gunshot isn't waiting on decode. (A click is still required before anything actually plays — that's the browser, not a stall.)
+- **Fix** — “Done attacking” / “Continue” stay clickable after you scroll. They were sliding under the sticky status bar.
 
 ---
 

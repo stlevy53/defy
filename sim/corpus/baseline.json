@@ -1,6 +1,6 @@
 {
-  "version": "0.1.3",
-  "createdAt": "2026-07-30T00:14:24.615Z",
+  "version": "0.2.0",
+  "createdAt": "2026-08-25T20:16:25.661Z",
   "policy": "greedy",
   "stepCap": 2000,
   "seeds": {
@@ -325,9 +325,9 @@
       "failed": false
     },
     "41": {
-      "outcome": "loss:spies",
+      "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 42,
+      "steps": 40,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -429,9 +429,9 @@
       "failed": false
     },
     "54": {
-      "outcome": "loss:spies",
+      "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 48,
+      "steps": 46,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -951,7 +951,7 @@
     "119": {
       "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 47,
+      "steps": 44,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1045,9 +1045,9 @@
       "failed": false
     },
     "131": {
-      "outcome": "loss:spies",
-      "rounds": 3,
-      "steps": 47,
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 49,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1071,7 +1071,7 @@
     "134": {
       "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 49,
+      "steps": 47,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1237,9 +1237,9 @@
       "failed": false
     },
     "155": {
-      "outcome": "loss:spies",
-      "rounds": 3,
-      "steps": 56,
+      "outcome": "loss:civilians",
+      "rounds": 4,
+      "steps": 58,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1575,7 +1575,7 @@
     "197": {
       "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 45,
+      "steps": 46,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1599,7 +1599,7 @@
     "200": {
       "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 51,
+      "steps": 48,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -1983,7 +1983,7 @@
     "248": {
       "outcome": "loss:spies",
       "rounds": 4,
-      "steps": 58,
+      "steps": 59,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -2151,7 +2151,7 @@
     "269": {
       "outcome": "loss:missions",
       "rounds": 3,
-      "steps": 54,
+      "steps": 51,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -2159,7 +2159,7 @@
     "270": {
       "outcome": "loss:civilians",
       "rounds": 4,
-      "steps": 57,
+      "steps": 55,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -2263,7 +2263,7 @@
     "283": {
       "outcome": "loss:missions",
       "rounds": 4,
-      "steps": 52,
+      "steps": 50,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -2791,7 +2791,7 @@
     "349": {
       "outcome": "loss:civilians",
       "rounds": 3,
-      "steps": 47,
+      "steps": 48,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -3029,9 +3029,9 @@
       "failed": false
     },
     "379": {
-      "outcome": "loss:spies",
-      "rounds": 3,
-      "steps": 49,
+      "outcome": "loss:missions",
+      "rounds": 4,
+      "steps": 51,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false
@@ -3725,9 +3725,9 @@
       "failed": false
     },
     "466": {
-      "outcome": "loss:civilians",
+      "outcome": "loss:missions",
       "rounds": 4,
-      "steps": 62,
+      "steps": 60,
       "finalPhase": "GAME_OVER",
       "stub": [],
       "failed": false

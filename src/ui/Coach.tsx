@@ -42,7 +42,7 @@ export function visibleCoachWindow(scale: number, vw: number, vh: number): Coach
   return { left: VIEW_PAD, top: VIEW_PAD, right: vw / s - VIEW_PAD, bottom: vh / s - VIEW_PAD }
 }
 
-/** Keep the copy card on the table column (`.board-main`), never past the visible window. */
+/** Keep the copy card on the table (`#root`), never past the visible window. */
 export function coachStageBox(stage: CoachBox | null, vis: CoachBox): CoachBox {
   const box: CoachBox = {
     left: Math.max(vis.left, stage?.left ?? vis.left),
@@ -110,7 +110,7 @@ export function Coach({
       if (!next) return
       const cardH = cardEl?.offsetHeight ?? 220
       const vis = visibleCoachWindow(scale, window.innerWidth, window.innerHeight)
-      const stageEl = document.querySelector('.board-main')
+      const stageEl = document.querySelector('#root')
       const stage =
         stageEl instanceof HTMLElement
           ? (() => {

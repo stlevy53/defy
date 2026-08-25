@@ -9,8 +9,7 @@
 //   npm run regress -- --capture     # write sim/corpus/baseline.json from the current build
 //   npm run regress                  # check current build against the committed baseline
 //
-// The baseline is version-stamped; capturing v0.1.3 records current behavior (bugs included) as the
-// reference point, exactly as agreed.
+// The baseline is version-stamped; capturing v0.2.0 records current behavior (including the Celia/Antonio empty-pool rules fix) as the reference point.
 
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'

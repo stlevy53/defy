@@ -117,7 +117,7 @@ modal owns the decision), `src/ui/format.ts` (export a `classifyCandidate` helpe
 ## Verification
 
 1. `tsc --noEmit` + `npm run build` clean.
-2. `npm test` (147 tests) green — proves engine + hook untouched.
+2. `npm test` green — proves engine + hook untouched.
 3. `npm run fuzz` and `npm run regress` — the regression baseline must show **no behavioral change**
    (the modal changes presentation, not decisions), which confirms the engine path is identical.
 4. Tier-2 live pass on the seeds that raise these decisions (Juana Revealed-pile pick, Roberto/Juana

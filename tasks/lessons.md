@@ -10,9 +10,9 @@ were off-screen. No horizontal scroll.
 **What went wrong:** the card aligned to `hole.left` of the top-bar controls, then CSS `zoom` on
 `<html>` pushed that coordinate past the visible window.
 
-**Pattern:** constrain the coach card to `.board-main` ∩ the visible window (`innerWidth / scale`).
-A right-edge spotlight still lights the control; the copy sits on the table so the buttons stay
-clickable.
+**Pattern:** constrain the coach card to `#root` ∩ the visible window (`innerWidth / scale`).
+(`.board-main` was the table column before v0.2.0 dropped it.) A right-edge spotlight still lights
+the control; the copy sits on the table so the buttons stay clickable.
 
 ## Zoom every card surface, not only the table
 
