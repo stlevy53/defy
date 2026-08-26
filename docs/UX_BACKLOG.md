@@ -106,10 +106,11 @@ Hidden ↔ Revealed without undoing later plays; sides lock after any card actio
 followed — an arted Mission tile is a photograph of a card at ~250px, so its printed era subtitle and
 effect text were a few pixels tall and unreadable without right-click zoom.
 
-**Fixed:** a **Board size** row in Settings — 100 / 110 / 125 / 140 / 160% — applying CSS `zoom` to
+**Fixed:** a **Board size** row in Settings — 75 / 90 / 100 / 110 / 125 / 140% (75% and 90% added for
+laptop screens and 160% removed in v0.2.1) — applying CSS `zoom` to
 the root element, persisted in `localStorage` under `defy.uiScale`, with Ctrl +, Ctrl − and Ctrl 0
 accelerators that work whether or not Settings is open (`src/ui/useUiScale.ts`). At 140% the printed
-mission title, era line and effect text all read at board size.
+mission title, era line and effect text all read at board size; at 75–90% the whole table fits a smaller screen.
 
 **Fullscreen / a bigger window was NOT the fix — measured, not assumed.** The board is capped
 independently of the window by `#root { max-width: 1260px }` (`src/index.css`). The Electron window
@@ -131,7 +132,7 @@ proportions identical: [`ux-backlog/board-scale-zoom-140.jpg`](./ux-backlog/boar
 - **The overlays needed no changes.** Under CSS `zoom`, `getBoundingClientRect()` returns *unzoomed*
   layout pixels — the same coordinate space a `position: fixed` child is placed in — so the decision
   modal, zoom overlay, toasts and flying cards all land correctly. Verified by placing a fixed probe
-  from a measured rect at 100/140/160%: zero offset at every scale. Do not "correct" flight
+  from a measured rect at 100/125/140%: zero offset at every scale. Do not "correct" flight
   coordinates by the zoom factor; that breaks them.
 - **Hit-testing is the exception**, and uses *visual* coordinates (rect × zoom). Real mouse input is
   unaffected, but any automation that clicks at rect-derived coordinates will miss at a non-100%
