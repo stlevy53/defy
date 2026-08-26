@@ -33,6 +33,52 @@ function firesInPhase(actionType: string | null, phase: GameState['phase']): boo
   return actionType === phase
 }
 
+const hasSpyInHand = (s: GameState): boolean => s.hand.some((c) => c.dataId === 'spy')
+const hasMaquisInHand = (s: GameState): boolean => s.hand.some((c) => c.dataId !== 'spy')
+const revealedPileNonEmpty = (s: GameState): boolean => s.recruit.revealed.length > 0
+const hasFaceDownEnemy = (s: GameState): boolean =>
+  s.missionRow.some((slot) => !slot.faceDown && slot.enemies.some((e) => !e.faceUp))
+
+/** The copied hidden action can be performed in full (same bar legalActions uses for UseAction). */
+function copiedHiddenCanComplete(s: GameState, dataId: string): boolean {
+  switch (dataId) {
+    case 'celia':
+    case 'antonio':
+      return hasSpyInHand(s)
+    case 'pilar':
+    case 'domingo':
+      return hasFaceDownEnemy(s)
+    case 'anastasio':
+    case 'adolfo': {
+      if (s.chosenMissionUid === null) return false
+      const slot = s.missionRow.find((m) => m.uid === s.chosenMissionUid)
+      return (slot?.enemies.length ?? 0) > 0
+    }
+    case 'adela': {
+      if (s.chosenMissionUid === null) return false
+      const slot = s.missionRow.find((m) => m.uid === s.chosenMissionUid)
+      if (!slot || slot.enemies.length === 0) return false
+      return s.missionRow.some((m) => m.uid !== slot.uid && !m.faceDown)
+    }
+    default:
+      return true
+  }
+}
+
+/** Hidden Maquis whose hidden action Emilio can copy right now — phase matches *and* the copy
+ *  would complete (so using Emilio never spends the card on a no-op). */
+function emilioCopyTargetUids(s: GameState): string[] {
+  return s.inPlay
+    .filter(
+      (m) =>
+        m.side === 'hidden' &&
+        m.dataId !== 'emilio' &&
+        firesInPhase(hiddenActionTypeById.get(m.dataId) ?? null, s.phase) &&
+        copiedHiddenCanComplete(s, m.dataId),
+    )
+    .map((m) => m.uid)
+}
+
 type UidItem = { uid: string }
 
 const isSpy = (c: { dataId: string }): boolean => c.dataId === 'spy'
@@ -408,14 +454,7 @@ const ignoreChosenMissionEffect: EffectHandler = ({ state }) => {
 const emilioCopyHidden: EffectHandler = (ctx): Decision | void => {
   const s = ctx.state as Draft<GameState>
   if (ctx.responses.length === 0) {
-    const candidates = s.inPlay
-      .filter(
-        (m) =>
-          m.side === 'hidden' &&
-          m.dataId !== 'emilio' &&
-          firesInPhase(hiddenActionTypeById.get(m.dataId) ?? null, s.phase),
-      )
-      .map((m) => m.uid)
+    const candidates = emilioCopyTargetUids(s)
     if (candidates.length === 0) return
     return { kind: 'selectTarget', candidates, prompt: 'Copy the hidden action of which Maquis?' }
   }
@@ -472,12 +511,6 @@ export function registerPlanEffects(): void {
 // Rulebook: a card action may only be performed if it can be performed *in full*. legalActions
 // consults these so UseAction is never offered for an action the player couldn't complete.
 
-const hasSpyInHand = (s: GameState): boolean => s.hand.some((c) => c.dataId === 'spy')
-const hasMaquisInHand = (s: GameState): boolean => s.hand.some((c) => c.dataId !== 'spy')
-const revealedPileNonEmpty = (s: GameState): boolean => s.recruit.revealed.length > 0
-const hasFaceDownEnemy = (s: GameState): boolean =>
-  s.missionRow.some((slot) => !slot.faceDown && slot.enemies.some((e) => !e.faceUp))
-
 export const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('celia', 'hidden')]: hasSpyInHand,
   [maquisEffectId('antonio', 'hidden')]: hasSpyInHand,
@@ -488,11 +521,5 @@ export const PLAN_PRECONDITIONS: Record<string, (s: GameState) => boolean> = {
   [maquisEffectId('juana', 'revealed')]: revealedPileNonEmpty,
   [maquisEffectId('pilar', 'hidden')]: hasFaceDownEnemy,
   [maquisEffectId('domingo', 'hidden')]: hasFaceDownEnemy,
-  [maquisEffectId('emilio', 'hidden')]: (s) =>
-    s.inPlay.some(
-      (m) =>
-        m.side === 'hidden' &&
-        m.dataId !== 'emilio' &&
-        firesInPhase(hiddenActionTypeById.get(m.dataId) ?? null, s.phase),
-    ),
+  [maquisEffectId('emilio', 'hidden')]: (s) => emilioCopyTargetUids(s).length > 0,
 }

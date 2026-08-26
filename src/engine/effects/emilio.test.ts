@@ -3,6 +3,7 @@
 // including nested decisions. Registers the real PLAN effects; conservation after every action.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { produce } from 'immer'
 import { createGame } from '../setup'
 import { applyAction, legalActions, resolveDecision } from '../actions'
 import { assertConservation } from '../zones'
@@ -83,5 +84,38 @@ describe('Emilio precondition', () => {
     s = play(s, 'emilio', 'hidden') // only Emilio in play — nothing to copy
     expect(canFireEffect(maquisEffectId('emilio', 'hidden'), s)).toBe(false)
     expect(legalActions(s).some((a) => a.type === 'UseAction' && a.uid === 'emilio')).toBe(false)
+  })
+
+  it('is not offered when the only copy target cannot complete (Antonio, no Spy in hand)', () => {
+    let s = seedWithHand('emilio', 'antonio')
+    s = play(s, 'emilio', 'hidden')
+    s = play(s, 'antonio', 'hidden')
+    s = produce(s, (d) => {
+      const spies = d.hand.filter((c) => c.dataId === 'spy')
+      d.hand = d.hand.filter((c) => c.dataId !== 'spy')
+      d.hidden.discard.push(...spies)
+    })
+    expect(canFireEffect(maquisEffectId('emilio', 'hidden'), s)).toBe(false)
+    expect(legalActions(s).some((a) => a.type === 'UseAction' && a.uid === 'emilio')).toBe(false)
+    // Sides stay unlocked — the player can still flip Carlos / Antonio without spending Emilio.
+    expect(legalActions(s).some((a) => a.type === 'MoveMaquis')).toBe(true)
+  })
+
+  it('is offered when another hidden Maquis can complete even if Antonio cannot', () => {
+    let s = seedWithHand('emilio', 'antonio', 'manuela')
+    s = play(s, 'emilio', 'hidden')
+    s = play(s, 'antonio', 'hidden')
+    s = play(s, 'manuela', 'hidden')
+    s = produce(s, (d) => {
+      const spies = d.hand.filter((c) => c.dataId === 'spy')
+      d.hand = d.hand.filter((c) => c.dataId !== 'spy')
+      d.hidden.discard.push(...spies)
+    })
+    expect(canFireEffect(maquisEffectId('emilio', 'hidden'), s)).toBe(true)
+    s = apply(s, { type: 'UseAction', uid: 'emilio' })
+    expect(s.pendingDecision?.kind).toBe('selectTarget')
+    const candidates = (s.pendingDecision as { candidates: string[] }).candidates
+    expect(candidates).toContain('manuela')
+    expect(candidates).not.toContain('antonio')
   })
 })

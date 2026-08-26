@@ -97,6 +97,18 @@ describe('playSfx', () => {
     expect(played).toEqual(['Card Flip.mp3', 'Gunshot.mp3'])
   })
 
+  it('maps the civilian-death cue to its own file', () => {
+    const played: string[] = []
+    configureAudio({
+      urls: { 'Civilian Death': 'Civilian Death.mp3' },
+      play: (url) => played.push(url),
+      storage: mem(),
+    })
+    unlock()
+    playSfx('civilian')
+    expect(played).toEqual(['Civilian Death.mp3'])
+  })
+
   it('scales the one-shot by master volume × gain', () => {
     const vols: number[] = []
     const s = mem()

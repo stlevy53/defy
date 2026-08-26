@@ -284,15 +284,15 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
               ? 'Switch sides, use an action, or choose the Mission you attack.'
               : 'Switch sides, play more, or choose the Mission you attack.'
             : canUseAction
-              ? "Use a card's action, or choose the Mission you attack."
-              : 'Play or use more cards, or choose the Mission you attack.',
+              ? 'Sides locked after a Use. Use an action, or choose the Mission. Undo to rearrange.'
+              : 'Play more, or choose the Mission. Sides locked after a Use — Undo to rearrange.',
         steps: [
           { text: 'Play Maquis — click Hidden/Revealed, or drag the card onto that section.', active: canDo(actions, 'PlayMaquis') },
           {
             text: 'Switch a played Maquis — drag it to the other section, or click the dimmed half. Locks after you use an action.',
             active: canMove,
           },
-          { text: 'Optionally use PLAN card actions — click the action on a played Maquis.', active: true },
+          { text: 'Optionally use PLAN card actions — click the gold Use bar, or the card.', active: true },
           { text: 'Choose one Mission — click the Mission card to attack it. (Ends PLAN)', active: canDo(actions, 'ChooseMission') },
         ],
       }
@@ -307,7 +307,7 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
           hint: 'Fire ATTACK actions as you go.',
           steps: [
             { text: 'Play out the rest of your hand — mandatory.', active: true },
-            { text: 'Fire ATTACK actions to raise Attack Strength or weaken Enemies.', active: true },
+            { text: 'Fire ATTACK actions — click the gold Use bar, or the card.', active: true },
             { text: 'Spend Attack Strength on targets to defeat them.' },
           ],
         }
@@ -320,7 +320,7 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
         hint: canStrike ? 'Grunts fall first.' : 'Leftover Attack Strength is lost.',
         steps: [
           { text: 'Hand played out.' },
-          { text: 'Fire any remaining ATTACK actions to boost your strike.', active: true },
+          { text: 'Fire any remaining ATTACK actions — click the gold Use bar, or the card.', active: true },
           { text: 'Click targets on the board to strike them, then Done attacking.', active: true },
         ],
       }

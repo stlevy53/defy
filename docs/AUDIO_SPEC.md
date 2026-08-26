@@ -89,6 +89,7 @@ Table movement shares one card-flip; combat is gunshot / knife / explosion; end-
 | `strike` | Spend Attack on an Enemy | File: `Gunshot.wav`. |
 | `slash` | A Spy leaves the table (discarded from hand) | File: `Knife slash.mp3`. |
 | `reinforce` | An Enemy is added to a Mission | Same card flip (a card sliding onto the board). |
+| `civilian` | A Civilian is sent to the Graveyard (Villa, CG Headquarters, Franco HQ, Caves, …) | File: `Civilian Death.mp3`. Fires on Graveyard growth (`useCivilianDeaths`); an undo that shrinks the pile stays silent. |
 | `defeat` | Spend Attack on the Mission (the killing blow) | File: `Explosion.mp3`. |
 | `loss` | Loss overlay opens | File: `Defeat Audio.mp3`. All three loss reasons share it. |
 | `winDraw` | Draw overlay | File: `Draw Audio.mp3`. |

@@ -64,6 +64,7 @@ function forcedSelection(d: Decision): string[] | null {
     case 'orderCards':
       return d.cards.length <= 1 ? d.cards : null
     case 'selectCards': {
+      if (d.forceChoice) return null
       const n = d.candidates.length
       if (d.min === d.max) {
         if (d.min === 0) return []
@@ -91,6 +92,8 @@ export interface UseGame {
   state: GameState
   actions: Action[]
   seed: number
+  /** Whether the current game was dealt via the draft setup (for the profile record). */
+  draft: boolean
   /** Monotonic id that changes only when a new game starts (immune to seed reuse). */
   gameId: number
   /** History depth. Increases on every committed action, decreases on undo, resets on new game.
@@ -113,6 +116,7 @@ export interface UseGame {
 export function useGame(initialSeed?: number): UseGame {
   const [seed, setSeed] = useState<number>(() => initialSeed ?? randomSeed())
   const [gameId, setGameId] = useState(0)
+  const [draft, setDraft] = useState(false)
   const [history, setHistory] = useState<GameState[]>(() => [settle(createGame({ seed: initialSeed ?? seed }))])
   const [error, setError] = useState<string | null>(null)
 
@@ -158,6 +162,7 @@ export function useGame(initialSeed?: number): UseGame {
   const newGame = useCallback((s?: number, draft?: boolean) => {
     const next = s ?? randomSeed()
     setSeed(next)
+    setDraft(!!draft)
     setGameId((n) => n + 1)
     setError(null)
     setHistory([settle(createGame({ seed: next, draft }))])
@@ -194,6 +199,7 @@ export function useGame(initialSeed?: number): UseGame {
     const p = readSave()
     if (!p) return { ok: false, reason: 'No saved game found.' }
     setSeed(p.seed)
+    setDraft(false) // a mid-game save doesn't record the draft flag; unknown on resume
     setGameId((n) => n + 1) // fresh animation context so diff-hooks don't fire against the old board
     setError(null)
     setHistory(p.history)
@@ -216,6 +222,7 @@ export function useGame(initialSeed?: number): UseGame {
     state,
     actions,
     seed,
+    draft,
     gameId,
     step: history.length,
     dispatch,
@@ -287,6 +294,31 @@ export function useReinforcements(state: GameState, gameId: number): Record<stri
   }, [added])
 
   return added
+}
+
+/**
+ * Fires the civilian-death cue whenever the Graveyard grows between two committed states — a Mission
+ * or Enemy effect sending Civilians there (Villa, CG Headquarters, Franco HQ, the Caves line, etc.).
+ * Same guards as useReinforcements: a `gameId` change adopts the new state as the baseline without
+ * sounding (uids/counts reset per game), and only an *increase* triggers the cue, so an undo — which
+ * shrinks the pile — stays silent.
+ */
+export function useCivilianDeaths(state: GameState, gameId: number): void {
+  const seen = useRef<GameState | null>(null)
+  const gameRef = useRef(gameId)
+
+  useEffect(() => {
+    if (gameRef.current !== gameId) {
+      gameRef.current = gameId
+      seen.current = state
+      return
+    }
+    const prev = seen.current
+    if (prev === state) return
+    seen.current = state
+    if (!prev) return // first commit — don't sound the initial deal
+    if (state.graveyard.length > prev.graveyard.length) playSfx('civilian')
+  }, [state, gameId])
 }
 
 /** A card seen moving between the hand and a pile, rendered as a token flying across the board. */

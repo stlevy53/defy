@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 
+# Vite config reload scratch (regenerated on each dev run)
+vite.config.ts.timestamp-*.mjs
+
 # Logs
 *.log
 npm-debug.log*

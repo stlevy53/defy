@@ -11,6 +11,23 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.1',
+    date: '2026-08-25',
+    title: 'Your profile, your stats, and a table that fits',
+    changes: [
+      'Player profile & stats — a new Profile tab under ⚙ Settings. Set a display name and track your games over time: best score, average, win rate, a score-per-game chart, personal records, and full history. Export, import, or clear your data any time. (Stored locally for now.)',
+      'Committed lanes no longer scroll — played Maquis lay out up to four across each Hidden / Revealed row; a fifth card wraps to a second row whose top edge peeks so you know there’s more, and you scroll only that lane to see it.',
+      'Board size — added 75% and 90% for laptop screens and dropped 160%. The steps are now 75 / 90 / 100 / 110 / 125 / 140%, still adjustable with Ctrl + / − / 0.',
+      'More table space — trimmed the empty band under the phase guidance so the play area gets the room.',
+      'Round counter in the status bar, and during ATTACK the Attack Strength token shows a “To clear” total (the Mission’s remaining Defense plus standing Enemies) that drops as targets fall.',
+      'Bunker always discards a Maquis, never a Spy — and says so if your hand has none left.',
+      'Emilio only offers Copy when another hidden Maquis can actually complete its action; after any Use, a locked card’s dimmed half explains that sides are locked until you Undo that Use.',
+      'Use — the gold action bar under a played Maquis is a bigger click target, and clicking the card itself fires its action when it’s legal.',
+      'Sound cues start loading when the app opens, so the first flip or gunshot isn’t waiting on decode.',
+      'Fix — “Done attacking” / “Continue” stay clickable after you scroll (they were sliding under the sticky status bar).',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-08-25',
     title: 'A board that fits the window',

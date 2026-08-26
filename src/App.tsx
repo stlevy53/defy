@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { useGame, useReinforcements, useCardFlights, useLogToasts } from './ui/useGame'
+import { useGame, useReinforcements, useCardFlights, useLogToasts, useCivilianDeaths } from './ui/useGame'
 import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { DecisionModal } from './ui/DecisionModal'
@@ -29,11 +29,24 @@ import {
 import { isDraftPromptEnabled } from './ui/draftPref'
 import { installUnlock, preloadAudio, playEndgameSfx } from './ui/audio'
 import { actionLabel, missionOf, guidanceFor, ROUND_PHASES, boardPickable, countActionBonus, nameOfMaquis, graveyardCivilians } from './ui/format'
+import { appendGameRecord, buildGameRecord, loadProfile } from './ui/profile'
 import { isDraftDecision, isDrafting, gatingStrikeUids } from './engine'
 import type { Action, Decision, GameResult, GameState } from './engine'
 
 /** Stable empty array so a "no board selection" render doesn't churn child props. */
 const EMPTY: string[] = []
+
+/** Remaining Defense of the chosen Mission plus every standing Enemy — a planning total, not a
+ *  rules cost (you still spend per target). Null outside ATTACK. Decrements as targets fall. */
+function remainingToClear(state: GameState): number | null {
+  if (state.phase !== 'ATTACK' || state.chosenMissionUid == null) return null
+  const slot = state.missionRow.find((s) => s.uid === state.chosenMissionUid)
+  if (!slot) return null
+  const data = missionOf(slot.dataId)
+  const missionDef = slot.defeated ? 0 : (state.missionDefenseOverride ?? data?.defense ?? 0)
+  const enemyDef = slot.enemies.reduce((n, e) => n + e.defense, 0)
+  return missionDef + enemyDef
+}
 
 /** The Defense cost of striking `uid` — a Mission or one of its garrison Enemies — and the uid of
  *  the Mission slot it belongs to, read from the board at click time (before the dispatch that
@@ -57,7 +70,7 @@ function findStrikeCost(state: GameState, uid: string): { missionUid: string; co
 }
 
 export function App() {
-  const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, gameId, step } =
+  const { state, actions, dispatch, respond, undo, newGame, saveGame, loadGame, savedMeta, canUndo, error, seed, draft, gameId, step } =
     useGame()
 
   // First launch of a build: What's New. When it closes, the draft offer (if enabled), then the
@@ -177,8 +190,35 @@ export function App() {
   // What end-of-game overlay to show: a preview override wins, else the real game result.
   const shown = previewResult(preview) ?? state.result
 
+  // Career profile: append one compact record the first time a game reaches GAME_OVER, and capture
+  // whether it beat the previous best VP so the win overlay can celebrate it. Keyed on gameId via a
+  // ref so re-renders at GAME_OVER (and undo back into it) never double-count; a `?preview=` overlay
+  // is synthetic (no state.result) and is never recorded.
+  const recordedGameRef = useRef<number | null>(null)
+  const [careerCtx, setCareerCtx] = useState<{ prevBest: number | null; isNewBest: boolean } | null>(null)
+  useEffect(() => {
+    setCareerCtx(null)
+  }, [gameId])
+  useEffect(() => {
+    const result = state.result
+    if (!result || state.phase !== 'GAME_OVER') return
+    if (recordedGameRef.current === gameId) return
+    recordedGameRef.current = gameId
+    const prevBest = loadProfile().games.reduce<number | null>(
+      (best, g) => (g.outcome === 'win' && g.points != null ? Math.max(best ?? 0, g.points) : best),
+      null,
+    )
+    appendGameRecord(buildGameRecord(state, seed, draft))
+    if (result.outcome === 'win' && result.points != null) {
+      setCareerCtx({ prevBest, isNewBest: prevBest == null || result.points > prevBest })
+    }
+  }, [state, gameId, seed, draft])
+
   // Enemy chips added to a Mission this transition (reinforcements) — used to animate them in.
   const reinforced = useReinforcements(state, gameId)
+
+  // Sound a death cue whenever Civilians are sent to the Graveyard.
+  useCivilianDeaths(state, gameId)
 
   // A strike's cost, flashed on the single Attack Strength token and mirrored on the struck target,
   // so the number reads at the seam between where it's generated and where it's spent (Phase 6).
@@ -411,6 +451,12 @@ export function App() {
           <strong>RESIST!</strong>
         </div>
         <div className="status-meters" data-coach="status">
+          <Tip below text="The current round. Choosing Continue at the end of AFTERMATH starts the next one.">
+            <div className="meter">
+              <span className="meter-label">Round</span>
+              <span className="meter-score-value">{state.round}</span>
+            </div>
+          </Tip>
           <Tip below text="Victory Points — your score so far from defeated Missions.">
             <div className="meter">
               <span className="meter-label">Score</span>
@@ -511,6 +557,7 @@ export function App() {
           points={shown.points}
           cueKey={`${gameId}-win`}
           onPlayAgain={playAgain}
+          career={shown === state.result ? careerCtx : null}
         />
       )}
 
@@ -599,7 +646,12 @@ export function App() {
           pickTargets={pickTargets}
           onPick={onPick}
         />
-        <AttackStrengthToken value={state.attackStrength} phase={state.phase} spend={strikeFlash} />
+        <AttackStrengthToken
+          value={state.attackStrength}
+          phase={state.phase}
+          spend={strikeFlash}
+          toClear={remainingToClear(state)}
+        />
       </section>
 
       <section className="hand" data-coach="hand">
@@ -823,7 +875,15 @@ function Zone({
   pickTargets: string[]
   onPick: (uid: string) => void
 }) {
-  const hint = side === 'hidden' ? 'concealed from Franco' : 'active — visible to Franco'
+  const sidesLocked = state.phase === 'PLAN' && state.inPlay.some((m) => m.actionUsed)
+  const hint = sidesLocked
+    ? 'sides locked after a Use — Undo to rearrange'
+    : side === 'hidden'
+      ? 'concealed from Franco'
+      : 'active — visible to Franco'
+  const lockHint = sidesLocked
+    ? 'Sides lock after you use a card action. Undo that Use to rearrange.'
+    : undefined
   return (
     <div className={`zone${dropOk ? ' drop-ok' : ''}`} data-drop-side={side}>
       <div className="zone-head">
@@ -855,6 +915,7 @@ function Zone({
               // used, the gained attack is baked into the card's value, so drop the stale preview.
               liveBonus={canUse ? countActionBonus(state, m.dataId, side, m.uid) : null}
               actionUsed={m.actionUsed}
+              moveLockedHint={lockHint}
             />
           )
         })}
@@ -1057,10 +1118,12 @@ function AttackStrengthToken({
   value,
   phase,
   spend,
+  toClear,
 }: {
   value: number
   phase: GameState['phase']
   spend: { missionUid: string; cost: number; seq: number } | null
+  toClear: number | null
 }) {
   const prev = useRef(value)
   const [gain, setGain] = useState(0)
@@ -1074,13 +1137,18 @@ function AttackStrengthToken({
     }
   }, [value])
   const dormant = phase !== 'ATTACK'
+  const aria =
+    toClear != null
+      ? `${value} Attack Strength left to spend. ${toClear} remaining to clear.`
+      : `${value} Attack Strength left to spend`
   return (
-    <div className={`attack-token ${dormant ? 'dormant' : ''} ${gain > 0 ? 'gain' : ''}`} role="status" aria-label={`${value} Attack Strength left to spend`}>
+    <div className={`attack-token ${dormant ? 'dormant' : ''} ${gain > 0 ? 'gain' : ''}`} role="status" aria-label={aria}>
       <span className="at-label">Attack Strength</span>
       <span key={`v${value}`} className="at-value">
         {value}
       </span>
       <span className="at-sub">{dormant ? 'builds as you commit Maquis' : 'left to spend'}</span>
+      {toClear != null && <span className="at-toclear">To clear: {toClear}</span>}
       {gain > 0 && <span className="at-gain">+{gain}</span>}
       {spend && <span key={spend.seq} className="at-spend">−{spend.cost}</span>}
     </div>
@@ -1263,11 +1331,15 @@ function WinOverlay({
   points,
   cueKey,
   onPlayAgain,
+  career,
 }: {
   tier?: string
   points?: number
   cueKey: string
   onPlayAgain: () => void
+  /** Career context for this win: previous best VP and whether this game beat it. Null for a
+   *  previewed overlay (nothing is recorded), so no career line shows. */
+  career?: { prevBest: number | null; isNewBest: boolean } | null
 }) {
   const info = WIN_TIERS[tier ?? 'Draw'] ?? WIN_TIERS.Draw
   const level = info.level
@@ -1282,11 +1354,28 @@ function WinOverlay({
         <h1 className="gameover-title win">{info.headline}</h1>
         <p className="gameover-sub win">{points} Victory Points</p>
         <p className="gameover-reason win">{info.flavor}</p>
+        {career && <CareerLine career={career} points={points} />}
         <button className="gameover-btn win" onClick={onPlayAgain}>
           Play again
         </button>
       </div>
     </div>
+  )
+}
+
+/** One line of career context under a win: a new-personal-best badge, or how this game compares. */
+function CareerLine({ career, points }: { career: { prevBest: number | null; isNewBest: boolean }; points?: number }) {
+  if (career.isNewBest) {
+    return (
+      <p className="gameover-career new-best">
+        New personal best!{career.prevBest != null ? ` Previous best ${career.prevBest} VP.` : ''}
+      </p>
+    )
+  }
+  return (
+    <p className="gameover-career">
+      Personal best {career.prevBest} VP · this game {points} VP
+    </p>
   )
 }
 

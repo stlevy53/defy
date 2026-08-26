@@ -106,7 +106,7 @@ export const COACH_BEATS: CoachBeat[] = [
     body: [
       'These four Missions are what you can attack. In PLAN, click a Mission to choose it — that ends PLAN and reveals its Enemies.',
       'In ATTACK, click a glowing Enemy or the Mission to strike it. The glow means this is a legal click.',
-      'After a Maquis is on the table, a small Use button appears under it when its action can fire. Click that, not a list of buttons.',
+      'After a Maquis is on the table, a gold Use bar appears under it when its action can fire. Click the bar or the card itself — not a list of buttons.',
       'During PLAN, drag a played Maquis onto the other section to move it Hidden ↔ Revealed — or click the dimmed half. That locks as soon as anyone uses an action.',
     ],
   },
@@ -136,7 +136,7 @@ export const COACH_BEATS: CoachBeat[] = [
     title: 'Undo and Settings',
     body: [
       'Undo takes back the last move. You cannot undo revealing Enemies — a scout or choosing a Mission — once they are face-up. During PLAN you can also drag a played Maquis to the other section (or click its dimmed half) — until anyone uses an action.',
-      'The ⚙ cog (or Esc) is Settings: New game, Save, Load, and Board size if the table is hard to read. Ctrl + and Ctrl − scale it any time; Ctrl 0 returns to 100%.',
+      'The ⚙ cog (or Esc) is Settings: the Game tab has New game, Save and Load; the Options tab has Board size if the table is hard to read. Ctrl + and Ctrl − scale it any time; Ctrl 0 returns to 100%.',
       'This tour lives under Settings as How to play this table if you want it again.',
     ],
   },

@@ -256,6 +256,35 @@ describe('mission DEFEND effect logic', () => {
     fire('mayor_house', g, 'DEFEND')
     expect(g.missionRow.find((m) => m.uid === slot.uid)!.enemies.map((e) => e.defense)).toEqual(before)
   })
+
+  it('Bunker never takes a Spy and logs a skip when the hand has no Maquis', () => {
+    const { g } = chosenGame()
+    const maquis = g.hand.filter((c) => !isSpy(c))
+    g.hand = g.hand.filter(isSpy)
+    g.hidden.discard.push(...maquis)
+    const spiesBefore = spyCount(g.hand)
+    fire('bunker', g, 'DEFEND')
+    expect(spyCount(g.hand)).toBe(spiesBefore)
+    expect(g.log.some((l) => /Bunker.*no Maquis/.test(l))).toBe(true)
+    assertConservation(g)
+  })
+
+  it('Bunker still prompts when only one Maquis is in hand', () => {
+    const { g } = chosenGame()
+    const maquis = g.hand.filter((c) => !isSpy(c))
+    const keep = maquis[0]
+    g.hidden.discard.push(...maquis.slice(1), ...g.hand.filter(isSpy))
+    g.hand = [keep]
+    const d = fire('bunker', g, 'DEFEND')
+    expect(d).toMatchObject({
+      kind: 'selectCards',
+      min: 1,
+      max: 1,
+      candidates: [keep.uid],
+      forceChoice: true,
+    })
+    expect(g.hand).toEqual([keep])
+  })
 })
 
 // --- reveal-limit enforcement (actions.ts) ----------------------------------
@@ -308,6 +337,8 @@ describe('end-to-end wiring', () => {
     let s = applyAction(g, { type: 'ChooseMission', uid: bunker.uid })
     expect(s.phase).toBe('ATTACK')
     expect(s.pendingDecision?.kind).toBe('selectCards') // Bunker's forced discard
+    expect((s.pendingDecision as Extract<Decision, { kind: 'selectCards' }>).forceChoice).toBe(true)
+    expect((s.pendingDecision as Extract<Decision, { kind: 'selectCards' }>).candidates.every((uid) => s.hand.find((c) => c.uid === uid)?.dataId !== 'spy')).toBe(true)
     const pick = (s.pendingDecision as Extract<Decision, { kind: 'selectCards' }>).candidates[0]
     s = resolveDecision(s, { selection: [pick] })
     expect(s.hand.filter((c) => c.dataId !== 'spy').length).toBe(handMaquis - 1)

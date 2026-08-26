@@ -163,9 +163,23 @@ const policeStationSift = ({ state }: EffectContext) => {
 const bunkerDiscardHandMaquis = ({ state, responses }: EffectContext): Decision | void => {
   const s = state as Draft<GameState>
   const maquis = s.hand.filter((c) => !isSpy(c)).map((c) => c.uid)
-  if (maquis.length === 0) return
+  if (maquis.length === 0) {
+    // Printed text is "discard a Maquis", never a Spy. With an empty or Spies-only hand the
+    // effect has nothing legal to take — say so on the event line rather than failing silently.
+    s.log.push(`${s.phase}: Bunker — no Maquis left in hand to discard`)
+    return
+  }
   if (responses.length === 0) {
-    return { kind: 'selectCards', from: 'hand', min: 1, max: 1, prompt: 'Discard a Maquis from your hand (Bunker)', candidates: maquis }
+    return {
+      kind: 'selectCards',
+      from: 'hand',
+      min: 1,
+      max: 1,
+      prompt: 'Discard a Maquis from your hand (Bunker)',
+      candidates: maquis,
+      // Even a single remaining Maquis must be clicked — auto-settling made the discard invisible.
+      forceChoice: true,
+    }
   }
   const i = s.hand.findIndex((c) => c.uid === responses[0][0])
   if (i !== -1) s.hidden.discard.push(s.hand.splice(i, 1)[0])

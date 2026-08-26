@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #0e0c0a; }
+  a { color: #d99a24; }
+  a:hover { color: #efe6d6; }
+</style>
+</helmet>
+
+<section style="padding:64px 64px 120px;font-family:'Segoe UI',system-ui,Helvetica,Arial,sans-serif;color:#efe6d6">
+
+  <div style="max-width:900px;margin-bottom:56px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#c8452f">Design review · DEFY! v0.1.9</div>
+    <h1 style="font-family:Newsreader,Georgia,serif;font-size:56px;line-height:1.05;font-weight:600;margin:14px 0 0;letter-spacing:-.01em">The board doesn't fit on the board.</h1>
+    <p style="font-size:17px;line-height:1.6;color:#c3b9a6;margin:20px 0 0;text-wrap:pretty">Two problems in this UI are the same problem. Cards are too small to read because the play area is capped at 1260px on a 1920px screen, and you scroll because everything that got squeezed out of the width went into height. Fix the spatial model and readability comes along with it. Below: a faithful recreation of the current PLAN screen with the findings marked on it, then the same game state rebuilt to fit one screen, then the ATTACK state showing the feedback changes.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+    <!-- ============================ 1a — recreation ============================ -->
+    <div id="1a">
+      <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 9px;border-radius:6px;background:#2a221b;border:1px solid #4a3d2c;font-size:13px;font-weight:800;letter-spacing:.06em;color:#d99a24">1a</span>
+        <h2 style="font-family:Newsreader,Georgia,serif;font-size:26px;font-weight:600;margin:0">As it stands</h2>
+        <span style="font-size:13px;color:#8d8474">PLAN, round 1, seed 1 — recreated at 1920×1080</span>
+      </div>
+
+      <div style="position:relative;width:1920px;height:1080px;overflow:hidden;border:1px solid #3a3025;border-radius:4px;background-color:#14110e;background-image:linear-gradient(rgba(15,12,9,.32),rgba(15,12,9,.52)),url('assets/tabletop.jpg');background-size:cover,cover;background-position:center top,center top;background-repeat:no-repeat,no-repeat">
+
+        <div style="max-width:1260px;margin:0 auto;padding:20px">
+
+          <!-- topbar -->
+          <div style="display:flex;align-items:center;gap:16px;padding:9.6px 14.4px;border-radius:10px;background:rgba(20,17,14,.92);border:1px solid rgba(122,98,62,.45);box-shadow:0 6px 20px rgba(0,0,0,.5)">
+            <div style="flex:none;white-space:nowrap"><strong style="color:#c8452f;letter-spacing:.12em;font-size:18.4px">RESIST!</strong> <span style="color:#9a8f7d;font-size:15px">Maquis vs. Franco</span></div>
+            <div style="display:flex;gap:6.4px;margin-left:auto">
+              <span style="background:#2a221b;border:1px solid #3a3025;border-radius:999px;padding:2.4px 9.6px;font-size:12.8px">Round 1</span>
+              <span style="background:#2a221b;border:1px solid #3a3025;border-radius:999px;padding:2.4px 9.6px;font-size:12.8px">★ 0 VP</span>
+            </div>
+            <div style="display:flex;gap:6.4px;align-items:center">
+              <button type="button" style="font-family:inherit;font-size:14.4px;background:transparent;color:#efe6d6;border:1px solid #3a3025;border-radius:8px;padding:5px 11px;opacity:.45">Undo</button>
+              <button type="button" style="font-family:inherit;font-size:14.4px;background:transparent;color:#efe6d6;border:1px solid #3a3025;border-radius:8px;padding:5px 11px">v0.1.9</button>
+              <button type="button" style="font-family:inherit;font-size:14.4px;background:transparent;color:#efe6d6;border:1px solid #3a3025;border-radius:8px;padding:5px 11px">⚙</button>
+              <span style="font-size:11.5px;color:#9a8f7d;background:#2a221b;border:1px solid #3a3025;border-radius:999px;padding:2.4px 8.8px">seed 1</span>
+            </div>
+          </div>
+
+          <!-- phase guide -->
+          <div style="margin:11.2px 0">
+            <ol style="display:flex;flex-wrap:wrap;gap:6.4px;list-style:none;margin:0;padding:0">
+              <li style="display:flex;align-items:center;gap:6.4px;padding:4.5px 11.2px;border-radius:999px;background:#c8452f;border:1px solid #c8452f;color:#fff;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#fff;color:#c8452f;border:1px solid #fff;font-size:10.6px">1</span><span>PLAN</span>
+              </li>
+              <li style="display:flex;align-items:center;gap:6.4px;padding:4.5px 11.2px;border-radius:999px;background:#201a15;border:1px solid #3a3025;color:#9a8f7d;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#2a221b;border:1px solid #3a3025;font-size:10.6px">2</span><span>ATTACK</span>
+              </li>
+              <li style="display:flex;align-items:center;gap:6.4px;padding:4.5px 11.2px;border-radius:999px;background:#201a15;border:1px solid #3a3025;color:#9a8f7d;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#2a221b;border:1px solid #3a3025;font-size:10.6px">3</span><span>AFTERMATH</span>
+              </li>
+              <li style="display:flex;align-items:center;gap:6.4px;padding:4.5px 11.2px;border-radius:999px;background:#201a15;border:1px solid #3a3025;color:#9a8f7d;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#2a221b;border:1px solid #3a3025;font-size:10.6px">4</span><span>RECOVER</span>
+              </li>
+            </ol>
+
+            <div style="margin-top:8.8px;padding:9.6px 13.6px;background:rgba(24,19,14,.78);border:1px solid rgba(122,98,62,.4);border-left:3px solid #c8452f;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.45);display:flex;gap:16px;align-items:flex-start">
+              <div style="flex:2 1 340px;min-width:0">
+                <div style="color:#efe6d6;font-weight:600;display:flex;align-items:center;gap:8px;font-size:15px">
+                  <span style="color:#d99a24;text-transform:uppercase;letter-spacing:.06em;font-size:12.5px">PLAN</span>Set up your attack.
+                </div>
+                <p style="margin:6.4px 0 0;padding-left:14.4px;position:relative;color:#efe6d6;font-size:14.7px;font-weight:600">
+                  <span style="position:absolute;left:0;color:#c8452f">▸</span>Play Maquis from your hand by clicking a side — Hidden (left) or Revealed (right).
+                </p>
+                <ol style="margin:7.2px 0 0;padding-left:20px;color:#9a8f7d;font-size:13.4px">
+                  <li style="margin:2px 0;color:#efe6d6">Play Maquis — click the Hidden (left) or Revealed (right) side.</li>
+                  <li style="margin:2px 0;opacity:.5">Optionally use PLAN card actions — click the action on a played Maquis.</li>
+                  <li style="margin:2px 0;opacity:.5">Choose one Mission — click the Mission card to attack it. (Ends PLAN)</li>
+                </ol>
+              </div>
+              <div style="flex:1 1 280px;min-width:0"></div>
+            </div>
+          </div>
+
+          <!-- board grid -->
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 178px;gap:16px;align-items:start">
+            <div style="min-width:0">
+
+              <!-- missions -->
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9.6px;margin:9.6px 0">
+                <sc-for list="{{ missions }}" as="m" hint-placeholder-count="4">
+                  <div style="position:relative;background:#201a15;border:1px solid #4a3d2c;border-radius:10px;overflow:hidden;box-shadow:0 5px 14px rgba(0,0,0,.55)">
+                    <img src="{{ m.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                    <span style="position:absolute;top:6px;right:6px;z-index:2;display:block;background:rgba(20,17,14,.88);color:#d99a24;font-weight:800;font-size:10.9px;letter-spacing:.04em;padding:2px 6.4px;border-radius:6px;border:1px solid rgba(217,154,36,.45)">Era 1</span>
+                    <div style="padding:6.4px 8px 8px">
+                      <div style="display:flex;flex-wrap:wrap;gap:4.8px">
+                        <sc-for list="{{ m.facedown }}" as="e" hint-placeholder-count="3">
+                          <span style="font-size:11.2px;padding:1.6px 6.4px;border-radius:5px;background:#2a221b;border:1px solid #3a3025;color:#9a8f7d">🂠</span>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <!-- play area -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:9.6px;margin:9.6px 0">
+                <div style="background:rgba(24,19,14,.5);border:1px solid rgba(122,98,62,.32);border-radius:10px;padding:9.6px 12px">
+                  <h4 style="margin:4px 0;color:#9a8f7d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px">Hidden Maquis</h4>
+                  <div style="display:flex;gap:6.4px;margin-top:4.8px;color:#9a8f7d;font-size:15px">—</div>
+                </div>
+                <div style="background:rgba(24,19,14,.5);border:1px solid rgba(122,98,62,.32);border-radius:10px;padding:9.6px 12px">
+                  <h4 style="margin:4px 0;color:#9a8f7d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px">Revealed Maquis</h4>
+                  <div style="display:flex;gap:6.4px;margin-top:4.8px;color:#9a8f7d;font-size:15px">—</div>
+                </div>
+              </div>
+
+              <!-- hand -->
+              <div style="background:rgba(24,19,14,.5);border:1px solid rgba(122,98,62,.32);border-radius:10px;padding:9.6px 12px;margin:9.6px 0">
+                <h3 style="margin:4px 0;color:#9a8f7d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px">Your hand</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:6.4px;margin-top:4.8px;align-items:flex-start">
+                  <sc-for list="{{ hand }}" as="c" hint-placeholder-count="5">
+                    <div style="width:250px;border-radius:10px;overflow:hidden;background:#201a15;border:1px solid #4a3d2c;box-shadow:0 5px 14px rgba(0,0,0,.55)">
+                      <img src="{{ c.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="margin-top:9.6px;color:#9a8f7d;font-size:12.8px">▸ Log</div>
+            </div>
+
+            <!-- piles rail -->
+            <div style="display:flex;flex-direction:column;gap:6.4px;margin-top:6.4px">
+              <h3 style="margin:0 0 2.4px;color:#9a8f7d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px">Card Piles</h3>
+              <sc-for list="{{ piles }}" as="p" hint-placeholder-count="11">
+                <div style="display:flex;align-items:center;gap:9.6px;padding:5.1px 8px;border-radius:9px;background:rgba(20,17,14,.62);border:1px solid rgba(122,98,62,.32);opacity:{{ p.op }}">
+                  <span style="position:relative;flex:none;width:27px;height:36px;margin:1px 4px 3px 1px;border-radius:4px;border:1px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13.1px;text-shadow:0 1px 2px rgba(0,0,0,.6);background:{{ p.c1 }};box-shadow:1.5px 1.5px 0 {{ p.c2 }},3px 3px 0 {{ p.c3 }},4px 5px 5px rgba(0,0,0,.45)">{{ p.n }}</span>
+                  <span style="font-size:12.8px;color:#efe6d6;line-height:1.15">{{ p.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- fold marker -->
+        <div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(rgba(200,69,47,0),rgba(160,30,20,.55));pointer-events:none"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;border-top:2px dashed #ff8a72"></div>
+        <div style="position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:#c8452f;color:#fff;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 14px;border-radius:6px">Page height 1028px. 125% board size → 1285px. 140% → 1439px.</div>
+
+        <!-- annotations -->
+        <sc-for list="{{ notes }}" as="n" hint-placeholder-count="9">
+          <div style="position:absolute;left:{{ n.x }}px;top:{{ n.y }}px;display:flex;align-items:center;gap:9px;z-index:20">
+            <span style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#c8452f;border:2px solid #ffd9cf;color:#fff;font-weight:800;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.6)">{{ n.n }}</span>
+            <span style="max-width:280px;background:rgba(14,11,9,.94);border:1px solid rgba(255,138,114,.5);color:#ffd9cf;font-size:12.5px;font-weight:600;line-height:1.3;padding:5px 9px;border-radius:6px;text-wrap:pretty">{{ n.t }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- ============================ 1b — redesign, PLAN ============================ -->
+    <div id="1b">
+      <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 9px;border-radius:6px;background:#3a2a12;border:1px solid #7a5a1c;font-size:13px;font-weight:800;letter-spacing:.06em;color:#f0c25a">1b</span>
+        <h2 style="font-family:Newsreader,Georgia,serif;font-size:26px;font-weight:600;margin:0">Proposed — one screen, no scroll</h2>
+        <span style="font-size:13px;color:#8d8474">Same game state. Mission cards 424px instead of 248px.</span>
+      </div>
+
+      <div style="position:relative;width:1920px;height:1080px;overflow:hidden;border:1px solid #3a3025;border-radius:4px;background-color:#14110e;background-image:linear-gradient(rgba(15,12,9,.42),rgba(15,12,9,.62)),url('assets/tabletop.jpg');background-size:cover,cover;background-position:center top,center top;background-repeat:no-repeat,no-repeat;display:flex;flex-direction:column;padding:12px 20px 16px;gap:12px">
+
+        <!-- status bar -->
+        <div style="flex:none;height:56px;display:flex;align-items:center;gap:22px;padding:0 18px;border-radius:10px;background:rgba(18,15,12,.9);border:1px solid rgba(122,98,62,.45)">
+          <div style="flex:none"><strong style="color:#c8452f;letter-spacing:.13em;font-size:19px">RESIST!</strong></div>
+          <div style="flex:none;display:flex;align-items:center;gap:10px;padding:4px 12px 4px 6px;border-radius:999px;background:#c8452f">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#fff;color:#c8452f;font-weight:800;font-size:12px">1</span>
+            <span style="color:#fff;font-size:13px;font-weight:800;letter-spacing:.1em">PLAN</span>
+          </div>
+          <div style="flex:1 1 auto;min-width:0;font-size:15px;color:#efe6d6;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Play Maquis onto Hidden or Revealed, then choose the Mission you attack.</div>
+          <button type="button" style="flex:none;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;color:#9a8f7d;background:transparent;border:1px solid #3a3025;border-radius:999px;width:24px;height:24px;padding:0">?</button>
+
+          <div style="flex:none;display:flex;align-items:center;gap:16px;padding:0 18px;border-left:1px solid #3a3025;border-right:1px solid #3a3025;margin:0 2px">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">SCORE</span>
+              <span style="font-size:17px;font-weight:800;line-height:1;color:#d99a24;white-space:nowrap">★ 0 VP</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">MISSIONS FAILED</span>
+              <span style="display:flex;gap:4px"><i style="display:block;width:26px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:26px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">CIVILIANS LOST</span>
+              <span style="display:flex;gap:4px"><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i></span>
+            </div>
+          </div>
+
+          <div style="flex:none;display:flex;align-items:center;gap:8px">
+            <sc-for list="{{ keyPiles }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:6px" title="{{ p.label }}">
+                <span style="position:relative;flex:none;width:20px;height:27px;border-radius:3px;border:1px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:{{ p.c1 }};box-shadow:1.2px 1.2px 0 {{ p.c2 }},2.4px 2.4px 0 {{ p.c3 }}">{{ p.n }}</span>
+                <span style="font-size:11px;color:#9a8f7d;line-height:1.1;white-space:nowrap">{{ p.label }}</span>
+              </div>
+            </sc-for>
+            <button type="button" style="font-family:inherit;font-size:11px;font-weight:700;color:#9a8f7d;background:transparent;border:1px solid #3a3025;border-radius:6px;padding:5px 8px;white-space:nowrap">All piles</button>
+          </div>
+
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding-left:18px;border-left:1px solid #3a3025">
+            <button type="button" style="font-family:inherit;font-size:14px;font-weight:700;background:rgba(217,154,36,.14);color:#d99a24;border:1px solid rgba(217,154,36,.55);border-radius:8px;padding:7px 16px;white-space:nowrap;opacity:.4">↺ Undo</button>
+            <button type="button" style="font-family:inherit;font-size:14px;background:transparent;color:#9a8f7d;border:1px solid #3a3025;border-radius:8px;padding:6px 10px">⚙</button>
+          </div>
+        </div>
+
+        <!-- mission row -->
+        <div style="flex:none;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:baseline;gap:10px;padding-left:2px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">THE MISSION ROW</span>
+            <span style="font-size:12.5px;color:#d99a24;font-weight:600">▸ Choose one to attack this round</span>
+          </div>
+          <div style="display:flex;gap:16px;justify-content:space-between">
+            <sc-for list="{{ missions }}" as="m" hint-placeholder-count="4">
+              <div style="width:452px;position:relative;border-radius:12px;overflow:hidden;background:#201a15;border:1px solid #4a3d2c;box-shadow:0 8px 22px rgba(0,0,0,.6)">
+                <div style="position:relative">
+                  <img src="{{ m.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                  <span style="position:absolute;top:8px;left:8px;background:rgba(16,13,10,.85);color:#cbbfa6;font-size:11px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:5px;white-space:nowrap">ERA 1 · RE-INVASION OF SPAIN</span>
+                  <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:26px 12px 9px;background:linear-gradient(rgba(16,13,10,0),rgba(14,11,9,.94) 62%)">
+                    <span style="font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:4px;white-space:nowrap;color:{{ m.kwFg }};border:1px solid {{ m.kwBd }}">{{ m.kw }}</span>
+                    <span style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:17px;font-weight:800;white-space:nowrap">
+                      <span title="Defense">🛡 {{ m.def }}</span>
+                      <span style="color:#d99a24" title="Victory Points">★ {{ m.vp }}</span>
+                      <span style="color:#e0a58f" title="Garrison">☗ {{ m.garrison }}</span>
+                    </span>
+                  </div>
+                </div>
+                <div style="padding:9px 12px 8px">
+                  <div style="font-size:16px;font-weight:700;letter-spacing:.01em;color:#efe6d6">{{ m.name }}</div>
+                  <div style="font-size:12.5px;line-height:1.35;color:#b6ab97;margin-top:3px;height:30px;overflow:hidden;text-wrap:pretty">{{ m.effect }}</div>
+                </div>
+                <div style="display:flex;gap:6px;padding:0 12px 12px">
+                  <sc-for list="{{ m.slots }}" as="s" hint-placeholder-count="5">
+                    <div style="width:78px;height:109px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:{{ s.bg }};border:{{ s.border }};color:#6f6558;font-size:22px">{{ s.glyph }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- committed lanes -->
+        <div style="flex:1 1 auto;min-height:0;display:flex;gap:16px;align-items:stretch">
+          <div style="flex:1 1 0;min-width:0;display:flex;gap:0;border-radius:10px;background:rgba(20,16,12,.55);border:1px solid rgba(122,98,62,.32);overflow:hidden">
+            <div style="flex:1 1 0;min-width:0;padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#7a2b20"></span><span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">HIDDEN</span><span style="font-size:11.5px;color:#6f6558">drop here to keep the side secret</span></div>
+              <div style="flex:1 1 auto;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(122,98,62,.4);border-radius:8px;color:#6f6558;font-size:13px">empty</div>
+            </div>
+            <div style="width:1px;background:rgba(122,98,62,.32)"></div>
+            <div style="flex:1 1 0;min-width:0;padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#4f2f74"></span><span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">REVEALED</span><span style="font-size:11.5px;color:#6f6558">drop here to use the revealed action</span></div>
+              <div style="flex:1 1 auto;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(122,98,62,.4);border-radius:8px;color:#6f6558;font-size:13px">empty</div>
+            </div>
+          </div>
+          <div style="flex:none;width:190px;border-radius:10px;background:rgba(20,16,12,.55);border:1px solid rgba(122,98,62,.32);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:.5">
+            <span style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#8d8474">ATTACK STRENGTH</span>
+            <span style="font-size:44px;font-weight:800;line-height:1;color:#6f6558">0</span>
+            <span style="font-size:11px;color:#6f6558">builds as you commit Maquis</span>
+          </div>
+        </div>
+
+        <!-- hand -->
+        <div style="flex:none;position:relative;border-radius:10px;background:rgba(20,16,12,.62);border:1px solid rgba(122,98,62,.38);padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">YOUR HAND</span>
+            <span style="font-size:11.5px;color:#6f6558">click a half to commit that side · hover to read the card</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <sc-for list="{{ hand }}" as="c" hint-placeholder-count="5">
+              <div style="width:230px;position:relative;border-radius:9px;overflow:hidden;background:#201a15;border:1px solid #4a3d2c;box-shadow:0 6px 16px rgba(0,0,0,.55);opacity:{{ c.op }}">
+                <img src="{{ c.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                <div style="position:absolute;left:0;right:0;bottom:0;display:flex">
+                  <div style="flex:1 1 0;padding:4px 6px;background:rgba(122,43,32,.92);border-right:1px solid rgba(0,0,0,.4)">
+                    <div style="font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#ffcfc4">HIDDEN</div>
+                    <div style="font-size:12.5px;font-weight:800;color:#fff;line-height:1.1">⚔ {{ c.hAtk }} <span style="font-size:9.5px;font-weight:700;color:#ffcfc4">{{ c.hTag }}</span></div>
+                  </div>
+                  <div style="flex:1 1 0;padding:4px 6px;background:rgba(79,47,116,.92)">
+                    <div style="font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#dcc9ff">REVEALED</div>
+                    <div style="font-size:12.5px;font-weight:800;color:#fff;line-height:1.1">⚔ {{ c.rAtk }} <span style="font-size:9.5px;font-weight:700;color:#dcc9ff">{{ c.rTag }}</span></div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- hover peek -->
+          <div style="position:absolute;left:432px;bottom:150px;width:404px;z-index:30;border-radius:10px;overflow:hidden;border:2px solid #d99a24;box-shadow:0 20px 50px rgba(0,0,0,.8)">
+            <img src="assets/cards/maquis/roberto.jpg" alt="Roberto" draggable="false" style="display:block;width:100%;height:auto">
+            <div style="display:flex;background:#14110e">
+              <div style="flex:1 1 0;padding:7px 9px;border-right:1px solid #3a3025">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:#e0a58f">HIDDEN · ⚔ 2</div>
+                <div style="font-size:12px;line-height:1.35;color:#efe6d6;margin-top:3px"><b style="color:#d99a24">PLAN</b> Look at the top three cards of the Enemy deck. Discard any of them and put the rest back in any order.</div>
+              </div>
+              <div style="flex:1 1 0;padding:7px 9px">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:#cdb0ff">REVEALED · ⚔ 4</div>
+                <div style="font-size:12px;line-height:1.35;color:#9a8f7d;margin-top:3px">No action.</div>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;left:600px;bottom:120px;z-index:31;background:#d99a24;color:#14110e;font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:5px">HOVER — no right-click needed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ 1c — redesign, ATTACK ============================ -->
+    <div id="1c">
+      <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 9px;border-radius:6px;background:#3a2a12;border:1px solid #7a5a1c;font-size:13px;font-weight:800;letter-spacing:.06em;color:#f0c25a">1c</span>
+        <h2 style="font-family:Newsreader,Georgia,serif;font-size:26px;font-weight:600;margin:0">Proposed — ATTACK, mid-strike</h2>
+        <span style="font-size:13px;color:#8d8474">Where the feedback changes live</span>
+      </div>
+
+      <div style="position:relative;width:1920px;height:1080px;overflow:hidden;border:1px solid #3a3025;border-radius:4px;background-color:#14110e;background-image:linear-gradient(rgba(15,12,9,.42),rgba(15,12,9,.62)),url('assets/tabletop.jpg');background-size:cover,cover;background-position:center top,center top;background-repeat:no-repeat,no-repeat;display:flex;flex-direction:column;padding:12px 20px 16px;gap:12px">
+
+        <!-- status bar -->
+        <div style="flex:none;height:56px;display:flex;align-items:center;gap:22px;padding:0 18px;border-radius:10px;background:rgba(18,15,12,.9);border:1px solid rgba(122,98,62,.45)">
+          <div style="flex:none"><strong style="color:#c8452f;letter-spacing:.13em;font-size:19px">RESIST!</strong></div>
+          <div style="flex:none;display:flex;align-items:center;gap:10px;padding:4px 12px 4px 6px;border-radius:999px;background:#7a2b20">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#fff;color:#7a2b20;font-weight:800;font-size:12px">2</span>
+            <span style="color:#fff;font-size:13px;font-weight:800;letter-spacing:.1em">ATTACK</span>
+          </div>
+          <div style="flex:1 1 auto;min-width:0;font-size:15px;color:#efe6d6;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Spend Attack Strength on the guards, then the Mission. <span style="color:#9a8f7d;font-weight:400">Grunts fall first.</span></div>
+          <button type="button" style="flex:none;font-family:inherit;font-size:12px;font-weight:700;color:#9a8f7d;background:transparent;border:1px solid #3a3025;border-radius:999px;width:24px;height:24px;padding:0">?</button>
+          <div style="flex:none;display:flex;align-items:center;gap:16px;padding:0 18px;border-left:1px solid #3a3025;border-right:1px solid #3a3025;margin:0 2px">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">SCORE</span>
+              <span style="font-size:17px;font-weight:800;line-height:1;color:#d99a24;white-space:nowrap">★ 0 VP</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">MISSIONS FAILED</span>
+              <span style="display:flex;gap:4px"><i style="display:block;width:26px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:26px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:10px;letter-spacing:.12em;color:#8d8474;font-weight:700;white-space:nowrap">CIVILIANS LOST</span>
+              <span style="display:flex;gap:4px"><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i><i style="display:block;width:14px;height:7px;border-radius:2px;background:#2f2820;border:1px solid #4a3d2c"></i></span>
+            </div>
+          </div>
+          <div style="flex:none;display:flex;align-items:center;gap:8px">
+            <sc-for list="{{ keyPiles }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="position:relative;flex:none;width:20px;height:27px;border-radius:3px;border:1px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:{{ p.c1 }};box-shadow:1.2px 1.2px 0 {{ p.c2 }},2.4px 2.4px 0 {{ p.c3 }}">{{ p.n }}</span>
+                <span style="font-size:11px;color:#9a8f7d;line-height:1.1;white-space:nowrap">{{ p.label }}</span>
+              </div>
+            </sc-for>
+            <button type="button" style="font-family:inherit;font-size:11px;font-weight:700;color:#9a8f7d;background:transparent;border:1px solid #3a3025;border-radius:6px;padding:5px 8px;white-space:nowrap">All piles</button>
+          </div>
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding-left:18px;border-left:1px solid #3a3025">
+            <button type="button" style="font-family:inherit;font-size:14px;font-weight:700;background:rgba(217,154,36,.14);color:#d99a24;border:1px solid rgba(217,154,36,.55);border-radius:8px;padding:7px 16px;white-space:nowrap">↺ Undo</button>
+            <button type="button" style="font-family:inherit;font-size:14px;background:transparent;color:#9a8f7d;border:1px solid #3a3025;border-radius:8px;padding:6px 10px">⚙</button>
+          </div>
+        </div>
+
+        <!-- one-line event feed -->
+        <div style="flex:none;display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(20,16,12,.92);border:1px solid rgba(217,154,36,.45);border-radius:999px;padding:5px 16px">
+            <span style="width:7px;height:7px;border-radius:999px;background:#d99a24"></span>
+            <span style="font-size:13px;color:#efe6d6">Pilar's PLAN action flipped 4 Enemies at Recon the Mountain Pass face-up.</span>
+          </div>
+        </div>
+
+        <!-- mission row -->
+        <div style="flex:none;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:baseline;gap:10px;padding-left:2px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">THE MISSION ROW</span>
+            <span style="font-size:12.5px;color:#e0a58f;font-weight:600">▸ Attacking Recon the Mountain Pass — the other three are out of reach this round</span>
+          </div>
+          <div style="display:flex;gap:16px;justify-content:space-between">
+
+            <!-- chosen mission -->
+            <div style="width:452px;position:relative;border-radius:12px;overflow:hidden;background:#241a15;border:2px solid #c8452f;box-shadow:0 0 0 4px rgba(200,69,47,.22),0 10px 26px rgba(0,0,0,.65)">
+              <div style="position:relative">
+                <img src="assets/cards/mission/mountain_pass.jpg" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                <span style="position:absolute;top:8px;left:8px;background:#c8452f;color:#fff;font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:5px">UNDER ATTACK</span>
+                <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:26px 12px 9px;background:linear-gradient(rgba(16,13,10,0),rgba(14,11,9,.94) 62%)">
+                  <span style="font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:4px;white-space:nowrap;color:#e0a58f;border:1px solid #6b3a2c">DEFEAT</span>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:17px;font-weight:800;white-space:nowrap">
+                    <span>🛡 5</span><span style="color:#d99a24">★ 1</span><span style="color:#e0a58f">☗ 4</span>
+                  </span>
+                </div>
+              </div>
+              <div style="padding:9px 12px 8px">
+                <div style="font-size:16px;font-weight:700;color:#efe6d6">Recon the Mountain Pass</div>
+                <div style="font-size:12.5px;line-height:1.35;color:#b6ab97;margin-top:3px;height:30px">Flip all Enemies at one Mission face-up.</div>
+              </div>
+              <div style="display:flex;gap:6px;padding:0 12px 12px">
+                <sc-for list="{{ guards }}" as="g" hint-placeholder-count="4">
+                  <div style="width:78px;position:relative;border-radius:6px;overflow:hidden;border:{{ g.border }};box-shadow:{{ g.glow }};opacity:{{ g.op }}">
+                    <img src="{{ g.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                    <span style="position:absolute;top:0;left:0;background:{{ g.orderBg }};color:{{ g.orderFg }};font-size:9.5px;font-weight:800;letter-spacing:.06em;padding:2px 5px;border-bottom-right-radius:5px">{{ g.order }}</span>
+                    <span style="position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(14,11,9,.88);color:#fff;font-size:12px;font-weight:800;padding:2px 0">🛡 {{ g.def }}</span>
+                  </div>
+                </sc-for>
+                <div style="width:78px;height:109px;border-radius:6px;border:1px dashed rgba(122,98,62,.35);display:flex;align-items:center;justify-content:center;color:#5c5348;font-size:11px;text-align:center;line-height:1.2">room for<br>1 more</div>
+              </div>
+              <!-- strike debit -->
+              <div style="position:absolute;left:104px;bottom:104px;background:#c8452f;color:#fff;font-size:15px;font-weight:800;padding:3px 10px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.7)">−1</div>
+            </div>
+
+            <!-- other missions, dimmed -->
+            <sc-for list="{{ otherMissions }}" as="m" hint-placeholder-count="3">
+              <div style="width:452px;position:relative;border-radius:12px;overflow:hidden;background:#201a15;border:1px solid #3a3025;box-shadow:0 6px 16px rgba(0,0,0,.5);opacity:.42">
+                <div style="position:relative">
+                  <img src="{{ m.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                  <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:26px 12px 9px;background:linear-gradient(rgba(16,13,10,0),rgba(14,11,9,.94) 62%)">
+                    <span style="font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:4px;white-space:nowrap;color:{{ m.kwFg }};border:1px solid {{ m.kwBd }}">{{ m.kw }}</span>
+                    <span style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:17px;font-weight:800;white-space:nowrap">
+                      <span>🛡 {{ m.def }}</span><span style="color:#d99a24">★ {{ m.vp }}</span><span style="color:#e0a58f">☗ {{ m.garrison }}</span>
+                    </span>
+                  </div>
+                </div>
+                <div style="padding:9px 12px 8px">
+                  <div style="font-size:16px;font-weight:700;color:#efe6d6">{{ m.name }}</div>
+                  <div style="font-size:12.5px;line-height:1.35;color:#b6ab97;margin-top:3px;height:30px;overflow:hidden">{{ m.effect }}</div>
+                </div>
+                <div style="display:flex;gap:6px;padding:0 12px 12px">
+                  <sc-for list="{{ m.slots }}" as="s" hint-placeholder-count="4">
+                    <div style="width:78px;height:109px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:{{ s.bg }};border:{{ s.border }};color:#6f6558;font-size:22px">{{ s.glyph }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- committed lanes + attack coin -->
+        <div style="flex:1 1 auto;min-height:0;display:flex;gap:16px;align-items:stretch">
+          <div style="flex:1 1 0;min-width:0;display:flex;border-radius:10px;background:rgba(20,16,12,.55);border:1px solid rgba(122,98,62,.32);overflow:hidden">
+            <div style="flex:none;width:250px;padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#7a2b20"></span><span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">HIDDEN</span></div>
+              <div style="flex:1 1 auto;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(122,98,62,.4);border-radius:8px;color:#6f6558;font-size:13px">empty</div>
+            </div>
+            <div style="width:1px;background:rgba(122,98,62,.32)"></div>
+            <div style="flex:1 1 0;min-width:0;padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#4f2f74"></span><span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">REVEALED</span><span style="font-size:11.5px;color:#6f6558">2 actions still unfired</span></div>
+              <div style="display:flex;gap:10px">
+                <sc-for list="{{ committed }}" as="c" hint-placeholder-count="4">
+                  <div style="width:230px;position:relative;border-radius:9px;overflow:hidden;background:#201a15;border:1px solid {{ c.border }};box-shadow:0 6px 16px rgba(0,0,0,.55)">
+                    <img src="{{ c.art }}" alt="" draggable="false" style="display:block;width:100%;height:auto">
+                    <div style="position:absolute;left:0;top:0;bottom:0;width:50%;background:rgba(10,8,6,.66)"></div>
+                    <div style="position:absolute;left:0;right:0;bottom:0;padding:4px 8px;background:{{ c.barBg }};display:flex;align-items:center;gap:8px">
+                      <span style="font-size:14px;font-weight:800;color:#fff">⚔ {{ c.atk }}</span>
+                      <span style="margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:{{ c.barFg }}">{{ c.bar }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;width:190px;border-radius:10px;background:rgba(200,69,47,.16);border:2px solid #c8452f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative">
+            <span style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#e0a58f">ATTACK STRENGTH</span>
+            <span style="font-size:52px;font-weight:800;line-height:1;color:#fff">7</span>
+            <span style="font-size:11px;color:#e0a58f">left to spend</span>
+            <span style="position:absolute;top:6px;right:10px;color:#ff9a86;font-size:15px;font-weight:800">−1</span>
+          </div>
+        </div>
+
+        <!-- hand -->
+        <div style="flex:none;border-radius:10px;background:rgba(20,16,12,.62);border:1px solid rgba(122,98,62,.38);padding:9px 14px 12px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.16em;color:#8d8474">YOUR HAND</span>
+            <span style="font-size:11.5px;color:#6f6558">played out — a Spy stays until Recover</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:230px;border-radius:9px;overflow:hidden;background:#201a15;border:1px solid #4a3d2c;box-shadow:0 6px 16px rgba(0,0,0,.55);opacity:.75">
+              <img src="assets/cards/spy/spy.jpg" alt="Spy" draggable="false" style="display:block;width:100%;height:auto">
+            </div>
+            <div style="flex:1 1 auto;display:flex;align-items:center;padding-left:8px;color:#6f6558;font-size:13px">Hand played out. When the guards fall, strike the Mission — or end the Attack.</div>
+            <button type="button" style="flex:none;align-self:center;font-family:inherit;font-size:16px;font-weight:700;background:rgba(217,154,36,.9);color:#14110e;border:1px solid #d99a24;border-radius:9px;padding:12px 26px">Done attacking →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================ critique ============================ -->
+  <div style="margin-top:80px;max-width:1180px">
+    <h2 style="font-family:Newsreader,Georgia,serif;font-size:38px;font-weight:600;margin:0 0 8px">Findings</h2>
+    <p style="font-size:15.5px;color:#9a8f7d;margin:0 0 36px">Numbered items are marked on <a href="#1a">1a</a>. Measurements are from the current CSS at a maximized 1920×1080 window, board size 100%.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 48px">
+      <sc-for list="{{ findings }}" as="f" hint-placeholder-count="10">
+        <div style="border-top:1px solid #2f2820;padding-top:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:{{ f.badgeBg }};border:1px solid {{ f.badgeBd }};color:{{ f.badgeFg }};font-weight:800;font-size:12.5px">{{ f.n }}</span>
+            <h3 style="font-family:Newsreader,Georgia,serif;font-size:21px;font-weight:600;margin:0;color:#efe6d6;letter-spacing:0;text-transform:none">{{ f.title }}</h3>
+          </div>
+          <p style="font-size:14.5px;line-height:1.6;color:#c3b9a6;margin:0;text-wrap:pretty">{{ f.body }}</p>
+          <p style="font-size:14.5px;line-height:1.6;color:#e5c583;margin:10px 0 0;text-wrap:pretty"><b style="color:#d99a24;font-size:11px;letter-spacing:.14em;text-transform:uppercase">Fix &nbsp;</b>{{ f.fix }}</p>
+        </div>
+      </sc-for>
+    </div>
+
+    <h2 style="font-family:Newsreader,Georgia,serif;font-size:38px;font-weight:600;margin:76px 0 8px">Order to build it in</h2>
+    <p style="font-size:15.5px;color:#9a8f7d;margin:0 0 28px">Each step is independently shippable and each one buys back space for the next.</p>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="6">
+        <div style="display:flex;gap:20px;align-items:baseline;padding:16px 0;border-top:1px solid #2f2820">
+          <span style="flex:none;width:34px;font-family:Newsreader,Georgia,serif;font-size:24px;color:#7a6f5e">{{ s.n }}</span>
+          <span style="flex:none;width:340px;font-size:16px;font-weight:700;color:#efe6d6">{{ s.what }}</span>
+          <span style="flex:1 1 auto;font-size:14.5px;line-height:1.55;color:#9a8f7d;text-wrap:pretty">{{ s.why }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    const fd = (n) => Array.from({ length: n }, (_, i) => ({ i }));
+    const slot = (kind) =>
+      kind === 'facedown'
+        ? { bg: 'rgba(30,24,19,.9)', border: '1px solid #4a3d2c', glyph: '?' }
+        : { bg: 'transparent', border: '1px dashed rgba(122,98,62,.3)', glyph: '' };
+    const slots = (garrison, max) => {
+      const out = [];
+      for (let i = 0; i < max; i++) out.push(slot(i < garrison ? 'facedown' : 'empty'));
+      return out;
+    };
+
+    const missions = [
+      { art: 'assets/cards/mission/mountain_pass.jpg', name: 'Recon the Mountain Pass', kw: 'DEFEAT', kwFg: '#e0a58f', kwBd: '#6b3a2c', def: 5, vp: 1, garrison: 4,
+        effect: 'Flip all Enemies at one Mission face-up.', facedown: fd(4), slots: slots(4, 5) },
+      { art: 'assets/cards/mission/bunker.jpg', name: 'Destroy the Bunker', kw: 'DEFEND', kwFg: '#9fbede', kwBd: '#385065', def: 5, vp: 1, garrison: 2,
+        effect: 'When this Mission is chosen, immediately choose a Maquis card (not a Spy) from your hand and discard it.', facedown: fd(2), slots: slots(2, 5) },
+      { art: 'assets/cards/mission/border.jpg', name: 'Cross the Border', kw: 'DEFEAT', kwFg: '#e0a58f', kwBd: '#6b3a2c', def: 3, vp: 1, garrison: 3,
+        effect: 'Draw one fewer card from the Hidden deck during the Recover phase.', facedown: fd(3), slots: slots(3, 5) },
+      { art: 'assets/cards/mission/villa.jpg', name: "Attack the Commander's Villa", kw: 'DEFEAT', kwFg: '#e0a58f', kwBd: '#6b3a2c', def: 5, vp: 3, garrison: 4,
+        effect: 'For each undefeated Enemy at this Mission, draw a card from the Civilian deck and place it face-up in the Graveyard.', facedown: fd(4), slots: slots(4, 5) },
+    ];
+
+    const hand = [
+      { art: 'assets/cards/maquis/emilio.jpg', hAtk: 0, hTag: 'PLAN/ATTACK', rAtk: 2, rTag: 'ATTACK', op: 1 },
+      { art: 'assets/cards/maquis/benigno.jpg', hAtk: 2, hTag: '—', rAtk: 0, rTag: 'ATTACK', op: 1 },
+      { art: 'assets/cards/maquis/roberto.jpg', hAtk: 2, hTag: 'PLAN', rAtk: 4, rTag: '—', op: 1 },
+      { art: 'assets/cards/maquis/pilar.jpg', hAtk: 0, hTag: 'PLAN', rAtk: 2, rTag: 'PLAN', op: 1 },
+      { art: 'assets/cards/spy/spy.jpg', hAtk: 0, hTag: '—', rAtk: 0, rTag: '—', op: 0.72 },
+    ];
+
+    const piles = [
+      ['Hidden deck', 10, '#c8452f', '#a5371f', '#822a17'],
+      ['Hidden discard', 0, '#c8452f', '#a5371f', '#822a17'],
+      ['Recruit deck', 12, '#7c5cff', '#5f45cc', '#48339e'],
+      ['Revealed pile', 0, '#7c5cff', '#5f45cc', '#48339e'],
+      ['Enemy deck', 19, '#5b5148', '#463e37', '#332d28'],
+      ['Enemy discard', 0, '#5b5148', '#463e37', '#332d28'],
+      ['Mission deck', 6, '#d99a24', '#b47d17', '#8c6111'],
+      ['Defeated', 0, '#d99a24', '#b47d17', '#8c6111'],
+      ['Graveyard', 0, '#6ea84f', '#57883d', '#42682e'],
+      ['Spy supply', 3, '#3f8f99', '#316f77', '#234f55'],
+      ['Removed', 0, '#4a4038', '#3a322c', '#2a241f'],
+    ].map(([label, n, c1, c2, c3]) => ({ label, n, c1, c2, c3, op: n === 0 ? 0.42 : 1 }));
+
+    const keyPiles = [
+      { label: 'Hidden', n: 10, c1: '#c8452f', c2: '#a5371f', c3: '#822a17' },
+      { label: 'Enemy', n: 19, c1: '#5b5148', c2: '#463e37', c3: '#332d28' },
+      { label: 'Missions', n: 6, c1: '#d99a24', c2: '#b47d17', c3: '#8c6111' },
+      { label: 'Graveyard', n: 0, c1: '#6ea84f', c2: '#57883d', c3: '#42682e' },
+    ];
+
+    const notes = [
+      { n: 1, x: 700, y: 232, t: '230px of guidance that restates the same three steps every round.' },
+      { n: 2, x: 612, y: 494, t: 'Every printed stat — Defense, VP, Garrison, era, effect — renders about 5px tall.' },
+      { n: 3, x: 342, y: 556, t: 'Garrison chips wrap, so tile height jumps as Enemies arrive.' },
+      { n: 4, x: 880, y: 652, t: 'Two empty rectangles hold the board open all game.' },
+      { n: 5, x: 452, y: 940, t: 'The hand is three cards per row and eats 370px. Raise board size to 125% and it goes below the fold.' },
+      { n: 6, x: 1288, y: 448, t: '5 of 11 pile tiles read 0, and Graveyard duplicates the top bar.' },
+      { n: 7, x: 962, y: 84, t: 'Both loss conditions are hidden until you are already losing.' },
+      { n: 8, x: 1216, y: 26, t: 'Undo carries the same visual weight as the version number.' },
+      { n: 9, x: 120, y: 372, t: '330px of unused table on each side — the column is capped at 1260px.' },
+    ];
+
+    const guards = [
+      { art: 'assets/cards/enemy/grunt.jpg', def: 1, order: 'STRIKE 1st', orderBg: '#c8452f', orderFg: '#fff', border: '2px solid #c8452f', glow: '0 0 0 3px rgba(200,69,47,.35)', op: 1 },
+      { art: 'assets/cards/enemy/grunt.jpg', def: 1, order: 'STRIKE 1st', orderBg: '#c8452f', orderFg: '#fff', border: '2px solid #c8452f', glow: '0 0 0 3px rgba(200,69,47,.35)', op: 1 },
+      { art: 'assets/cards/enemy/guard.jpg', def: 2, order: '2nd', orderBg: 'rgba(14,11,9,.85)', orderFg: '#9a8f7d', border: '1px solid #3a3025', glow: 'none', op: 0.5 },
+      { art: 'assets/cards/enemy/military.jpg', def: 2, order: '3rd', orderBg: 'rgba(14,11,9,.85)', orderFg: '#9a8f7d', border: '1px solid #3a3025', glow: 'none', op: 0.5 },
+    ];
+
+    const otherMissions = missions.slice(1);
+
+    const committed = [
+      { art: 'assets/cards/maquis/emilio.jpg', atk: 2, bar: 'ATTACK · USE', barBg: 'rgba(217,154,36,.92)', barFg: '#3a2a06', border: '#d99a24' },
+      { art: 'assets/cards/maquis/benigno.jpg', atk: 0, bar: 'ATTACK · USE', barBg: 'rgba(217,154,36,.92)', barFg: '#3a2a06', border: '#d99a24' },
+      { art: 'assets/cards/maquis/roberto.jpg', atk: 4, bar: 'SPENT', barBg: 'rgba(20,16,12,.9)', barFg: '#6f6558', border: '#4a3d2c' },
+      { art: 'assets/cards/maquis/pilar.jpg', atk: 2, bar: 'USED IN PLAN', barBg: 'rgba(20,16,12,.9)', barFg: '#6f6558', border: '#4a3d2c' },
+    ];
+
+    const red = { badgeBg: '#3a1b14', badgeBd: '#7a3325', badgeFg: '#ff9a86' };
+    const gold = { badgeBg: '#3a2a12', badgeBd: '#7a5a1c', badgeFg: '#f0c25a' };
+
+    const findings = [
+      { n: '1', ...red, title: 'The guidance tile is the largest object on the table',
+        body: 'The breadcrumb plus the phase message occupy roughly 240px of vertical space, permanently, and the three numbered steps are identical every round. It is the single biggest consumer of the space the cards need, and a returning player reads it zero times after round two.',
+        fix: 'Collapse it to one sentence in the status bar, with the numbered steps behind a "?". Put the situational prompt where the situation is — on the Mission that needs choosing, on the card that can fire.' },
+      { n: '2', ...red, title: 'Printed stats are rendered as pixels when you already hold them as data',
+        body: 'A Mission tile is 248px wide, so its 1050px photo lands at 24% scale: Defense, VP, Garrison, the era subtitle and the effect text all render around 5px tall. The themed-frame branch of Card.tsx renders those fields as real text; the art branch dropped them and replaced them with a photo of them.',
+        fix: 'Keep the photo for identity, overlay the numbers. A stat rail across the foot of the art carries keyword, Defense, VP and Garrison at 17px, and the effect line prints below the art as real text. Zoom stops being the only way to read a card.' },
+      { n: '3', ...gold, title: 'The garrison is a wrapping chip row, not a rank of guards',
+        body: 'Enemy tokens are flex items that wrap, so four guards break onto two lines and the tile grows. Tile heights differ across the row and change mid-round when a Radio Operator reinforces, which moves everything below.',
+        fix: 'Give every Mission a fixed garrison strip of five slots. Filled slots show the Enemy, empty ones show a faint outline — so the height never moves and you can see how many more can still arrive.' },
+      { n: '4', ...gold, title: 'The play zones hold the board open while empty',
+        body: 'Hidden and Revealed are two fixed 50/50 rectangles showing an em dash for most of PLAN. In round one they cost about 75px to say nothing, and they are the thing standing between the Mission row and your hand.',
+        fix: 'Make them one lane split by a divider, sized to the cards in them, sitting directly under the Mission row so the drop target is between the source and the destination.' },
+      { n: '5', ...red, title: 'Your hand is below the fold on the first turn of the game',
+        body: 'At 1920×1080 the page measures about 1165px, so the second row of a five-card hand is cut off — and 250px hand cards mean three per row. At 140% board size, the setting you added to make cards readable, roughly 550px sits below the fold.',
+        fix: 'No scroll, ever. Three bands that add up to 1080: status, Mission row, your side of the table. Hand cards drop to 200px and sit in one row of up to eight.' },
+      { n: '6', ...gold, title: 'The pile rail spends 178px on four useful numbers',
+        body: 'Eleven tiles of equal weight, five of them reading zero at setup. Graveyard duplicates the topbar civilian counter. Meanwhile that 178px column is the width that would make Mission cards readable.',
+        fix: 'Four counts inline in the status bar — Hidden deck, Enemy deck, Mission deck, Graveyard — and the other seven behind "All piles". The rail disappears and Mission cards go from 248px to 424px wide.' },
+      { n: '7', ...red, title: 'You cannot see how you lose until you are losing',
+        body: 'App.tsx renders the failed-missions and civilians pills only when the count is above zero. The two loss conditions — the shape of the whole game — are invisible for the first several rounds, then appear as a surprise.',
+        fix: 'Always-on tracks: two segments for missions failed, five for civilians lost, empty at the start. A new player learns the stakes on turn one; a veteran reads the position at a glance.' },
+      { n: '8', ...gold, title: 'Undo looks like the version number',
+        body: 'Undo, v0.1.9 and the cog are three identically weighted ghost buttons. The most-used affordance in a solitaire game — where the whole point is trying a line and reconsidering — is indistinguishable from a build stamp.',
+        fix: 'Undo gets the accent treatment and an icon; the version stamp moves into Settings.' },
+      { n: '9', ...red, title: 'Attack Strength is shown twice, 400px apart',
+        body: 'During ATTACK the topbar carries a red pill and the guidance tile carries a large meter, both reading the same number, with the "+N" gain animation on one and the bump animation on the other. Neither is near the Enemies you spend it on.',
+        fix: 'One object, at the seam between the Mission row and your committed cards — where the strength is generated and where it is spent. Debits count down on it and float a red −N on the token you struck.' },
+      { n: '10', ...gold, title: 'Feedback lands in the corner, away from the cards',
+        body: 'Log toasts stack in the bottom-left, four deep, over the Hidden Maquis zone, restating lines from a Log that is collapsed. Card flights travel up to 1000px to land on a number chip in the rail. The motion is expensive and the payoff is a corner of the screen nobody is looking at.',
+        fix: 'One event line, centred under the status bar, one message at a time, and only for things not already visible on the board. Everything else animates on the card it happened to — the struck Enemy takes the hit, the reinforced Mission flashes its garrison strip.' },
+      { n: '11', ...gold, title: 'Strike order is taught by punishing the misclick',
+        body: 'Click a Guard while Grunts stand and the board pulses the Grunts at you for 1.5 seconds. It works, but it only fires after you have made the mistake, and the pulse competes with the ochre pick-pulse used elsewhere.',
+        fix: 'Rank the garrison before the click: legal targets lit with a red ring and "STRIKE 1st", the rest dimmed with a quiet 2nd/3rd marker. Reserve pulsing for exactly one thing at a time.' },
+      { n: '12', ...gold, title: 'Right-click zoom carries too much of the load',
+        body: 'Zoom is well built and correctly sized, but it is currently the only way to read a card. That makes a modal round-trip part of every evaluation of every card, several times a turn.',
+        fix: 'Hover-peek: pointing at a card lifts a 2× copy with both sides\u2019 printed text as real HTML. Keep right-click zoom for the full photo. The peek answers the common question without a modal.' },
+    ];
+
+    const steps = [
+      { n: '01', what: 'Drop the 1260px cap and the pile rail', why: 'The single change that buys the most: Mission cards go from 248px to 424px wide with no zoom, no redraw, no new art. Move four pile counts into the status bar and put the rest behind a disclosure.' },
+      { n: '02', what: 'Overlay the stats the photo cannot show', why: 'Stat rail on the art, effect text as real HTML below it. The data is already loaded and typed; this is presentation only, and it answers the era-legibility item in your own backlog.' },
+      { n: '03', what: 'Shrink guidance to one line', why: 'Frees ~180px. Keep the full steps behind a "?" and let the board carry situational prompts.' },
+      { n: '04', what: 'Rebuild the vertical rhythm as three fixed bands', why: 'Status, Mission row, your side of the table. Once 01–03 have freed the height, 1080 fits without scrolling, which is what makes higher board-size settings usable rather than a tradeoff.' },
+      { n: '05', what: 'Fixed five-slot garrison strips', why: 'Stops tile heights moving and gives reinforcements somewhere legible to land.' },
+      { n: '06', what: 'Consolidate feedback', why: 'One Attack Strength object, one event line, on-card animation for everything else. Then re-run the tier-2 pass: the screenshots become a much better read on whether the board is legible.' },
+    ];
+
+    return { missions, otherMissions, hand, piles, keyPiles, notes, guards, committed, findings, steps };
+  }
+}
+</script>
+</body>
+</html>

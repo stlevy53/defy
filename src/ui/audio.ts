@@ -13,6 +13,7 @@ export type SfxName =
   | 'strike'
   | 'slash'
   | 'reinforce'
+  | 'civilian'
   | 'defeat'
   | 'loss'
   | 'winDraw'
@@ -29,6 +30,7 @@ export const SFX_NAMES: readonly SfxName[] = [
   'strike',
   'slash',
   'reinforce',
+  'civilian',
   'defeat',
   'loss',
   'winDraw',
@@ -51,6 +53,7 @@ const CUE_FILE: Record<SfxName, string> = {
   choose: 'Mission attack selection audio',
   strike: 'Gunshot',
   slash: 'Knife slash',
+  civilian: 'Civilian Death',
   defeat: 'Explosion',
   loss: 'Defeat Audio',
   winDraw: 'Draw Audio',

@@ -12,8 +12,9 @@ import { useCallback, useEffect, useState } from 'react'
 
 const KEY = 'defy.uiScale'
 
-/** Offered steps. 1 is the historical size; the top end is comfortable on a 1920-wide window. */
-export const UI_SCALES: readonly number[] = [1, 1.1, 1.25, 1.4, 1.6]
+/** Offered steps. 1 is the historical size; the lower steps help on laptop screens, the top end is
+ *  comfortable on a 1920-wide window. */
+export const UI_SCALES: readonly number[] = [0.75, 0.9, 1, 1.1, 1.25, 1.4]
 
 const DEFAULT_SCALE = 1
 
@@ -31,8 +32,8 @@ function apply(scale: number): void {
   document.documentElement.style.zoom = scale === DEFAULT_SCALE ? '' : String(scale)
 }
 
-/** Applies the stored scale before the first render, so a board saved at 160% doesn't flash at 100%
- *  on launch. The hook keeps it in sync from then on. */
+/** Applies the stored scale before the first render, so a board saved at a non-default size doesn't
+ *  flash at 100% on launch. The hook keeps it in sync from then on. */
 export function applyStoredUiScale(): void {
   apply(readStored())
 }

@@ -26,7 +26,7 @@ body {
     url('/tabletop.jpg') center top / cover no-repeat fixed,
     var(--bg);
 }
-#root { display: flex; flex-direction: column; padding: 12px 20px 16px; gap: 12px; min-height: 100vh; }
+#root { display: flex; flex-direction: column; padding: 12px 20px 16px; gap: 8px; min-height: 100vh; }
 /* The single top-level div React renders into #root carries no layout role of its own — its
  *  children (status bar, event line, missions, committed lanes, hand) are the fixed-rhythm bands,
  *  so they need to be direct flex children of #root, not grandchildren of an unstyled wrapper. */
@@ -55,8 +55,8 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
  *  wrapper — Piles / "?" popovers anchor inside it and open below. */
 .board-chrome {
   position: sticky; top: 0; z-index: 50;
-  display: flex; flex-direction: column; gap: 12px;
-  padding-bottom: 4px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding-bottom: 2px;
   background: rgba(15, 12, 9, 0.9);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
@@ -191,14 +191,14 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
  *  the newest message is shown, and useLogToasts filters out anything that already animates on a
  *  card (a strike's cost floats on the target and the Attack Strength token instead; a
  *  reinforcement flashes the garrison strip) — see the .toast rule below for the pill itself. */
-.event-line { flex: none; height: 29px; display: flex; align-items: center; justify-content: center; }
+.event-line { flex: none; height: 22px; display: flex; align-items: center; justify-content: center; }
 
 /* The single Attack Strength object (Phase 6) — was a topbar pill AND a turn-tile meter showing the
  *  same number twice. Lives at the right end of the committed lanes (.play-area), the seam between
  *  where the number is generated and where it's spent. Dormant outside ATTACK: quieter, no accent
  *  border, sublabel explains what fills it instead of claiming there's something to spend yet. */
 .attack-token {
-  flex: none; width: 190px; align-self: stretch;
+  flex: none; width: 150px; align-self: stretch;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   position: relative; text-align: center; padding: 10px;
   border-radius: 10px; background: rgba(200, 69, 47, 0.16); border: 2px solid var(--accent);
@@ -206,7 +206,7 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 }
 .attack-token.dormant { opacity: 0.5; background: rgba(122, 98, 62, 0.12); border: 2px solid transparent; }
 .at-label { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #e0a58f; }
-.attack-token.dormant .at-label { color: var(--muted); }
+.attack-token.dormant .at-label { color: #c2b6a1; }
 .at-value {
   font-size: 52px; font-weight: 800; line-height: 1; color: #fff; min-width: 1.2ch;
   display: inline-block; animation: at-bump 0.32s ease-out;
@@ -215,7 +215,8 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
   0% { transform: scale(1.22); color: var(--accent-2); }
   100% { transform: scale(1); color: #fff; }
 }
-.at-sub { font-size: 11px; color: var(--muted); }
+.at-sub { font-size: 11px; color: #c2b6a1; }
+.at-toclear { font-size: 12px; font-weight: 800; color: #e0a58f; letter-spacing: 0.04em; }
 .at-gain {
   position: absolute; top: 6px; right: 10px; z-index: 2;
   background: var(--win); color: #14110e; border-radius: 999px;
@@ -282,7 +283,9 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
 }
 .card.mission .click-hint { top: 0.45rem; bottom: auto; }
 .card.mission.actionable:hover .click-hint,
-.card.mission.actionable:focus-visible .click-hint { opacity: 1; }
+.card.mission.actionable:focus-visible .click-hint,
+.card.played.usable:hover .click-hint,
+.card.played.usable:focus-visible .click-hint { opacity: 1; }
 .card.mission.failed:not(.has-art) { opacity: 0.5; }
 .card.mission.defeated { border-color: var(--win); }
 
@@ -492,13 +495,15 @@ button.enemy.pickable.picked::after {
 .zone-swatch { flex: none; width: 8px; height: 8px; border-radius: 2px; }
 .zone-swatch.hidden { background: #7a2b20; }
 .zone-swatch.revealed { background: #4f2f74; }
-.zone-name { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-.zone-hint { font-size: 11.5px; color: #6f6558; }
+.zone-name { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #d3c6ae; }
+.zone-hint { font-size: 11.5px; color: #a99d8a; }
 .zone-empty {
   flex: 1 1 auto; min-height: 60px; display: flex; align-items: center; justify-content: center;
   border: 1px dashed rgba(122, 98, 62, 0.4); border-radius: 8px; color: #6f6558; font-size: 0.78rem;
 }
-.zone .cards { flex: 1 1 auto; }
+/* Committed cards wrap into a compact grid that packs to the top of the lane, so a whole round's
+   commit is visible without scrolling the lane (see the width override below). */
+.zone .cards { flex: 1 1 auto; align-content: flex-start; }
 /* Hand — sized to its content (flex: none), never to fill leftover space: an empty rectangle under
  *  a full-height hand was the flaw this rebuild removes. */
 .hand {
@@ -508,8 +513,8 @@ button.enemy.pickable.picked::after {
 }
 /* Header note: a defeated Mission (Cross the Border / Valley) changes the size of the next hand.
  * Shown inline with the "Your hand" title so the player is warned before clicking Continue. */
-.hand-head { display: flex; align-items: center; gap: 0.5rem; }
-.hand-hint { margin: 0 0 0.3rem; font-size: 11.5px; color: #6f6558; }
+.hand-head { display: flex; align-items: center; gap: 0.5rem; color: #d3c6ae; }
+.hand-hint { margin: 0 0 0.3rem; font-size: 11.5px; color: #a99d8a; }
 .hand-draw-note {
   text-transform: none; letter-spacing: 0; font-weight: 700; font-size: 0.72rem;
   padding: 0.05rem 0.45rem; border-radius: 999px; border: 1px solid;
@@ -518,7 +523,7 @@ button.enemy.pickable.picked::after {
 .hand-draw-note.good { color: #bfe3a6; background: rgba(45, 110, 40, 0.32); border-color: rgba(150, 220, 130, 0.55); }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
 .hand .cards { flex-wrap: nowrap; overflow-x: auto; }
-.card.played { width: 230px; padding: 0; overflow: hidden; }
+.card.played { width: 230px; padding: 0; overflow: hidden; position: relative; }
 .card.played.mcard { padding-bottom: 0.45rem; }
 .hand-card { width: 230px; padding: 0; overflow: hidden; }
 .card.played.mcard.hidden { border-color: #7a2b20; }
@@ -663,10 +668,34 @@ button.enemy.pickable.picked::after {
 
 /* Played Maquis: dim the half not in play. The foot bar sits under the card so printed text stays
  *  readable, and — unlike the old use-under button — is always present, not just while firable. */
-.played-wrap { display: flex; flex-direction: column; align-items: stretch; width: 230px; }
+.played-wrap { display: flex; flex-direction: column; align-items: stretch; width: 230px; position: relative; }
 .played-wrap.is-sliding { opacity: 0.35; }
 .card.played.has-art { width: 230px; }
 .played-wrap .card.played.has-art { width: 100%; }
+
+/* Committed lane: a four-column grid. A round's commit shows up to four across per row; extra cards
+   wrap to a second row, of which only the top quarter peeks above the fold — enough for the player
+   to see there are more cards and scroll the lane to reach them. Rows are a fixed height so the
+   "quarter peek" is exact, and the lane's max-height is one full row plus that quarter. The card art
+   scales within its cell (object-fit) while the foot bar stays pinned below. Scoped to .play-area so
+   the hand keeps its 230px cards. */
+.play-area .zone { padding-top: 0.4rem; padding-bottom: 0.4rem; overflow: hidden; }
+.play-area .zone-head { margin-bottom: 0.2rem; }
+.play-area .zone .cards {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem;
+  align-content: start; flex: 0 1 auto; min-height: 0;
+  grid-auto-rows: var(--lane-row-h, 150px);
+  max-height: calc(var(--lane-row-h, 150px) * 1.25 + 0.4rem);
+  overflow-x: hidden; overflow-y: auto;
+}
+.play-area .zone .cards > .played-wrap,
+.play-area .zone .cards > .card.played { min-width: 0; max-width: none; width: auto; height: 100%; }
+.play-area .played-wrap { display: flex; flex-direction: column; }
+.play-area .played-wrap .card.played.has-art { flex: 1 1 auto; min-height: 0; width: 100%; }
+.play-area .played-wrap .card.played.has-art .card-art { width: 100%; height: 100%; object-fit: contain; display: block; }
+.play-area .card-foot-bar { flex: 0 0 auto; min-height: 24px; padding: 3px 6px; }
+.play-area .card-foot-bar .cfb-attack { font-size: 12px; }
+.play-area .card-foot-bar .cfb-state { font-size: 9px; }
 .side-dim { position: absolute; top: 0; bottom: 0; width: 50%; background: rgba(10, 8, 6, 0.62); pointer-events: none; }
 .side-dim.left { left: 0; }
 .side-dim.right { right: 0; }
@@ -685,6 +714,8 @@ button.side-dim.moveable:focus-visible {
 }
 button.side-dim.moveable:hover .move-label,
 button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
+.side-dim.locked { pointer-events: auto; cursor: help; }
+.side-dim.locked:hover .move-label { opacity: 1; }
 .move-side {
   display: block; width: calc(100% - 0.7rem); margin: 0.25rem 0.35rem 0;
   font-family: inherit; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.03em;
@@ -693,19 +724,30 @@ button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
   border: 1px solid rgba(217, 154, 36, 0.45); border-radius: 6px; padding: 0.22rem 0.4rem;
 }
 .move-side:hover, .move-side:focus-visible { background: rgba(217, 154, 36, 0.32); outline: none; }
+.move-side.locked {
+  cursor: help; opacity: 0.85; background: rgba(20, 16, 12, 0.45);
+  color: var(--muted); border-color: rgba(122, 98, 62, 0.45);
+}
 .card-foot-bar {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
-  margin: 0; border: none; font-family: inherit; padding: 4px 8px;
+  margin: 0; border: none; font-family: inherit; padding: 8px 10px;
+  min-height: 40px; position: relative; flex-shrink: 0;
   background: rgba(20, 16, 12, 0.9); cursor: default;
+  touch-action: manipulation;
 }
-.card-foot-bar .cfb-attack { font-size: 14px; font-weight: 800; color: #fff; }
+.card-foot-bar .cfb-attack { font-size: 15px; font-weight: 800; color: #fff; }
 .card-foot-bar .cfb-state {
-  font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: #6f6558;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: #6f6558;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;
 }
-.card-foot-bar.firable { background: rgba(217, 154, 36, 0.92); cursor: pointer; }
+.card-foot-bar.firable { background: rgba(217, 154, 36, 0.92); cursor: pointer; z-index: 2; }
 .card-foot-bar.firable .cfb-state { color: #14110e; }
 .card-foot-bar.firable:hover, .card-foot-bar.firable:focus-visible { background: var(--accent-2); outline: none; }
+/* Extra hit padding around the gold bar — the seam with the card above was easy to miss, and a
+ *  fidgety mouseup just off the control used to eat the click. */
+.card-foot-bar.firable::after {
+  content: ''; position: absolute; inset: -8px -6px -12px;
+}
 .action-live.art { position: absolute; top: 6px; right: 6px; margin: 0; }
 
 /* Mission art: image on top, Enemies guarding it below; Defense pill only when modified this round. */
@@ -1394,12 +1436,31 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 }
 .settings-panel {
   position: relative; z-index: 1; width: min(440px, 100%);
+  display: flex; flex-direction: column;
+  max-height: min(85vh, 36rem); overflow: hidden;
   background: linear-gradient(180deg, #241d16, var(--panel));
   border: 1px solid rgba(122, 98, 62, 0.55); border-radius: 14px;
   padding: 1.3rem 1.5rem 1.5rem; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
   animation: whatsnew-rise 0.25s ease both;
 }
-.settings-title { margin: 0 0 1rem; color: var(--ink); font-size: 1.3rem; text-transform: none; letter-spacing: 0.02em; }
+.settings-title { margin: 0 0 0.9rem; color: var(--ink); font-size: 1.3rem; text-transform: none; letter-spacing: 0.02em; }
+/* Tab strip: same chrome as the .scale-opt option chips, one row across the panel. Pinned above the
+   scrolling pane so the sections stay reachable as the settings list grows. */
+.settings-tabs { display: flex; gap: 0.4rem; margin: 0 0 0.9rem; }
+.settings-tab {
+  flex: 1 1 auto; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  padding: 0.45rem 0.5rem; border-radius: 8px; color: var(--ink);
+  background: rgba(20, 15, 10, 0.5); border: 1px solid var(--line);
+  transition: border-color 0.1s, background 0.1s, transform 0.1s, color 0.1s;
+}
+.settings-tab:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+.settings-tab.active { background: var(--accent-2); border-color: var(--accent-2); color: #241503; }
+/* Only the pane scrolls; the title + tabs + save/load status stay put (see .settings-panel cap). */
+.settings-pane { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -0.3rem; padding: 0 0.3rem; }
+.settings-group-label {
+  color: var(--accent-2); text-transform: uppercase; letter-spacing: 0.14em;
+  font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.3rem 0;
+}
 .settings-actions { display: flex; flex-direction: column; gap: 0.6rem; }
 .settings-item {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; text-align: left;
@@ -1443,6 +1504,72 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .settings-status.warn { color: #241503; background: var(--accent-2); border-color: var(--accent-2); }
 .settings-status.err { color: #fff; background: var(--warn); border-color: var(--warn); }
 .settings-foot { margin: 1rem 0 0; color: var(--muted); font-size: 0.74rem; text-align: center; }
+
+/* --- Profile tab -------------------------------------------------------------------------------- */
+.profile-panel { gap: 0.9rem; }
+.profile-empty { color: var(--muted); font-size: 0.86rem; text-align: center; padding: 0.6rem 0; margin: 0; }
+.profile-status { margin: 0.2rem 0.3rem 0; color: var(--accent-2); }
+
+/* Headline stat tiles */
+.profile-tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; }
+.profile-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem; text-align: center;
+  padding: 0.5rem 0.25rem; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--line);
+}
+.profile-tile-value { font-weight: 800; font-size: 1rem; color: var(--ink); line-height: 1.1; }
+.profile-tile-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+/* Chart */
+.profile-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+.profile-toggle { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: var(--muted); cursor: pointer; }
+.profile-toggle input { accent-color: var(--accent-2); }
+.score-chart {
+  width: 100%; height: auto; display: block; margin: 0.35rem 0 0.1rem;
+  background: rgba(20, 15, 10, 0.5); border: 1px solid var(--line); border-radius: 9px;
+}
+.chart-axis { stroke: var(--line); stroke-width: 1; }
+.chart-guide { stroke: rgba(122, 98, 62, 0.35); stroke-width: 1; stroke-dasharray: 2 3; }
+.chart-guide-label { fill: var(--muted); font-size: 8px; }
+.chart-line { fill: none; stroke-width: 2; }
+.chart-line.official { stroke: var(--accent-2); }
+.chart-line.progress { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.8; }
+.chart-dot.official { fill: var(--accent-2); }
+.chart-dot.progress { fill: var(--muted); opacity: 0.8; }
+
+/* Outcome bars */
+.profile-bars { display: flex; flex-direction: column; gap: 0.3rem; }
+.profile-bar-row { display: grid; grid-template-columns: 6.5rem 1fr 1.4rem; align-items: center; gap: 0.5rem; }
+.profile-bar-label { font-size: 0.76rem; color: var(--ink); }
+.profile-bar-track { height: 0.5rem; border-radius: 4px; background: rgba(20, 15, 10, 0.6); overflow: hidden; }
+.profile-bar-fill { display: block; height: 100%; border-radius: 4px; }
+.profile-bar-fill.win { background: var(--win); }
+.profile-bar-fill.loss { background: var(--warn); }
+.profile-bar-count { font-size: 0.76rem; color: var(--muted); text-align: right; }
+
+/* Personal records + history rows */
+.profile-records, .profile-history { display: flex; flex-direction: column; gap: 0.25rem; }
+.profile-record-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.78rem; }
+.profile-record-label { color: var(--muted); }
+.profile-record-value { color: var(--ink); font-weight: 700; text-align: right; }
+.profile-record-value.muted { color: var(--muted); font-weight: 400; }
+.profile-record-seed { color: var(--muted); font-weight: 400; font-size: 0.72rem; }
+.profile-history-row {
+  display: grid; grid-template-columns: 3rem 1fr auto 2rem; align-items: center; gap: 0.5rem;
+  font-size: 0.76rem; padding: 0.3rem 0.5rem; border-radius: 7px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+}
+.profile-history-row.win { border-left-color: var(--win); }
+.profile-history-row.loss { border-left-color: var(--warn); }
+.profile-history-when { color: var(--muted); }
+.profile-history-outcome { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-history-score { color: var(--ink); font-weight: 700; }
+.profile-history-round { color: var(--muted); text-align: right; }
+.scale-opt.danger { background: var(--warn); border-color: var(--warn); color: #fff; }
+
+/* Career context line on the win overlay */
+.gameover-career { margin: 0.2rem 0 0.4rem; font-size: 0.92rem; color: rgba(255, 255, 255, 0.85); }
+.gameover-career.new-best { color: var(--accent-2); font-weight: 800; letter-spacing: 0.01em; }
 
 /* First-run coach: a dimmed board with a spotlight hole around one region, plus a copy card.
    Clicks never reach the table (`.coach-catch`); the hole is visual only. z 97 sits above

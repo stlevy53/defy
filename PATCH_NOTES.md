@@ -8,7 +8,22 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## Unreleased
 
-- **Sound** — cue files now start loading when the app opens, so the first card flip or gunshot isn't waiting on decode. (A click is still required before anything actually plays — that's the browser, not a stall.)
+---
+
+## v0.2.1 — 2026-08-25
+
+Your profile, your stats, and a table that fits.
+
+- **Player profile & stats** — a new Profile tab under ⚙ Settings. Set a display name and track your games over time: best score, average, win rate, a score-per-game chart, personal records, and full history. Export, import, or clear your data any time. Stored locally for now (Steam profiles come later).
+- **Committed lanes no longer scroll** — played Maquis lay out up to four across each Hidden / Revealed row; a fifth card wraps to a second row whose top edge peeks so you know there's more, and you scroll only that lane to see it. No more scrubbing a tiny strip.
+- **Board size** — added 75% and 90% for laptop screens and dropped 160%. The steps are now 75 / 90 / 100 / 110 / 125 / 140%, still adjustable with **Ctrl + / − / 0**.
+- **More table space** — trimmed the empty band under the phase guidance so the play area gets the room.
+- **Round** — the status bar now shows which round you're on.
+- **To clear** — during ATTACK, the Attack Strength token also shows the remaining Defense of the Mission plus standing Enemies, as one total. It drops as targets fall. (You still spend per target — this is a planning number.)
+- **Bunker** — the discard is always a Maquis, never a Spy. If your hand has no Maquis left, the event line says so instead of doing nothing. The last Maquis in hand waits for a click rather than vanishing on its own.
+- **Emilio** — Hidden Emilio only offers Copy when another hidden Maquis can actually complete its hidden action (so copying Antonio with no Spy in hand no longer spends the card for nothing). After any Use, the dimmed half of a committed card explains that sides are locked — Undo that Use to rearrange.
+- **Use** — the gold action bar under a played Maquis is a larger click target. Clicking the card itself also fires the action when it is legal (drag still rearranges during PLAN).
+- **Sound** — cue files now start loading when the app opens, so the first card flip or gunshot isn't waiting on decode. (A click is still required before anything actually plays — that's the browser, not a stall.) The Settings sound section drops its long description.
 - **Fix** — “Done attacking” / “Continue” stay clickable after you scroll. They were sliding under the sticky status bar.
 
 ---

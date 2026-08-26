@@ -78,6 +78,8 @@ export type CardFace =
       attackBonus?: number
       /** Whether this card's action has already fired this round — labels the foot bar "SPENT". */
       actionUsed?: boolean
+      /** PLAN: dimmed half is not movable because a card action was used this round. */
+      moveLockedHint?: string
     }
   | {
       kind: 'mission'
@@ -145,6 +147,7 @@ export function Card(face: CardFace) {
           liveBonus={face.liveBonus}
           attackBonus={face.attackBonus}
           actionUsed={face.actionUsed}
+          moveLockedHint={face.moveLockedHint}
         />
       )
     case 'mission':
@@ -300,6 +303,13 @@ function onEnter(e: KeyboardEvent, run: () => void) {
   }
 }
 
+/** Keep a Use click even if the pointer drifts off the control before mouseup — the old bar was
+ *  small enough that a fidgety click armed a card-slide or missed mouseup, so it took two tries. */
+function holdUsePointer(e: PointerEvent<HTMLButtonElement>) {
+  e.stopPropagation()
+  if (e.button === 0) e.currentTarget.setPointerCapture(e.pointerId)
+}
+
 /** One clickable side of a hand Maquis (its attack value + action), playable when `enabled`. */
 function SidePanel({
   dataId,
@@ -370,6 +380,7 @@ function MaquisPlayedFace({
   liveBonus,
   attackBonus,
   actionUsed,
+  moveLockedHint,
 }: {
   dataId: string
   uid: string
@@ -385,6 +396,7 @@ function MaquisPlayedFace({
   liveBonus?: number | null
   attackBonus?: number
   actionUsed?: boolean
+  moveLockedHint?: string
 }) {
   const action = maquisSideAction(dataId, side)
   const name = nameOfMaquis(dataId)
@@ -403,6 +415,8 @@ function MaquisPlayedFace({
   const otherLabel = otherSide === 'hidden' ? 'Hidden' : 'Revealed'
   const canSlide = !pick && !!onSlideStart && !!canMove
   const slideCls = `${canSlide ? 'slidable' : ''} ${sliding ? 'is-sliding' : ''}`
+  const firable = !!(action && canUse && onUse)
+  const onCardActivate = pick ?? (firable ? onUse : undefined)
 
   const dim =
     move ? (
@@ -417,6 +431,10 @@ function MaquisPlayedFace({
       >
         <span className="move-label">Move {otherLabel}</span>
       </button>
+    ) : moveLockedHint ? (
+      <div className={`side-dim ${dimSide} locked`} title={moveLockedHint}>
+        <span className="move-label">Locked after Use</span>
+      </div>
     ) : (
       <div className={`side-dim ${dimSide}`} aria-hidden="true" />
     )
@@ -429,7 +447,6 @@ function MaquisPlayedFace({
     // only appeared while firable and otherwise left the card's attack value unlabeled). Left side
     // is always the card's live attack contribution; right side is the action state — clickable only
     // while firable.
-    const firable = !!(action && canUse && onUse)
     // The action's own type (PLAN / ATTACK / PLAN/ATTACK), not a hardcoded phase — a PLAN-only
     // action used during PLAN must say so, not imply it only fires during an Attack. When the action
     // exists but isn't firable right now and hasn't fired yet, just name its type (no verb) — it may
@@ -440,7 +457,7 @@ function MaquisPlayedFace({
         type="button"
         className={`card-foot-bar ${firable ? 'firable' : ''}`}
         onClick={firable ? onUse : undefined}
-        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDown={firable ? holdUsePointer : (e) => e.stopPropagation()}
         disabled={!firable}
         title={firable ? `Use ${name}'s ${action?.type} action` : undefined}
       >
@@ -451,18 +468,19 @@ function MaquisPlayedFace({
     return (
       <div className={`played-wrap ${sliding ? 'is-sliding' : ''}`}>
         <div
-          className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''}`}
+          className={`card played has-art ${side} ${pick ? 'pickable pick-target' : ''} ${canSlide ? 'slidable' : ''} ${firable && !pick ? 'usable' : ''}`}
           data-peek-id={dataId}
-          onClick={pick ?? undefined}
+          onClick={onCardActivate ?? undefined}
           onContextMenu={zoom}
           onPointerDown={canSlide ? onSlideStart : undefined}
           onDragStart={(e) => e.preventDefault()}
           role={pick ? 'button' : undefined}
           tabIndex={pick ? 0 : undefined}
-          title={pick ? `Select ${name}` : undefined}
+          title={pick ? `Select ${name}` : firable ? `Use ${name}'s action` : undefined}
           onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
         >
           {pick && <div className="click-hint">Click to select</div>}
+          {firable && !pick && <div className="click-hint">Click to use</div>}
           <img className="card-art" src={art} alt={`${name} — ${side}`} draggable={false} />
           {dim}
           {bonus > 0 && (
@@ -483,17 +501,18 @@ function MaquisPlayedFace({
 
   return (
     <div
-      className={`card played mcard ${side} ${pick ? 'pickable pick-target' : ''} ${slideCls}`}
-      onClick={pick ?? undefined}
+      className={`card played mcard ${side} ${pick ? 'pickable pick-target' : ''} ${slideCls} ${firable && !pick ? 'usable' : ''}`}
+      onClick={onCardActivate ?? undefined}
       onContextMenu={zoom}
       onPointerDown={canSlide ? onSlideStart : undefined}
       onDragStart={(e) => e.preventDefault()}
       role={pick ? 'button' : undefined}
       tabIndex={pick ? 0 : undefined}
-      title={pick ? `Select ${name}` : undefined}
+      title={pick ? `Select ${name}` : firable ? `Use ${name}'s action` : undefined}
       onKeyDown={pick ? (e) => onEnter(e, pick) : undefined}
     >
       {pick && <div className="click-hint">Click to select</div>}
+      {firable && !pick && <div className="click-hint">Click to use</div>}
       <div className="mcard-banner">{name}</div>
       <div className={`portrait ${side}`}>
         <Tip
@@ -511,17 +530,33 @@ function MaquisPlayedFace({
         <span className="portrait-monogram">{monogram}</span>
       </div>
       {move && (
-        <button type="button" className="move-side" onClick={move} title={`Move ${name} to ${otherLabel}`}>
+        <button
+          type="button"
+          className="move-side"
+          onClick={(e) => {
+            e.stopPropagation()
+            move()
+          }}
+          title={`Move ${name} to ${otherLabel}`}
+        >
           Move to {otherLabel}
         </button>
+      )}
+      {moveLockedHint && !move && (
+        <div className="move-side locked" title={moveLockedHint}>
+          Sides locked after a Use
+        </div>
       )}
       {action &&
         (canUse && onUse ? (
           <button
             type="button"
             className="card-action usable"
-            onClick={onUse}
-            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onUse()
+            }}
+            onPointerDown={holdUsePointer}
             title={`Use ${nameOfMaquis(dataId)}'s action`}
           >
             <span className="action-type">{action.type} ▸ use</span>

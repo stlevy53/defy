@@ -55,7 +55,17 @@ export interface GameResult {
 // --- Interaction & effect scaffolding (expanded in later slices) ---
 
 export type Decision =
-  | { kind: 'selectCards'; from: string; min: number; max: number; prompt: string; candidates: string[] }
+  | {
+      kind: 'selectCards'
+      from: string
+      min: number
+      max: number
+      prompt: string
+      candidates: string[]
+      /** When set, the UI must not auto-resolve even if min === max === candidate count
+       *  (e.g. Bunker's last-Maquis discard — the player needs to see and click it). */
+      forceChoice?: boolean
+    }
   | { kind: 'selectTarget'; candidates: string[]; prompt: string }
   | { kind: 'orderCards'; cards: string[]; prompt: string }
   | { kind: 'chooseOption'; options: string[]; prompt: string }
