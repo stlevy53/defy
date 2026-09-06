@@ -522,7 +522,9 @@ button.enemy.pickable.picked::after {
 .hand-draw-note.warn { color: #ff9a86; background: rgba(150, 25, 20, 0.35); border-color: rgba(240, 120, 100, 0.6); }
 .hand-draw-note.good { color: #bfe3a6; background: rgba(45, 110, 40, 0.32); border-color: rgba(150, 220, 130, 0.55); }
 .cards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; align-items: flex-start; }
-.hand .cards { flex-wrap: nowrap; overflow-x: auto; }
+/* Centre the hand so a small hand's leftover width splits evenly instead of trailing off the right.
+ *  `safe` keeps it left-packed (and fully scrollable) once the hand grows past the width. */
+.hand .cards { flex-wrap: nowrap; overflow-x: auto; justify-content: safe center; }
 .card.played { width: 230px; padding: 0; overflow: hidden; position: relative; }
 .card.played.mcard { padding-bottom: 0.45rem; }
 .hand-card { width: 230px; padding: 0; overflow: hidden; }
