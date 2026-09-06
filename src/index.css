@@ -800,6 +800,28 @@ button.side-dim.moveable:focus-visible .move-label { opacity: 1; }
 .enemy.has-art { flex: 1 1 0; min-width: 0; aspect-ratio: 750 / 1050; padding: 0; border: none; background: transparent; overflow: visible; position: relative; }
 .enemy-art { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 5px; border: 1px solid var(--line); }
 button.enemy.faceup.has-art { width: auto; }
+/* Cover the printed shield (top-left of every Enemy photo) so a type's shared art never shows a
+ *  Defense that isn't this copy's. The footer pill is the number you scan at token size; zoom and
+ *  the decision window enlarge the same overlay so the printed glyph never peeks through. */
+.enemy-shield-overlay {
+  position: absolute; left: 9%; top: 1.5%; width: 17.2%; height: 16.8%; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; font-weight: 800; letter-spacing: -0.04em; color: #f3e6c8;
+  background: #16110c;
+  clip-path: polygon(50% 2%, 95% 20%, 95% 58%, 50% 98%, 5% 58%, 5% 20%);
+  font-size: 0; /* garrison tokens: hide the glyph — the footer pill is the readable number */
+}
+.enemy-shield-overlay.modified { color: #ffe08a; }
+.zoom-enemy-art, .dm-enemy-art { position: relative; display: inline-block; line-height: 0; }
+.zoom-enemy-art .zoom-art, .dm-enemy-art .dm-art { display: block; }
+.enemy.has-art .enemy-shield-overlay { font-size: 10px; }
+.zoom-enemy-art .enemy-shield-overlay,
+.dm-enemy-art .enemy-shield-overlay {
+  font-size: clamp(28px, 6.4vh, 58px);
+  text-shadow: 0 1px 0 #000;
+}
+.dm-enemy-art { display: block; width: 100%; margin-bottom: 0.4rem; }
+.dm-enemy-art .dm-art { width: 100%; margin-bottom: 0; }
 /* Defense reads as a footer strip across the token rather than a corner pill — legible at the
  *  smaller fixed-slot size and consistent whether or not the token is also carrying a strike badge. */
 .enemy-def-pill {

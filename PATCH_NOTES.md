@@ -6,6 +6,12 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ---
 
+## v0.2.3 — 2026-09-06
+
+- **Fix** — flipped Enemies now show this copy's Defense, not the number printed on the type photo. Recon the Mountain Pass (and any other reveal) was leaving both numbers visible, so a Grunt 2 could read as a Grunt 1. The live Defense covers the printed shield on the board, in zoom, and in the choice window.
+
+---
+
 ## v0.2.2 — 2026-09-06
 
 Fresh Maquis art, and a hand that fills the table.

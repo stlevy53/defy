@@ -142,9 +142,16 @@ describe('mission DEFEAT effect logic', () => {
     const d = fire('mountain_pass', g, 'DEFEAT') as Decision
     expect(d.kind).toBe('selectTarget')
     const targetUid = (d as Extract<Decision, { kind: 'selectTarget' }>).candidates[0]
+    const before = g.missionRow.find((m) => m.uid === targetUid)!.enemies.map((e) => ({
+      uid: e.uid,
+      defense: e.defense,
+      baseDefense: e.baseDefense,
+    }))
     fire('mountain_pass', g, 'DEFEAT', [[targetUid]])
     const flipped = g.missionRow.find((m) => m.uid === targetUid)!
     expect(flipped.enemies.every((e) => e.faceUp)).toBe(true)
+    // Flip is identity-only: each copy keeps the Defense printed on that physical card.
+    expect(flipped.enemies.map((e) => ({ uid: e.uid, defense: e.defense, baseDefense: e.baseDefense }))).toEqual(before)
   })
 
   it('Mountain Pass still asks which Mission after this garrison is already revealed', () => {

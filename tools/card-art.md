@@ -90,8 +90,12 @@ ricardo, juana`
 - Era 3: `farmhouse_e3, train_depot_e3, crossroads, police_station, mayor_house, franco_hq`
 - `back` — the printed Mission card back, shown when a Mission fails and stays in the row face-down.
 
-### enemy/ (8 — one per *type*; copies differ only in the Defense number, which the app overlays)
+### enemy/ (8 type photos; copies differ only in the printed Defense)
 `counter_guerrilla, military, guard, grunt, spy_master, jailor, engineer, radio_operator`
+- Optional per-copy files: `<typeId>_<defense>.jpg` (e.g. `grunt_2.jpg`). The app prefers these
+  when present, otherwise the type photo. The live Defense is always painted over the printed
+  shield (`.enemy-shield-overlay`) so a flipped garrison never shows the photographed copy's
+  number against a different instance.
 - Optional: `back` (the face-down Enemy card back) → `enemy/back.jpg`
 
 ### civilian/ (8 — the 1s/2s are interchangeable, any crop works for each)

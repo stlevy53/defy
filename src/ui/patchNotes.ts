@@ -11,6 +11,14 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.3',
+    date: '2026-09-06',
+    title: 'Flipped Enemies show the right Defense',
+    changes: [
+      'Fix — when Enemies flip face-up (Recon the Mountain Pass, a scout, choosing a Mission), the Defense you see is this copy’s value, not the number printed on the type photo. The live number covers the shield on the board, in zoom, and in the choice window.',
+    ],
+  },
+  {
     version: '0.2.2',
     date: '2026-09-06',
     title: 'Fresh Maquis art, and a hand that fills the table',

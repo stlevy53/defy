@@ -11,7 +11,7 @@ import type { Decision, GameState } from '../engine'
 import { DRAFT_FROM } from '../engine'
 import { classifyCandidate, maquisOf, enemyOf, missionOf } from './format'
 import { maquisArt, enemyArt, missionArt, missionBackArt, spyArt } from './cardArt'
-import { zoomNodeFor } from './Card'
+import { zoomNodeFor, EnemyShieldOverlay } from './Card'
 import { useZoom } from './Zoom'
 
 export function DecisionModal({
@@ -287,8 +287,15 @@ function DecisionCard({
       }
       case 'enemy': {
         const t = enemyOf(c.enemy.typeId)
-        const art = enemyArt(c.enemy.typeId)
-        if (art) return <img className="dm-art" src={art} alt={t?.name ?? c.enemy.typeId} draggable={false} />
+        const art = enemyArt(c.enemy.typeId, c.enemy.baseDefense)
+        if (art) {
+          return (
+            <div className="dm-enemy-art">
+              <img className="dm-art" src={art} alt={t?.name ?? c.enemy.typeId} draggable={false} />
+              <EnemyShieldOverlay defense={c.enemy.defense} printed={c.enemy.baseDefense} />
+            </div>
+          )
+        }
         return (
           <>
             <div className="dm-card-name">

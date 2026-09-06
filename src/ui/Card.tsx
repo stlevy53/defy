@@ -898,7 +898,7 @@ function EnemyChip({
   rank?: number
 }) {
   const type = enemyOf(enemy.typeId)
-  const art = enemyArt(enemy.typeId)
+  const art = enemyArt(enemy.typeId, enemy.baseDefense)
   const newCls = isNew ? ' reinforce-enter' : ''
   const hostCls = pulse ? ' must-strike-host' : ''
   const zoom = useEnemyZoom(enemy)
@@ -934,8 +934,9 @@ function EnemyChip({
     return <span className={`enemy facedown has-art${newCls}`}>{inner}</span>
   }
 
-  // Copies of a type share the same art but differ in Defense, so with art we show the portrait and
-  // overlay this instance's Defense; the full text lives in the hover tooltip.
+  // Copies of a type share the same photo but differ in Defense. Cover the printed shield with this
+  // instance's live Defense so a flipped garrison doesn't show Grunt-1 art against a Def 2 pill,
+  // and keep the footer strip as the number you can actually read at token size.
   const tip = [
     `${type?.name ?? enemy.typeId} — Defense ${enemy.defense}${type?.keyword ? ` · ${type.keyword}` : ''}`,
     type?.effect,
@@ -946,6 +947,7 @@ function EnemyChip({
   const body = art ? (
     <>
       <img className="enemy-art" src={art} alt={type?.name ?? enemy.typeId} draggable={false} />
+      <EnemyShieldOverlay defense={enemy.defense} printed={enemy.baseDefense} />
       <span className="enemy-def-pill">🛡 {enemy.defense}</span>
     </>
   ) : (
@@ -1056,7 +1058,9 @@ const useMaquisZoom = (dataId: string) => useZoomHandler(() => <ZoomMaquisCard d
 const useMissionZoom = (dataId: string, faceDown = false) =>
   useZoomHandler(() => <ZoomMissionCard dataId={dataId} faceDown={faceDown} />)
 const useEnemyZoom = (enemy: EnemyInstance) =>
-  useZoomHandler(() => <ZoomEnemyCard typeId={enemy.typeId} defense={enemy.defense} />)
+  useZoomHandler(() => (
+    <ZoomEnemyCard typeId={enemy.typeId} defense={enemy.defense} printedDefense={enemy.baseDefense} />
+  ))
 
 export function zoomNodeFor(state: GameState, uid: string): ReactNode | null {
   const c = classifyCandidate(state, uid)
@@ -1068,7 +1072,13 @@ export function zoomNodeFor(state: GameState, uid: string): ReactNode | null {
     case 'mission':
       return <ZoomMissionCard dataId={c.slot.dataId} faceDown={c.slot.faceDown} />
     case 'enemy':
-      return <ZoomEnemyCard typeId={c.enemy.typeId} defense={c.enemy.defense} />
+      return (
+        <ZoomEnemyCard
+          typeId={c.enemy.typeId}
+          defense={c.enemy.defense}
+          printedDefense={c.enemy.baseDefense}
+        />
+      )
     default:
       return null
   }
@@ -1139,11 +1149,26 @@ function ZoomMissionCard({ dataId, faceDown }: { dataId: string; faceDown?: bool
   )
 }
 
-function ZoomEnemyCard({ typeId, defense }: { typeId: string; defense: number }) {
+function ZoomEnemyCard({
+  typeId,
+  defense,
+  printedDefense,
+}: {
+  typeId: string
+  defense: number
+  printedDefense?: number
+}) {
   const type = enemyOf(typeId)
   const name = type?.name ?? typeId
-  const art = enemyArt(typeId)
-  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
+  const art = enemyArt(typeId, printedDefense)
+  if (art) {
+    return (
+      <div className="zoom-enemy-art">
+        <img className="zoom-art" src={art} alt={name} draggable={false} />
+        <EnemyShieldOverlay defense={defense} printed={printedDefense} />
+      </div>
+    )
+  }
   return (
     <div className="zoom-card zoom-enemy">
       <h2>
@@ -1154,5 +1179,15 @@ function ZoomEnemyCard({ typeId, defense }: { typeId: string; defense: number })
       </div>
       {type?.effect && <p className="zoom-effect">{type.effect}</p>}
     </div>
+  )
+}
+
+/** Covers the printed Defense shield on Enemy art with the live value for this copy. */
+export function EnemyShieldOverlay({ defense, printed }: { defense: number; printed?: number }) {
+  const modified = printed != null && defense !== printed
+  return (
+    <span className={`enemy-shield-overlay${modified ? ' modified' : ''}`} aria-hidden>
+      {defense}
+    </span>
   )
 }
