@@ -10,6 +10,14 @@ Accepted extensions: `.jpg`, `.jpeg`, `.png`, `.webp`.
 Civilians, the Spy), sliced from the playmat photos in `Card Assets/`. What follows is how to redo or
 extend it. The only image still missing is the optional face-down Enemy back (`enemy/back.jpg`).
 
+**v0.2.2 re-scanned the 24 Maquis** from `Card Assets/New Maquis Art/` — 24 individual, upright,
+full-bleed single-card scans (not a playmat sheet), so the sheet slicer below did not apply. Each was
+centre-cropped to the cards' native **3:2** and resized to **1125×750** (the scans clustered at
+1.475–1.531, so the crop trims only a few px — no distortion, no clipping of the corner sunbursts),
+with the scan→id mapping read from each printed name banner and confirmed against `data/maquis.json`.
+The Spy (`spy/spy.jpg`) was re-cropped to the same 3:2 to match. If you re-shoot Maquis the same way
+(one card per scan, full frame on a plain bed), a simple centre-crop-to-3:2 + resize is all you need.
+
 ---
 
 ## 1. Photograph the cards for reliable auto-slicing

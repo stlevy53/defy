@@ -6,7 +6,13 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ---
 
-## Unreleased
+## v0.2.2 — 2026-09-06
+
+Fresh Maquis art, and a hand that fills the table.
+
+- **New Maquis art** — all 24 Maquis cards now show fresh, cleaner scans of their printed faces (from `Card Assets/New Maquis Art/`), everywhere they appear: the board, your hand, the choice window and right-click zoom. Scanned full-bleed and cropped to the cards' native 3:2, so nothing is squished and the corner sunbursts aren't clipped.
+- **Spy proportions** — the Spy card is re-cropped to the same 3:2 as the new Maquis, so it sits at the same height as the rest of your hand instead of standing a touch taller.
+- **Centred hand** — your hand now centres in the board width instead of hugging the left edge, so a small hand's leftover space splits evenly. A large hand still packs left and scrolls, so no card is pushed out of reach.
 
 ---
 

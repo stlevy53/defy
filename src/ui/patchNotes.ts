@@ -11,6 +11,16 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.2',
+    date: '2026-09-06',
+    title: 'Fresh Maquis art, and a hand that fills the table',
+    changes: [
+      'New Maquis art — all 24 Maquis now show fresh, cleaner scans of their printed faces, on the board, in your hand, in the choice window and in right-click zoom.',
+      'The Spy card matches the new Maquis proportions, so it sits at the same height as everything else in your hand.',
+      'Your hand is centred on the table instead of hugging the left edge, so a small hand uses the width evenly. A large hand still packs left and scrolls.',
+    ],
+  },
+  {
     version: '0.2.1',
     date: '2026-08-25',
     title: 'Your profile, your stats, and a table that fits',
