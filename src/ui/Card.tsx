@@ -7,6 +7,7 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { gatingStrikeUids } from '../engine'
+import { missionClickKind } from './commit'
 import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip, eraLabel, classifyCandidate } from './format'
 import { maquisArt, enemyArt, enemyBackArt, missionArt, missionBackArt, spyArt } from './cardArt'
 import { Tip } from './Tip'
@@ -632,17 +633,24 @@ function MissionFace({
   const garrisonExtra = slot.enemies.length - garrisonBase
 
   // The whole card is clickable for exactly one reason at a time (they live in different moments):
-  // choose it to attack (PLAN), strike it (ATTACK), or pick it as a decision target.
+  // pick it as a pending-decision target, choose it to attack (PLAN), or strike it (ATTACK).
+  // A scout pick always beats ChooseMission — otherwise clicking the Mission to flip 1–2 Enemies
+  // would reveal the whole garrison and jump to ATTACK.
   const canStrikeMission = !!onStrike && (strikeTargets?.includes(slot.uid) ?? false)
   const canPickMission = !!onPick && (pickTargets?.includes(slot.uid) ?? false)
   const blockedMission = !!onBlockedStrike && (blockedStrikeUids?.includes(slot.uid) ?? false)
+  const click = missionClickKind({
+    canPick: canPickMission,
+    canChoose: !!(canChoose && onChoose),
+    canStrike: canStrikeMission,
+  })
   const act =
-    canChoose && onChoose
-      ? { run: () => onChoose(slot.uid), hint: 'Click to attack', title: `Attack this Mission: ${name}` }
-      : canStrikeMission
-        ? { run: () => onStrike!(slot.uid), hint: 'Click to strike', title: `Strike this Mission: ${name}` }
-        : canPickMission
-          ? { run: () => onPick!(slot.uid), hint: 'Click to select', title: `Select this Mission: ${name}` }
+    click === 'pick'
+      ? { run: () => onPick!(slot.uid), hint: 'Click to select', title: `Select this Mission: ${name}` }
+      : click === 'choose'
+        ? { run: () => onChoose!(slot.uid), hint: 'Click to attack', title: `Attack this Mission: ${name}` }
+        : click === 'strike'
+          ? { run: () => onStrike!(slot.uid), hint: 'Click to strike', title: `Strike this Mission: ${name}` }
           : null
 
   const art = missionArt(slot.dataId)

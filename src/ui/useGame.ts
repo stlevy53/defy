@@ -2,9 +2,10 @@
 // and dispatches actions / decision responses through the pure engine.
 
 import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from 'react'
-import { createGame, applyAction, legalActions, resolveDecision } from '../engine'
-import type { Action, Decision, GameState } from '../engine'
+import { createGame, legalActions } from '../engine'
+import type { Action, GameState } from '../engine'
 import { ensureEffectsRegistered } from './bootstrap'
+import { applyDecisionResponse, applyDispatchedAction, settle } from './commit'
 import { APP_VERSION } from './patchNotes'
 import { useDebugHook } from './debugHook'
 import { canPopUndo, popUndo } from './undo'
@@ -53,41 +54,6 @@ function readSave(): SavePayload | null {
 
 const randomSeed = () => Math.floor(Math.random() * 0x7fffffff)
 
-/** The forced answer to a decision that offers no real choice, or null if the player must decide.
- *  Used to skip pointless panels (a single legal target, a "take all", nothing to take). */
-function forcedSelection(d: Decision): string[] | null {
-  switch (d.kind) {
-    case 'selectTarget':
-      return d.candidates.length === 1 ? [d.candidates[0]] : null
-    case 'chooseOption':
-      return d.options.length === 1 ? [d.options[0]] : null
-    case 'orderCards':
-      return d.cards.length <= 1 ? d.cards : null
-    case 'selectCards': {
-      if (d.forceChoice) return null
-      const n = d.candidates.length
-      if (d.min === d.max) {
-        if (d.min === 0) return []
-        if (d.min === n) return [...d.candidates]
-      }
-      if (n === 0 && d.min === 0) return []
-      return null
-    }
-  }
-}
-
-/** Resolve any run of forced decisions so only genuine choices reach the UI. Bounded to avoid a
- *  loop if the engine ever produced an unanswerable decision. */
-function settle(state: GameState): GameState {
-  let s = state
-  for (let i = 0; i < 100 && s.pendingDecision; i++) {
-    const sel = forcedSelection(s.pendingDecision)
-    if (sel === null) break
-    s = resolveDecision(s, { selection: sel })
-  }
-  return s
-}
-
 export interface UseGame {
   state: GameState
   actions: Action[]
@@ -123,40 +89,51 @@ export function useGame(initialSeed?: number): UseGame {
   const state = history[history.length - 1]
   const actions = useMemo(() => legalActions(state), [state])
 
-  const push = useCallback((next: GameState) => setHistory((h) => [...h, next]), [])
+  // Keep a live pointer so two clicks in the same tick (UseAction, then the Mission) compose
+  // instead of both applying to the pre-UseAction snapshot. A stale ChooseMission handler is
+  // otherwise enough to flip the whole garrison and enter ATTACK (Domingo/Pilar scout).
+  const historyRef = useRef(history)
+  historyRef.current = history
 
-  const dispatch = useCallback(
-    (action: Action) => {
-      try {
-        setError(null)
-        push(settle(applyAction(state, action)))
-        const cue = actionSfx(
-          action,
-          state.missionRow.map((m) => m.uid),
-        )
-        if (cue) playSfx(cue)
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
-      }
-    },
-    [state, push],
-  )
+  const dispatch = useCallback((action: Action) => {
+    try {
+      setError(null)
+      const current = historyRef.current[historyRef.current.length - 1]
+      const next = applyDispatchedAction(current, action)
+      if (next === current) return
+      const nextHist = [...historyRef.current, next]
+      historyRef.current = nextHist
+      setHistory(nextHist)
+      const cue = actionSfx(
+        action,
+        current.missionRow.map((m) => m.uid),
+      )
+      if (cue) playSfx(cue)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }, [])
 
-  const respond = useCallback(
-    (selection: string[]) => {
-      try {
-        setError(null)
-        push(settle(resolveDecision(state, { selection })))
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
-      }
-    },
-    [state, push],
-  )
+  const respond = useCallback((selection: string[]) => {
+    try {
+      setError(null)
+      const current = historyRef.current[historyRef.current.length - 1]
+      const next = applyDecisionResponse(current, selection)
+      const nextHist = [...historyRef.current, next]
+      historyRef.current = nextHist
+      setHistory(nextHist)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }, [])
 
   const undo = useCallback(() => {
     setError(null)
-    setHistory((h) => popUndo(h))
+    setHistory((h) => {
+      const next = popUndo(h)
+      historyRef.current = next
+      return next
+    })
   }, [])
 
   const newGame = useCallback((s?: number, draft?: boolean) => {
@@ -165,7 +142,9 @@ export function useGame(initialSeed?: number): UseGame {
     setDraft(!!draft)
     setGameId((n) => n + 1)
     setError(null)
-    setHistory([settle(createGame({ seed: next, draft }))])
+    const hist = [settle(createGame({ seed: next, draft }))]
+    historyRef.current = hist
+    setHistory(hist)
   }, [])
 
   const [savedMeta, setSavedMeta] = useState<SaveMeta | null>(() => {
@@ -202,6 +181,7 @@ export function useGame(initialSeed?: number): UseGame {
     setDraft(false) // a mid-game save doesn't record the draft flag; unknown on resume
     setGameId((n) => n + 1) // fresh animation context so diff-hooks don't fire against the old board
     setError(null)
+    historyRef.current = p.history
     setHistory(p.history)
     return { ok: true, version: p.version }
   }, [])

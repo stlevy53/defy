@@ -11,6 +11,14 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.4',
+    date: '2026-09-06',
+    title: 'Domingo’s scout no longer starts the attack',
+    changes: [
+      'Fix — Domingo and Pilar’s PLAN scout no longer starts the attack. After you use the action, choosing a Mission to attack is blocked until you finish picking the Enemies to flip and discard. Clicking a Mission during the scout selects it for the action and stays in PLAN.',
+    ],
+  },
+  {
     version: '0.2.3',
     date: '2026-09-06',
     title: 'Flipped Enemies show the right card',

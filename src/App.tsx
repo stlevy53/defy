@@ -578,9 +578,14 @@ export function App() {
       <section className="missions" data-coach="missions">
         <h3 className="missions-head">
           Missions
-          {state.phase === 'PLAN' && !chosenMissionName && (
+          {state.phase === 'PLAN' && !chosenMissionName && !state.pendingDecision && (
             <span className="board-hint">Choose one to attack this round</span>
           )}
+          {state.phase === 'PLAN' &&
+            state.pendingDecision &&
+            pickTargets.some((uid) => state.missionRow.some((s) => s.uid === uid)) && (
+              <span className="board-hint">Select a highlighted Mission for this action — it does not end PLAN</span>
+            )}
           {state.phase === 'ATTACK' && chosenMissionName && (
             <span className="board-hint attack">
               Attacking {chosenMissionName} — the other three are out of reach this round
@@ -594,7 +599,7 @@ export function App() {
               kind="mission"
               slot={slot}
               state={state}
-              canChoose={canChoose(actions, slot.uid)}
+              canChoose={!state.pendingDecision && canChoose(actions, slot.uid)}
               onChoose={(uid) => dispatch({ type: 'ChooseMission', uid })}
               strikeTargets={strikeTargets}
               onStrike={(uid) => {

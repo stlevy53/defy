@@ -271,6 +271,18 @@ export function guidanceFor(state: GameState, actions: Action[]): Guidance | nul
   }
   switch (state.phase) {
     case 'PLAN': {
+      if (state.pendingDecision) {
+        return {
+          phase: 'PLAN',
+          goal: 'Finish this action.',
+          now: state.pendingDecision.prompt,
+          hint: 'Choosing a Mission to attack waits until this action is done.',
+          steps: [
+            { text: state.pendingDecision.prompt, active: true },
+            { text: 'Then you may choose a Mission to attack. (Ends PLAN)' },
+          ],
+        }
+      }
       const played = state.inPlay.length > 0
       const canUseAction = canDo(actions, 'UseAction')
       const canMove = canDo(actions, 'MoveMaquis')
