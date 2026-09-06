@@ -6,15 +6,10 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ---
 
-## v0.2.4 — 2026-09-06
-
-- **Fix** — Domingo and Pilar’s PLAN scout no longer starts the attack. After you use the action, choosing a Mission to attack is blocked until you finish picking the Enemies to flip and discard. Clicking a Mission during the scout selects it for the action and stays in PLAN.
-
----
-
 ## v0.2.3 — 2026-09-06
 
 - **Fix** — each Enemy copy now uses the photo of that Defense, not one picture per type. A Guard 3 shows `guard_3`, a Grunt 1 shows `grunt_1`, and so on, so a flipped garrison (Recon the Mountain Pass, a scout, choosing a Mission) matches the card. The Defense footer on the token still shows this copy's live value.
+- **Fix** — Domingo and Pilar’s PLAN scout no longer starts the attack. After you use the action, choosing a Mission to attack is blocked until you finish picking the Enemies to flip and discard. Clicking a Mission during the scout selects it for the action and stays in PLAN.
 
 ---
 
