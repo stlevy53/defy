@@ -13,9 +13,9 @@ export const PATCH_NOTES: PatchNote[] = [
   {
     version: '0.2.3',
     date: '2026-09-06',
-    title: 'Flipped Enemies show the right Defense',
+    title: 'Flipped Enemies show the right card',
     changes: [
-      'Fix — when Enemies flip face-up (Recon the Mountain Pass, a scout, choosing a Mission), the Defense you see is this copy’s value, not the number printed on the type photo. The live number covers the shield on the board, in zoom, and in the choice window.',
+      'Fix — each Enemy copy now uses the photo of that Defense (guard_1, guard_2, guard_3, …), so a flipped garrison matches the card. The Defense footer on the token still shows this copy’s live value.',
     ],
   },
   {

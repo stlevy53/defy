@@ -4,17 +4,16 @@
 //
 // Filenames must match the card IDs used in /data:
 //   maquis/<maquis id>       e.g. celia.jpg          (one image; shows both Hidden + Revealed halves)
-//   enemy/<enemy type id>    e.g. counter_guerrilla.jpg
-//   enemy/<typeId>_<defense> optional per-copy art, e.g. grunt_2.jpg (falls back to the type image)
+//   enemy/<typeId>_<defense> e.g. guard_1.jpg, guard_2.jpg, guard_3.jpg (the physical copy)
+//   enemy/<enemy type id>    fallback if a per-copy file is missing, e.g. guard.jpg
 //   mission/<mission id>     e.g. bunker.jpg
 //   civilian/<civilian id>   e.g. civ_1a.jpg
 //   spy/spy.(jpg|png|webp)
 //   enemy/back.(jpg|png|webp)   optional face-down Enemy card back
 //   mission/back.(jpg|png|webp)  face-down / failed Mission card back
 //
-// Copies of an Enemy type share one photo and differ only in the printed Defense. The UI covers
-// that printed shield with the instance's live Defense (see .enemy-shield-overlay) so a flipped
-// Grunt 2 never reads as the Grunt 1 that happened to be photographed.
+// Copies of an Enemy type share effect text but differ in printed Defense. Each distinct
+// (type, Defense) has its own photo so a Guard 3 shows the Guard 3 card, not a Guard 1 photo.
 
 type UrlMap = Record<string, string>
 
@@ -39,7 +38,7 @@ const civilian = glob(import.meta.glob('../assets/cards/civilian/*.{jpg,jpeg,png
 const spy = glob(import.meta.glob('../assets/cards/spy/*.{jpg,jpeg,png,webp}', { eager: true, import: 'default' }))
 
 export const maquisArt = (id: string): string | undefined => maquis[id]
-/** Face art for an Enemy. Prefers a per-copy file (`grunt_2.jpg`) when present, else the type photo. */
+/** Face art for an Enemy copy. Prefers `<typeId>_<printedDefense>` (e.g. `guard_3.jpg`). */
 export const enemyArt = (typeId: string, printedDefense?: number): string | undefined => {
   if (printedDefense != null) {
     const specific = enemy[`${typeId}_${printedDefense}`]

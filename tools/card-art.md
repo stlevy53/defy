@@ -6,9 +6,10 @@ without an image keeps the themed text frame as a fallback, so you can add art i
 
 Accepted extensions: `.jpg`, `.jpeg`, `.png`, `.webp`.
 
-**The full set is already in** — 62 images (24 Maquis, 20 Missions + Mission back, 8 Enemy types, 8
-Civilians, the Spy), sliced from the playmat photos in `Card Assets/`. What follows is how to redo or
-extend it. The only image still missing is the optional face-down Enemy back (`enemy/back.jpg`).
+**The full set is already in** — 24 Maquis, 20 Missions + Mission back, 20 Enemy faces (one per
+printed Defense: `guard_1`, `guard_2`, `guard_3`, …) plus type-only fallbacks and the Enemy back,
+8 Civilians, and the Spy, sliced from the playmat photos in `Card Assets/`. What follows is how to
+redo or extend it.
 
 **v0.2.2 re-scanned the 24 Maquis** from `Card Assets/New Maquis Art/` — 24 individual, upright,
 full-bleed single-card scans (not a playmat sheet), so the sheet slicer below did not apply. Each was
@@ -90,12 +91,14 @@ ricardo, juana`
 - Era 3: `farmhouse_e3, train_depot_e3, crossroads, police_station, mayor_house, franco_hq`
 - `back` — the printed Mission card back, shown when a Mission fails and stays in the row face-down.
 
-### enemy/ (8 type photos; copies differ only in the printed Defense)
+### enemy/ (one photo per printed Defense, named `<typeId>_<defense>`)
 `counter_guerrilla, military, guard, grunt, spy_master, jailor, engineer, radio_operator`
-- Optional per-copy files: `<typeId>_<defense>.jpg` (e.g. `grunt_2.jpg`). The app prefers these
-  when present, otherwise the type photo. The live Defense is always painted over the printed
-  shield (`.enemy-shield-overlay`) so a flipped garrison never shows the photographed copy's
-  number against a different instance.
+- Per-copy files: `guard_1.jpg`, `guard_2.jpg`, `guard_3.jpg`, `grunt_1.jpg`, `grunt_2.jpg`, …
+  Copies of a type share effect text; only the Defense number changes. The app looks up
+  `<typeId>_<printedDefense>` so a Guard 3 on a Mission shows the Guard 3 card. A type-only
+  file (e.g. `guard.jpg`) is a fallback if a per-copy file is missing.
+- The garrison token still shows a Defense footer (`🛡 N`) for readability at token size; that
+  number is this copy's live Defense (printed value, plus any in-round modifier).
 - Optional: `back` (the face-down Enemy card back) → `enemy/back.jpg`
 
 ### civilian/ (8 — the 1s/2s are interchangeable, any crop works for each)

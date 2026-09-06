@@ -934,9 +934,8 @@ function EnemyChip({
     return <span className={`enemy facedown has-art${newCls}`}>{inner}</span>
   }
 
-  // Copies of a type share the same photo but differ in Defense. Cover the printed shield with this
-  // instance's live Defense so a flipped garrison doesn't show Grunt-1 art against a Def 2 pill,
-  // and keep the footer strip as the number you can actually read at token size.
+  // Each physical copy has its own photo (`guard_1.jpg`, `guard_2.jpg`, …). The footer pill repeats
+  // this copy's live Defense so it stays readable at token size (and reflects in-round modifiers).
   const tip = [
     `${type?.name ?? enemy.typeId} — Defense ${enemy.defense}${type?.keyword ? ` · ${type.keyword}` : ''}`,
     type?.effect,
@@ -947,7 +946,6 @@ function EnemyChip({
   const body = art ? (
     <>
       <img className="enemy-art" src={art} alt={type?.name ?? enemy.typeId} draggable={false} />
-      <EnemyShieldOverlay defense={enemy.defense} printed={enemy.baseDefense} />
       <span className="enemy-def-pill">🛡 {enemy.defense}</span>
     </>
   ) : (
@@ -1161,14 +1159,7 @@ function ZoomEnemyCard({
   const type = enemyOf(typeId)
   const name = type?.name ?? typeId
   const art = enemyArt(typeId, printedDefense)
-  if (art) {
-    return (
-      <div className="zoom-enemy-art">
-        <img className="zoom-art" src={art} alt={name} draggable={false} />
-        <EnemyShieldOverlay defense={defense} printed={printedDefense} />
-      </div>
-    )
-  }
+  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
   return (
     <div className="zoom-card zoom-enemy">
       <h2>
@@ -1179,15 +1170,5 @@ function ZoomEnemyCard({
       </div>
       {type?.effect && <p className="zoom-effect">{type.effect}</p>}
     </div>
-  )
-}
-
-/** Covers the printed Defense shield on Enemy art with the live value for this copy. */
-export function EnemyShieldOverlay({ defense, printed }: { defense: number; printed?: number }) {
-  const modified = printed != null && defense !== printed
-  return (
-    <span className={`enemy-shield-overlay${modified ? ' modified' : ''}`} aria-hidden>
-      {defense}
-    </span>
   )
 }

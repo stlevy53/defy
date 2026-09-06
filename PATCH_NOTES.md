@@ -8,7 +8,7 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## v0.2.3 — 2026-09-06
 
-- **Fix** — flipped Enemies now show this copy's Defense, not the number printed on the type photo. Recon the Mountain Pass (and any other reveal) was leaving both numbers visible, so a Grunt 2 could read as a Grunt 1. The live Defense covers the printed shield on the board, in zoom, and in the choice window.
+- **Fix** — each Enemy copy now uses the photo of that Defense, not one picture per type. A Guard 3 shows `guard_3`, a Grunt 1 shows `grunt_1`, and so on, so a flipped garrison (Recon the Mountain Pass, a scout, choosing a Mission) matches the card. The Defense footer on the token still shows this copy's live value.
 
 ---
 
