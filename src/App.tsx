@@ -1032,7 +1032,7 @@ function PileChip({
     ? `Look through ${pile.label}${spies > 0 ? `, ${spies} ${spies === 1 ? 'Spy' : 'Spies'}` : ''}`
     : `${pile.label} is face-down`
   return (
-    <Tip below text={pile.hint}>
+    <Tip below={compact} text={pile.hint}>
       <button
         type="button"
         data-pile-key={compact ? pile.flightKey : pile.inline ? undefined : pile.flightKey}
