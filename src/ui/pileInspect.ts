@@ -35,7 +35,7 @@ export interface PileView {
 const INLINE: ReadonlySet<PileId> = new Set(['hidden.deck', 'hidden.discard', 'enemy.deck', 'mission.deck', 'graveyard'])
 
 export function facedownClickMessage(label: string): string {
-  return `The ${label} is face-down. You see those cards when they are dealt or drawn, or when an action lets you look.`
+  return `The ${label} is face-down. You see those cards when they are dealt or drawn.`
 }
 
 export function hiddenDiscardSpyCount(state: GameState): number {
@@ -81,7 +81,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'hidden.deck',
       inspect: false,
       inline: INLINE.has('hidden.deck'),
-      hint: 'Face-down Hidden Maquis (and shuffled Spies) you draw your hand from. Click to see why you can’t look through.',
+      hint: facedownClickMessage('Hidden deck'),
     },
     {
       id: 'hidden.discard',
@@ -102,7 +102,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'recruit.deck',
       inspect: false,
       inline: INLINE.has('recruit.deck'),
-      hint: 'Face-down inactive Maquis — only recovered by specific effects. Click to see why you can’t look through.',
+      hint: facedownClickMessage('Recruit deck'),
     },
     {
       id: 'recruit.revealed',
@@ -121,7 +121,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'enemy',
       inspect: false,
       inline: INLINE.has('enemy.deck'),
-      hint: 'Face-down Enemies dealt to refilled Missions by their Garrison. Click to see why you can’t look through.',
+      hint: facedownClickMessage('Enemy deck'),
     },
     {
       id: 'enemy.discard',
@@ -139,7 +139,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'mission',
       inspect: false,
       inline: INLINE.has('mission.deck'),
-      hint: 'Face-down Era-2 then Era-3 Missions that refill the row as you defeat Missions. Click to see why you can’t look through.',
+      hint: facedownClickMessage('Mission deck'),
     },
     {
       id: 'defeated',

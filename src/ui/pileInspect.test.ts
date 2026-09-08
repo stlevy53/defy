@@ -72,9 +72,13 @@ describe('inspectUids', () => {
 
 describe('facedownClickMessage', () => {
   it('names the deck so a missed click does not look broken', () => {
-    expect(facedownClickMessage('Hidden deck')).toMatch(/Hidden deck is face-down/)
-    expect(facedownClickMessage('Enemy deck')).toMatch(/dealt or drawn|lets you look/i)
-    expect(pileViews(createGame({ seed: 1 })).find((p) => p.id === 'hidden.deck')?.hint).toMatch(/Click to see why/)
+    expect(facedownClickMessage('Hidden deck')).toBe(
+      'The Hidden deck is face-down. You see those cards when they are dealt or drawn.',
+    )
+    expect(facedownClickMessage('Enemy deck')).toMatch(/Enemy deck is face-down/)
+    const hidden = pileViews(createGame({ seed: 1 })).find((p) => p.id === 'hidden.deck')
+    expect(hidden?.hint).toBe(facedownClickMessage('Hidden deck'))
+    expect(hidden?.hint).not.toMatch(/click/i)
   })
 })
 
