@@ -27,12 +27,31 @@ export interface PileView {
   flightKey?: string
   /** Face-up: click opens the inspector. Face-down: click explains why not. */
   inspect: boolean
+  /** Status-bar shortcut: your deck cycle, the occupation cycle, and the loss pile. */
   inline: boolean
+  /** All-piles catalog section — physical table order, deck then its public pile. */
+  group: PileGroup
   /** Spies currently sitting in Hidden discard — shown as a badge on that chip. */
   spyCount?: number
 }
 
-const INLINE: ReadonlySet<PileId> = new Set(['hidden.deck', 'hidden.discard', 'enemy.deck', 'mission.deck', 'graveyard'])
+export type PileGroup = 'maquis' | 'enemies' | 'missions' | 'out'
+
+export const PILE_GROUPS: { id: PileGroup; label: string }[] = [
+  { id: 'maquis', label: 'Maquis' },
+  { id: 'enemies', label: 'Enemies' },
+  { id: 'missions', label: 'Missions' },
+  { id: 'out', label: 'Out of play' },
+]
+
+/** Glance counts on the status bar: Hidden deck+discard, Enemy deck+discard, Graveyard. */
+const INLINE: ReadonlySet<PileId> = new Set([
+  'hidden.deck',
+  'hidden.discard',
+  'enemy.deck',
+  'enemy.discard',
+  'graveyard',
+])
 
 export function facedownClickMessage(label: string): string {
   return `The ${label} is face-down. You see those cards when they are dealt or drawn.`
@@ -81,6 +100,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'hidden.deck',
       inspect: false,
       inline: INLINE.has('hidden.deck'),
+      group: 'maquis',
       hint: facedownClickMessage('Hidden deck'),
     },
     {
@@ -91,6 +111,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'hidden.discard',
       inspect: true,
       inline: INLINE.has('hidden.discard'),
+      group: 'maquis',
       spyCount: hiddenSpies,
       hint: 'Face-up. Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out. Click to look through.',
     },
@@ -102,6 +123,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'recruit.deck',
       inspect: false,
       inline: INLINE.has('recruit.deck'),
+      group: 'maquis',
       hint: facedownClickMessage('Recruit deck'),
     },
     {
@@ -112,6 +134,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'recruit.revealed',
       inspect: true,
       inline: INLINE.has('recruit.revealed'),
+      group: 'maquis',
       hint: 'Face-up. Maquis played revealed this game — set aside, out of the decks. Click to look through.',
     },
     {
@@ -121,6 +144,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'enemy',
       inspect: false,
       inline: INLINE.has('enemy.deck'),
+      group: 'enemies',
       hint: facedownClickMessage('Enemy deck'),
     },
     {
@@ -130,6 +154,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'enemy',
       inspect: true,
       inline: INLINE.has('enemy.discard'),
+      group: 'enemies',
       hint: 'Face-up. Defeated/discarded Enemies; reshuffled into the Enemy deck when it runs out. Click to look through.',
     },
     {
@@ -139,6 +164,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'mission',
       inspect: false,
       inline: INLINE.has('mission.deck'),
+      group: 'missions',
       hint: facedownClickMessage('Mission deck'),
     },
     {
@@ -148,6 +174,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'mission',
       inspect: true,
       inline: INLINE.has('defeated'),
+      group: 'missions',
       hint: 'Face-up. Missions you have defeated — these score their Victory Points. Click to look through.',
     },
     {
@@ -157,6 +184,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'civ',
       inspect: true,
       inline: INLINE.has('graveyard'),
+      group: 'out',
       hint: 'Face-up. Lost Civilians. Reach 5 civilians here and the resistance is crushed. Click to look through.',
     },
     {
@@ -166,6 +194,7 @@ export function pileViews(state: GameState): PileView[] {
       tone: 'spy',
       inspect: true,
       inline: INLINE.has('spy.supply'),
+      group: 'out',
       hint: 'Face-up. Spies available to be added to your Hidden deck by enemy effects. Click to look through.',
     },
     {
@@ -176,6 +205,7 @@ export function pileViews(state: GameState): PileView[] {
       flightKey: 'removed',
       inspect: true,
       inline: INLINE.has('removed'),
+      group: 'out',
       hint: 'Face-up. Cards removed from the game entirely (back in the box). Click to look through.',
     },
   ]

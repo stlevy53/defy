@@ -26,10 +26,24 @@ describe('pileViews', () => {
     expect(byId['mission.deck'].inspect).toBe(false)
   })
 
-  it('keeps Hidden discard on the status bar next to Hidden deck', () => {
+  it('puts your cycle, the occupation cycle, and the Graveyard on the status bar', () => {
     const s = createGame({ seed: 1 })
     const inline = pileViews(s).filter((p) => p.inline).map((p) => p.id)
-    expect(inline).toEqual(['hidden.deck', 'hidden.discard', 'enemy.deck', 'mission.deck', 'graveyard'])
+    expect(inline).toEqual(['hidden.deck', 'hidden.discard', 'enemy.deck', 'enemy.discard', 'graveyard'])
+  })
+
+  it('groups All piles by table role, deck then its public pile', () => {
+    const s = createGame({ seed: 1 })
+    const byGroup = Object.fromEntries(
+      ['maquis', 'enemies', 'missions', 'out'].map((g) => [
+        g,
+        pileViews(s).filter((p) => p.group === g).map((p) => p.id),
+      ]),
+    )
+    expect(byGroup.maquis).toEqual(['hidden.deck', 'hidden.discard', 'recruit.deck', 'recruit.revealed'])
+    expect(byGroup.enemies).toEqual(['enemy.deck', 'enemy.discard'])
+    expect(byGroup.missions).toEqual(['mission.deck', 'defeated'])
+    expect(byGroup.out).toEqual(['graveyard', 'spy.supply', 'removed'])
   })
 
   it('puts a Spy count on Hidden discard', () => {

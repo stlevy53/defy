@@ -8,7 +8,7 @@ import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { DecisionModal } from './ui/DecisionModal'
 import { PileInspect } from './ui/PileInspect'
-import { facedownClickMessage, pileViews, type PileId, type PileView } from './ui/pileInspect'
+import { facedownClickMessage, pileViews, PILE_GROUPS, type PileId, type PileView } from './ui/pileInspect'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
@@ -957,7 +957,6 @@ function Piles({
 }) {
   const piles = pileViews(state)
   const inline = piles.filter((p) => p.inline)
-  const rest = piles.filter((p) => !p.inline)
   const [open, setOpen] = useState(false)
 
   const activate = (p: PileView) => {
@@ -991,15 +990,21 @@ function Piles({
         {/* Stays mounted (shown/hidden via CSS, not conditional rendering) even while closed, so
          *  useCardFlights can still measure these tiles as flight targets. See Phase 6. */}
         <div className={`piles-popover ${open ? 'open' : ''}`} role="dialog" aria-label="All piles">
-          <h3 className="piles-popover-head">Card Piles</h3>
-          {rest.map((p) => (
-            <PileChip
-              key={p.id}
-              pile={p}
-              compact={false}
-              landing={!!p.flightKey && landingPiles.includes(p.flightKey)}
-              onActivate={activate}
-            />
+          {PILE_GROUPS.map((g) => (
+            <div key={g.id} className="piles-group">
+              <h3 className="piles-group-head">{g.label}</h3>
+              {piles
+                .filter((p) => p.group === g.id)
+                .map((p) => (
+                  <PileChip
+                    key={p.id}
+                    pile={p}
+                    compact={false}
+                    landing={!!p.flightKey && landingPiles.includes(p.flightKey)}
+                    onActivate={activate}
+                  />
+                ))}
+            </div>
           ))}
         </div>
       </div>
@@ -1030,7 +1035,7 @@ function PileChip({
     <Tip below text={pile.hint}>
       <button
         type="button"
-        data-pile-key={pile.flightKey}
+        data-pile-key={compact ? pile.flightKey : pile.inline ? undefined : pile.flightKey}
         className={cls}
         onClick={() => onActivate(pile)}
         aria-label={aria}
