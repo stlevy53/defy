@@ -16,6 +16,7 @@ import { Coach } from './ui/Coach'
 import { useUiScale } from './ui/useUiScale'
 import { useCardSlide } from './ui/useCardSlide'
 import type { CardSlide } from './ui/useCardSlide'
+import { useHoverPeek } from './ui/hoverPeek'
 import { maquisArt, spyArt } from './ui/cardArt'
 import { maquisSideAction, maquisAttack } from './ui/format'
 import { APP_VERSION } from './ui/patchNotes'
@@ -241,38 +242,10 @@ export function App() {
   // on the app root and positioned via `position: fixed` from the hovered card's measured rect, the
   // same technique FloatingPickBar/SlidingCard use, so it isn't clipped by the scrolling zones/hand
   // (an ancestor `overflow` silently clips plain `position: absolute` popovers — see the phase-help
-  // popover fix).
-  const [peek, setPeek] = useState<{ dataId: string; x: number; y: number; width: number } | null>(null)
+  // popover fix). Glance-only: dismissed the moment the pointer leaves (right-click zoom is the
+  // sticky look).
   const appRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    const root = appRef.current
-    if (!root) return
-    const sel = '.card.hand-card.has-art[data-peek-id], .card.played.has-art[data-peek-id]'
-    let hideTimer: ReturnType<typeof setTimeout> | undefined
-    const onOver = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest(sel) as HTMLElement | null
-      if (!target) return
-      clearTimeout(hideTimer)
-      const dataId = target.getAttribute('data-peek-id')
-      if (!dataId) return
-      const r = target.getBoundingClientRect()
-      setPeek({ dataId, x: r.left + r.width / 2, y: r.top, width: r.width })
-    }
-    const onOut = (e: MouseEvent) => {
-      const from = (e.target as HTMLElement).closest(sel)
-      if (!from) return
-      const to = e.relatedTarget instanceof Node ? (e.relatedTarget as HTMLElement).closest(sel) : null
-      if (to === from) return
-      hideTimer = setTimeout(() => setPeek(null), 40)
-    }
-    root.addEventListener('mouseover', onOver)
-    root.addEventListener('mouseout', onOut)
-    return () => {
-      clearTimeout(hideTimer)
-      root.removeEventListener('mouseover', onOver)
-      root.removeEventListener('mouseout', onOut)
-    }
-  }, [])
+  const peek = useHoverPeek(appRef)
 
   // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
   const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
@@ -1164,8 +1137,8 @@ function AttackStrengthToken({
  *  rules text as real HTML, lifted above the card the pointer is over. Answers "what does this do"
  *  without the click the right-click zoom still requires for a closer look at the art itself
  *  (Phase 6 — reading a card's rules text should never require a click). Positioned `fixed` from
- *  the hovered card's measured rect (see the delegated listener in App()) rather than a CSS-only
- *  `:hover` popover, since the committed lanes and hand both scroll/clip via `overflow` and a plain
+ *  the hovered card's measured rect (see `useHoverPeek`) rather than a CSS-only `:hover` popover,
+ *  since the committed lanes and hand both scroll/clip via `overflow` and a plain
  *  `position: absolute` child would be cut off (the same lesson as the phase-help popover fix). */
 function HoverPeek({ dataId, x, y, width }: { dataId: string; x: number; y: number; width: number }) {
   if (dataId === 'spy') return null

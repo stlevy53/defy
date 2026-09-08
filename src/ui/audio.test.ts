@@ -4,6 +4,7 @@ import {
   DEFAULT_VOLUME,
   SOUND_MUTED_KEY,
   SOUND_VOLUME_KEY,
+  CUE_GAIN,
   actionSfx,
   configureAudio,
   endgameCue,
@@ -121,6 +122,22 @@ describe('playSfx', () => {
     setVolume(0.5, s)
     playSfx('strike', { gain: 0.4 })
     expect(vols).toEqual([0.2])
+  })
+
+  it('applies the quieter gunshot cue gain by default, leaving the card flip at master volume', () => {
+    const vols: number[] = []
+    const s = mem()
+    configureAudio({
+      urls: { 'Card Flip': 'flip.wav', Gunshot: 'gun.wav' },
+      play: (_url, vol) => vols.push(vol),
+      storage: s,
+    })
+    unlock()
+    setVolume(0.5, s)
+    playSfx('play')
+    playSfx('strike')
+    expect(vols).toEqual([0.5, 0.5 * (CUE_GAIN.strike ?? 1)])
+    expect(CUE_GAIN.strike).toBe(0.35)
   })
 })
 

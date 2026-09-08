@@ -1071,10 +1071,11 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 
 /* Hover-peek (Phase 6) — a large read-only copy lifted above whichever hand/committed art-mode card
  *  the pointer is over, both sides' printed rules text as real HTML below the art, so reading a
- *  card never requires the click right-click zoom still does. `position: fixed`, coordinates set
- *  inline from the hovered card's measured rect (see App's delegated listener) rather than a plain
- *  `position: absolute` popover, since the committed lanes and hand both scroll/clip via `overflow`
- *  and would cut a CSS-anchored one off — the same fix as the phase-help popover. */
+ *  card never requires the click right-click zoom still does. Glance-only (`pointer-events: none`)
+ *  and dismissed the moment the pointer leaves (see `useHoverPeek`). `position: fixed`, coordinates
+ *  set inline from the hovered card's measured rect rather than a plain `position: absolute`
+ *  popover, since the committed lanes and hand both scroll/clip via `overflow` and would cut a
+ *  CSS-anchored one off — the same fix as the phase-help popover. */
 .hover-peek {
   position: fixed; z-index: 70; width: var(--peek-w, 320px);
   transform: translate(-50%, calc(-100% - 12px));

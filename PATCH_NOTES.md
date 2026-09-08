@@ -6,6 +6,15 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ---
 
+## v0.2.4 — 2026-09-08
+
+Hover peek lets go, and the gun sits down.
+
+- **Fix** — the hover preview on a hand or committed card now disappears as soon as you move the pointer away (or scroll, or right-click to zoom). It used to stick until you hovered that card again. Right-click zoom is still the way to hold a card up and read it.
+- **Sound** — the gunshot when you spend Attack on an Enemy is quieter, so it sits closer to the card flip and the other table cues. Mute and Volume in ⚙ Settings are unchanged — one slider still covers everything.
+
+---
+
 ## v0.2.3 — 2026-09-06
 
 - **Fix** — each Enemy copy now uses the photo of that Defense, not one picture per type. A Guard 3 shows `guard_3`, a Grunt 1 shows `grunt_1`, and so on, so a flipped garrison (Recon the Mountain Pass, a scout, choosing a Mission) matches the card. The Defense footer on the token still shows this copy's live value.

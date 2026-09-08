@@ -11,6 +11,15 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.4',
+    date: '2026-09-08',
+    title: 'Hover peek lets go, and the gun sits down',
+    changes: [
+      'Fix — the hover preview on a hand or committed card now disappears as soon as you move the pointer away (or scroll, or right-click to zoom). It used to stick until you hovered that card again.',
+      'Sound — the gunshot on an Enemy is quieter, so it sits closer to the card flip and the other table cues. One Volume slider still covers everything.',
+    ],
+  },
+  {
     version: '0.2.3',
     date: '2026-09-06',
     title: 'Flipped Enemies show the right card',
