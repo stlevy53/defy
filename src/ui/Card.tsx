@@ -8,8 +8,8 @@ import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import type { GameState, MissionSlot, EnemyInstance } from '../engine'
 import { gatingStrikeUids } from '../engine'
 import { missionClickKind } from './commit'
-import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip, eraLabel, classifyCandidate } from './format'
-import { maquisArt, enemyArt, enemyBackArt, missionArt, missionBackArt, spyArt } from './cardArt'
+import { missionOf, nameOfMaquis, maquisAttack, maquisSideAction, enemyOf, keywordTip, eraLabel, classifyCandidate, civilianOf } from './format'
+import { maquisArt, enemyArt, enemyBackArt, missionArt, missionBackArt, spyArt, civilianArt } from './cardArt'
 import { Tip } from './Tip'
 import { useZoom } from './Zoom'
 
@@ -1085,6 +1085,8 @@ export function zoomNodeFor(state: GameState, uid: string): ReactNode | null {
           printedDefense={c.enemy.baseDefense}
         />
       )
+    case 'civilian':
+      return <ZoomCivilianCard dataId={c.dataId} />
     default:
       return null
   }
@@ -1177,6 +1179,20 @@ function ZoomEnemyCard({
         <span>🛡 Defense {defense}</span>
       </div>
       {type?.effect && <p className="zoom-effect">{type.effect}</p>}
+    </div>
+  )
+}
+
+function ZoomCivilianCard({ dataId }: { dataId: string }) {
+  const civ = civilianOf(dataId)
+  const n = civ?.civilians ?? 0
+  const name = n === 1 ? '1 Civilian' : `${n} Civilians`
+  const art = civilianArt(dataId)
+  if (art) return <img className="zoom-art" src={art} alt={name} draggable={false} />
+  return (
+    <div className="zoom-card zoom-civilian">
+      <h2>{name}</h2>
+      {civ?.effect && <p className="zoom-effect">{civ.effect}</p>}
     </div>
   )
 }

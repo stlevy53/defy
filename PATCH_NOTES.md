@@ -8,8 +8,10 @@ Versions use `v0.MINOR.PATCH`. The prototype ships as a portable Windows build (
 
 ## v0.2.4 — 2026-09-08
 
-Hover peek lets go, and the gun sits down.
+Hover peek lets go, the gun sits down, and you can look through the discards.
 
+- **Look through face-up piles** — click Hidden discard, the Revealed pile, Enemy discard, Defeated Missions, the Graveyard, leftover Spies, or Removed to spread those cards (newest on top). Hidden discard sits on the status bar with a Spy count when Spies are in it. Empty piles still open and say so. You can look while a choice window is open (same as holding Domingo’s top 3 and spreading the discard). Click or right-click a card to zoom.
+- **Face-down decks stay closed** — Hidden, Recruit, Enemy, and Mission decks look flatter and dashed so they don’t read as look-through. Click one and the event line explains they are face-down; hover says the same.
 - **Fix** — the hover preview on a hand or committed card now disappears as soon as you move the pointer away (or scroll, or right-click to zoom). It used to stick until you hovered that card again. Right-click zoom is still the way to hold a card up and read it.
 - **Sound** — the gunshot when you spend Attack on an Enemy is quieter, so it sits closer to the card flip and the other table cues. Mute and Volume in ⚙ Settings are unchanged — one slider still covers everything.
 

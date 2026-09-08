@@ -11,6 +11,7 @@ const maquisCard = new Map(maquis.map((m) => [m.id, m]))
 const missionCard = new Map(missions.map((m) => [m.id, m]))
 const enemyTypeById = new Map(enemyTypes.map((t) => [t.id, t]))
 const civilianCount = new Map(civilians.map((c) => [c.id, c.civilians]))
+const civilianCard = new Map(civilians.map((c) => [c.id, c]))
 
 /** Total civilians in the Graveyard (sum of each card's printed count — the loss condition is 5). */
 export function graveyardCivilians(state: GameState): number {
@@ -56,6 +57,7 @@ export function keywordTip(kw?: string): string {
   }
 }
 export const missionOf = (dataId: string) => missionCard.get(dataId)
+export const civilianOf = (dataId: string) => civilianCard.get(dataId)
 
 /** Printed era line, e.g. "Era 1: Re-invasion of Spain". */
 export const eraLabel = (era: 1 | 2 | 3): string => `Era ${era}: ${eraNames[era]}`
@@ -127,9 +129,10 @@ export type Candidate =
   | { kind: 'mission'; uid: string; slot: MissionSlot }
   | { kind: 'maquis'; uid: string; dataId: string }
   | { kind: 'spy'; uid: string }
+  | { kind: 'civilian'; uid: string; dataId: string }
   | { kind: 'unknown'; uid: string; label: string }
 
-/** Classify a candidate uid so the decision modal can draw its real card face. */
+/** Classify a candidate uid so the decision modal (and pile inspector) can draw its real card face. */
 export function classifyCandidate(state: GameState, uid: string): Candidate {
   const enemy = findEnemy(state, uid)
   if (enemy) return { kind: 'enemy', uid, enemy }
@@ -138,6 +141,14 @@ export function classifyCandidate(state: GameState, uid: string): Candidate {
   const dataId = findCardDataId(state, uid)
   if (dataId === 'spy') return { kind: 'spy', uid }
   if (dataId && maquisCard.has(dataId)) return { kind: 'maquis', uid, dataId }
+  if (dataId && missionCard.has(dataId)) {
+    return {
+      kind: 'mission',
+      uid,
+      slot: { uid, dataId, faceDown: false, defeated: true, enemies: [] },
+    }
+  }
+  if (dataId && civilianCard.has(dataId)) return { kind: 'civilian', uid, dataId }
   return { kind: 'unknown', uid, label: describeUid(state, uid) }
 }
 

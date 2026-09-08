@@ -1302,17 +1302,57 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
   .confetti, .win-rays { display: none; }
 }
 
-/* Card piles: four high-frequency piles sit inline in the status bar as compact chips; the rest
- *  live behind an "All piles" disclosure popover. Both share the tile styling below — the popover
- *  reuses full-size `.pile` tiles, the status bar uses the compact `.status-pile` variant. The
- *  popover panel itself stays mounted (visibility, not display:none) even while closed, so
- *  useCardFlights can still measure its tiles as flight targets (see Phase 6, which repoints all
- *  flights at the inline chips and makes this moot). */
-.status-piles { flex: none; display: flex; align-items: center; gap: 0.5rem; }
+/* Card piles: high-frequency piles sit inline in the status bar as compact chips (Hidden deck,
+ *  Hidden discard, Enemy deck, Mission deck, Graveyard); the rest live behind an "All piles"
+ *  disclosure. Face-up chips are gold-bordered and open a look-through; face-down decks are
+ *  dashed/flatter and explain on click. Both share the tile styling below — the popover reuses
+ *  full-size `.pile` tiles, the status bar uses the compact `.status-pile` variant. The popover
+ *  panel itself stays mounted (visibility, not display:none) even while closed, so useCardFlights
+ *  can still measure its tiles as flight targets (see Phase 6, which repoints all flights at the
+ *  inline chips and makes this moot). */
+.status-piles { flex: none; display: flex; align-items: center; gap: 0.32rem; }
+.status-piles .tip { cursor: inherit; }
+button.status-pile,
+button.pile {
+  appearance: none; font: inherit; color: inherit; text-align: left;
+}
 .status-pile {
-  display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+  display: flex; align-items: center; gap: 0.28rem; white-space: nowrap;
+  padding: 0.1rem 0.28rem 0.1rem 0.1rem; border-radius: 7px;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
 }
 .status-pile.empty { opacity: 0.5; }
+.status-pile.inspectable.empty { opacity: 0.82; }
+.status-pile.inspectable {
+  cursor: pointer;
+  border: 1px solid rgba(217, 154, 36, 0.55);
+  background: rgba(217, 154, 36, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(217, 154, 36, 0.12);
+}
+.status-pile.inspectable:hover,
+.status-pile.inspectable:focus-visible {
+  border-color: var(--accent-2);
+  background: rgba(217, 154, 36, 0.2);
+  transform: translateY(-1px);
+  outline: none;
+}
+.status-pile.facedown {
+  cursor: help;
+  border: 1px dashed rgba(122, 98, 62, 0.42);
+  background: rgba(20, 17, 14, 0.28);
+  opacity: 0.78;
+}
+.status-pile.facedown:hover,
+.status-pile.facedown:focus-visible {
+  border-color: rgba(180, 160, 120, 0.7);
+  background: rgba(40, 34, 28, 0.45);
+  opacity: 0.95;
+  outline: none;
+}
+.status-pile.facedown .deck-ico-sm {
+  box-shadow: none;
+  filter: saturate(0.65) brightness(0.82);
+}
 .status-pile .deck-ico-sm {
   position: relative; flex: none; width: 20px; height: 27px; border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.5);
@@ -1322,7 +1362,15 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 }
 .status-pile .status-pile-count { position: relative; z-index: 1; font-size: 11px; font-weight: 800; }
 .status-pile .status-pile-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.status-pile.inspectable .status-pile-label { color: var(--ink); }
 .status-pile.flight-land .deck-ico-sm { animation: pile-catch 0.85s ease-out; }
+.pile-spybadge {
+  position: absolute; top: -6px; right: -7px; z-index: 2;
+  min-width: 14px; height: 14px; padding: 0 3px; border-radius: 999px;
+  background: #3f8f99; color: #fff;
+  font-size: 0.58rem; font-weight: 800; line-height: 14px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
 
 .piles-disclosure { position: relative; }
 .piles-toggle { font-size: 0.72rem; padding: 0.22rem 0.6rem; }
@@ -1340,11 +1388,43 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 .piles-popover-head { margin: 0 0 0.15rem; }
 
 .pile {
+  width: 100%;
   display: flex; align-items: center; gap: 0.6rem;
   padding: 0.32rem 0.5rem; border-radius: 9px;
   background: rgba(20, 17, 14, 0.62); border: 1px solid rgba(122, 98, 62, 0.32);
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
 }
 .pile.empty { opacity: 0.42; }
+.pile.inspectable.empty { opacity: 0.78; }
+.pile.inspectable {
+  cursor: pointer;
+  border-color: rgba(217, 154, 36, 0.55);
+  background: rgba(217, 154, 36, 0.1);
+}
+.pile.inspectable:hover,
+.pile.inspectable:focus-visible {
+  border-color: var(--accent-2);
+  background: rgba(217, 154, 36, 0.18);
+  transform: translateY(-1px);
+  outline: none;
+}
+.pile.facedown {
+  cursor: help;
+  border-style: dashed;
+  border-color: rgba(122, 98, 62, 0.4);
+  background: rgba(20, 17, 14, 0.4);
+}
+.pile.facedown:hover,
+.pile.facedown:focus-visible {
+  border-color: rgba(180, 160, 120, 0.7);
+  background: rgba(40, 34, 28, 0.5);
+  outline: none;
+}
+.pile.facedown .deck-ico {
+  box-shadow: 1.5px 1.5px 0 var(--d2);
+  filter: saturate(0.65) brightness(0.82);
+}
+.pile.inspectable .pile-label { color: var(--ink); }
 .pile.flight-land { animation: pile-catch 0.85s ease-out; }
 @keyframes pile-catch {
   0%   { box-shadow: 0 0 0 0 rgba(217, 154, 36, 0); }
@@ -1715,13 +1795,18 @@ body.sliding-card .card.slidable { cursor: grabbing; }
 }
 
 /* --- Decision modal: off-board card choices (Revealed pile, deck peeks, reorder, options) --- */
-.dm-overlay {
+.dm-overlay,
+.pile-inspect-overlay {
   position: fixed; inset: 0; z-index: 96;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;
   background: radial-gradient(ellipse at center, rgba(20, 15, 10, 0.74), rgba(6, 4, 3, 0.92));
   backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   animation: whatsnew-fade 0.25s ease both;
 }
+/* Sit above a pending decision (96) so you can spread a face-up pile while Domingo's top 3 are
+ *  still in hand — same as holding cards in the physical game. Zoom stays at 100. */
+.pile-inspect-overlay { z-index: 98; }
+.dm-empty { margin: 0.4rem 0 0.2rem; color: var(--muted); font-size: 0.95rem; }
 /* Flex column with a pinned header + footer and a scrolling card area, so a large pile (a whole
  * deck's worth of candidates) scrolls the cards while the prompt and Confirm bar stay in view. */
 .dm {
@@ -1760,6 +1845,7 @@ body.sliding-card .card.slidable { cursor: grabbing; }
   transition: transform 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .dm-card:hover { transform: translateY(-2px); border-color: rgba(122, 98, 62, 0.85); }
+.dm-card.inspect { cursor: zoom-in; }
 .dm-card.selected { border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2), 0 8px 20px rgba(0, 0, 0, 0.4); }
 .dm-card-name { font-weight: 700; font-size: 0.98rem; margin-bottom: 0.35rem; display: flex; justify-content: space-between; gap: 0.4rem; align-items: baseline; }
 .dm-def, .dm-stats { color: var(--accent-2); font-weight: 600; font-size: 0.82rem; }

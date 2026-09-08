@@ -9,8 +9,8 @@
 import { useEffect, useState, type MouseEvent } from 'react'
 import type { Decision, GameState } from '../engine'
 import { DRAFT_FROM } from '../engine'
-import { classifyCandidate, maquisOf, enemyOf, missionOf } from './format'
-import { maquisArt, enemyArt, missionArt, missionBackArt, spyArt } from './cardArt'
+import { classifyCandidate, maquisOf, enemyOf, missionOf, civilianOf } from './format'
+import { maquisArt, enemyArt, missionArt, missionBackArt, spyArt, civilianArt } from './cardArt'
 import { zoomNodeFor } from './Card'
 import { useZoom } from './Zoom'
 
@@ -224,31 +224,41 @@ function ModalHead({ prompt, hint }: { prompt: string; hint?: string }) {
   )
 }
 
-/** A full, readable, read-only card face for a decision candidate. Uses the card-art seam and falls
- *  back to the themed text face (as the rest of the app does) when no image exists. */
-function DecisionCard({
+/** A full, readable card face for a decision candidate or a pile-inspect view. Uses the card-art
+ *  seam and falls back to the themed text face when no image exists. `inspect` is look-only:
+ *  click / right-click zoom; no selection. */
+export function DecisionCard({
   state,
   uid,
-  selected,
+  selected = false,
   order,
   onClick,
+  inspect,
 }: {
   state: GameState
   uid: string
-  selected: boolean
+  selected?: boolean
   order?: number
-  onClick: () => void
+  onClick?: () => void
+  inspect?: boolean
 }) {
   const c = classifyCandidate(state, uid)
-  const cls = `dm-card ${c.kind} ${selected ? 'selected' : ''}`
+  const cls = `dm-card ${c.kind}${selected ? ' selected' : ''}${inspect ? ' inspect' : ''}`
   const openZoom = useZoom()
   const zoom = (e: MouseEvent) => {
-    const node = zoomNodeFor(state, uid)
-    if (!node) return
     e.preventDefault()
     e.stopPropagation()
-    openZoom(node)
+    const node = zoomNodeFor(state, uid)
+    if (node) {
+      openZoom(node)
+      return
+    }
+    if (c.kind === 'spy') {
+      const art = spyArt()
+      openZoom(art ? <img className="zoom-art" src={art} alt="Spy" draggable={false} /> : <div className="zoom-card"><h2>Spy</h2></div>)
+    }
   }
+  const handleClick = inspect ? zoom : onClick
 
   // Art vs. text is either/or, exactly as the board's card renderer does: when a card image exists
   // it IS the face (the Maquis image already carries the name + both Hidden/Revealed halves side by
@@ -328,13 +338,33 @@ function DecisionCard({
           </>
         )
       }
+      case 'civilian': {
+        const civ = civilianOf(c.dataId)
+        const art = civilianArt(c.dataId)
+        const n = civ?.civilians ?? 0
+        const name = n === 1 ? '1 Civilian' : `${n} Civilians`
+        if (art) return <img className="dm-art" src={art} alt={name} draggable={false} />
+        return (
+          <>
+            <div className="dm-card-name">{name}</div>
+            {civ?.effect && <p className="dm-effect">{civ.effect}</p>}
+          </>
+        )
+      }
       case 'unknown':
         return <div className="dm-card-name">{c.label}</div>
     }
   })()
 
   return (
-    <button type="button" className={cls} onClick={onClick} onContextMenu={zoom} aria-pressed={selected} title="Right-click to zoom">
+    <button
+      type="button"
+      className={cls}
+      onClick={handleClick}
+      onContextMenu={zoom}
+      aria-pressed={inspect ? undefined : selected}
+      title={inspect ? 'Click or right-click to zoom' : 'Right-click to zoom'}
+    >
       {order !== undefined && <span className="dm-order">{order}</span>}
       {body}
     </button>
