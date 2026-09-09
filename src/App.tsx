@@ -958,6 +958,17 @@ function Piles({
   const piles = pileViews(state)
   const inline = piles.filter((p) => p.inline)
   const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [open])
 
   const activate = (p: PileView) => {
     setOpen(false)
@@ -976,7 +987,7 @@ function Piles({
           onActivate={activate}
         />
       ))}
-      <div className="piles-disclosure">
+      <div className="piles-disclosure" ref={menuRef}>
         <button
           type="button"
           className="ghost piles-toggle"
@@ -986,7 +997,6 @@ function Piles({
         >
           All piles
         </button>
-        {open && <div className="popover-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
         {/* Stays mounted (shown/hidden via CSS, not conditional rendering) even while closed, so
          *  useCardFlights can still measure these tiles as flight targets. See Phase 6. */}
         <div className={`piles-popover ${open ? 'open' : ''}`} role="dialog" aria-label="All piles">
