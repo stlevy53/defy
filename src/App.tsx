@@ -962,12 +962,26 @@ function Piles({
 
   useEffect(() => {
     if (!open) return
+    // Capture + swallow: a leftover pointerup/click on a Mission would ChooseMission
+    // (and start ATTACK) after we close. The old fixed backdrop lived inside
+    // .board-chrome's backdrop-filter, so it never covered the table.
+    const swallow = (e: Event) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const onDown = (e: PointerEvent) => {
       if (menuRef.current?.contains(e.target as Node)) return
+      swallow(e)
       setOpen(false)
+      document.addEventListener('pointerup', swallow, { capture: true, once: true })
+      document.addEventListener('click', swallow, { capture: true, once: true })
     }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
+    document.addEventListener('pointerdown', onDown, true)
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true)
+      document.removeEventListener('pointerup', swallow, true)
+      document.removeEventListener('click', swallow, true)
+    }
   }, [open])
 
   const activate = (p: PileView) => {
