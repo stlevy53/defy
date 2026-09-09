@@ -191,7 +191,7 @@ h3, h4 { margin: 0.25rem 0; color: var(--muted); font-weight: 600; text-transfor
  *  the newest message is shown, and useLogToasts filters out anything that already animates on a
  *  card (a strike's cost floats on the target and the Attack Strength token instead; a
  *  reinforcement flashes the garrison strip) — see the .toast rule below for the pill itself. */
-.event-line { flex: none; height: 22px; display: flex; align-items: center; justify-content: center; }
+.event-line { flex: none; min-height: 22px; height: auto; display: flex; align-items: center; justify-content: center; }
 
 /* The single Attack Strength object (Phase 6) — was a topbar pill AND a turn-tile meter showing the
  *  same number twice. Lives at the right end of the committed lanes (.play-area), the seam between
@@ -1016,6 +1016,13 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 }
 .tip.below::after { top: calc(100% + 7px); bottom: auto; }
 .tip.below::before { top: calc(100% + 2px); bottom: auto; border-top-color: transparent; border-bottom-color: var(--line); }
+.tip.aside::after {
+  left: auto; right: calc(100% + 8px); top: 6px; bottom: auto; transform: none;
+}
+.tip.aside::before {
+  left: auto; right: calc(100% + 2px); top: 14px; bottom: auto; transform: none;
+  border-top-color: transparent; border-left-color: var(--line);
+}
 .tip:hover::after, .tip:hover::before { display: block; opacity: 1; }
 @starting-style {
   .tip:hover::after, .tip:hover::before { opacity: 0; }
@@ -1071,10 +1078,11 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 
 /* Hover-peek (Phase 6) — a large read-only copy lifted above whichever hand/committed art-mode card
  *  the pointer is over, both sides' printed rules text as real HTML below the art, so reading a
- *  card never requires the click right-click zoom still does. `position: fixed`, coordinates set
- *  inline from the hovered card's measured rect (see App's delegated listener) rather than a plain
- *  `position: absolute` popover, since the committed lanes and hand both scroll/clip via `overflow`
- *  and would cut a CSS-anchored one off — the same fix as the phase-help popover. */
+ *  card never requires the click right-click zoom still does. Glance-only (`pointer-events: none`)
+ *  and dismissed the moment the pointer leaves (see `useHoverPeek`). `position: fixed`, coordinates
+ *  set inline from the hovered card's measured rect rather than a plain `position: absolute`
+ *  popover, since the committed lanes and hand both scroll/clip via `overflow` and would cut a
+ *  CSS-anchored one off — the same fix as the phase-help popover. */
 .hover-peek {
   position: fixed; z-index: 70; width: var(--peek-w, 320px);
   transform: translate(-50%, calc(-100% - 12px));
@@ -1301,17 +1309,58 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
   .confetti, .win-rays { display: none; }
 }
 
-/* Card piles: four high-frequency piles sit inline in the status bar as compact chips; the rest
- *  live behind an "All piles" disclosure popover. Both share the tile styling below — the popover
- *  reuses full-size `.pile` tiles, the status bar uses the compact `.status-pile` variant. The
- *  popover panel itself stays mounted (visibility, not display:none) even while closed, so
- *  useCardFlights can still measure its tiles as flight targets (see Phase 6, which repoints all
- *  flights at the inline chips and makes this moot). */
-.status-piles { flex: none; display: flex; align-items: center; gap: 0.5rem; }
+/* Card piles: glance shortcuts sit inline in the status bar (Hidden deck+discard, Enemy
+ *  deck+discard, Graveyard). All piles is the full catalog, grouped Maquis / Enemies / Missions /
+ *  Out of play, deck then its public pile. Face-up chips are gold-bordered and open a look-through;
+ *  face-down decks are dashed/flatter and explain on click. The popover stays mounted (visibility,
+ *  not display:none) even while closed, so useCardFlights can still measure leftover tiles as
+ *  flight targets. Duplicates of inline chips omit data-pile-key so flights still aim at the bar. */
+.status-piles { flex: none; display: flex; align-items: center; gap: 0.32rem; }
+.status-piles .tip { cursor: inherit; }
+button.status-pile,
+button.pile {
+  appearance: none; font: inherit; color: inherit; text-align: left;
+}
 .status-pile {
-  display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+  display: flex; align-items: center; gap: 0.28rem; white-space: nowrap;
+  padding: 0.1rem 0.28rem 0.1rem 0.1rem; border-radius: 7px;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
 }
 .status-pile.empty { opacity: 0.5; }
+.status-pile.inspectable.empty { opacity: 0.82; }
+.status-pile.inspectable {
+  cursor: pointer;
+  border: 1.5px solid var(--accent-2);
+  background: rgba(217, 154, 36, 0.16);
+  box-shadow: 0 0 0 1px rgba(217, 154, 36, 0.2), 0 1px 6px rgba(0, 0, 0, 0.28);
+}
+.status-pile.inspectable:hover,
+.status-pile.inspectable:focus-visible {
+  border-color: #f0c45a;
+  background: rgba(217, 154, 36, 0.28);
+  transform: translateY(-1px);
+  outline: none;
+}
+.status-pile.inspectable .deck-ico-sm {
+  box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.95), 1.2px 1.2px 0 var(--d2), 2.4px 2.4px 0 var(--d3);
+}
+.status-pile.facedown {
+  cursor: help;
+  border: 1px dashed rgba(154, 143, 125, 0.58);
+  background: rgba(20, 17, 14, 0.18);
+  opacity: 0.72;
+}
+.status-pile.facedown:hover,
+.status-pile.facedown:focus-visible {
+  border-color: rgba(196, 178, 148, 0.85);
+  background: rgba(40, 34, 28, 0.4);
+  opacity: 0.95;
+  outline: none;
+}
+.status-pile.facedown .deck-ico-sm {
+  box-shadow: none;
+  filter: grayscale(0.4) saturate(0.4) brightness(0.72);
+}
 .status-pile .deck-ico-sm {
   position: relative; flex: none; width: 20px; height: 27px; border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.5);
@@ -1321,29 +1370,76 @@ button.chip.tip, button.order-item.tip { cursor: pointer; }
 }
 .status-pile .status-pile-count { position: relative; z-index: 1; font-size: 11px; font-weight: 800; }
 .status-pile .status-pile-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.status-pile.inspectable .status-pile-label { color: var(--ink); }
 .status-pile.flight-land .deck-ico-sm { animation: pile-catch 0.85s ease-out; }
+.pile-spybadge {
+  position: absolute; top: -6px; right: -7px; z-index: 2;
+  min-width: 14px; height: 14px; padding: 0 3px; border-radius: 999px;
+  background: #3f8f99; color: #fff;
+  font-size: 0.58rem; font-weight: 800; line-height: 14px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
 
 .piles-disclosure { position: relative; }
 .piles-toggle { font-size: 0.72rem; padding: 0.22rem 0.6rem; }
 .popover-backdrop { position: fixed; inset: 0; z-index: 55; background: transparent; }
 .piles-popover {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
-  display: flex; flex-direction: column; gap: 0.4rem;
-  width: 220px; padding: 0.6rem; border-radius: 10px;
+  display: flex; flex-direction: column; gap: 0.7rem;
+  width: 240px;
+  overflow: visible;
+  padding: 0.65rem 0.6rem 0.7rem; border-radius: 10px;
   background: rgba(20, 17, 14, 0.96); border: 1px solid rgba(122, 98, 62, 0.45);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
   opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-4px);
   transition: opacity 0.12s ease, transform 0.12s ease;
 }
 .piles-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
-.piles-popover-head { margin: 0 0 0.15rem; }
+.piles-group { display: flex; flex-direction: column; gap: 0.32rem; min-width: 0; }
+.piles-group-head { margin: 0 0 0.05rem; }
+.piles-popover .tip { display: block; min-width: 0; }
 
 .pile {
+  width: 100%;
   display: flex; align-items: center; gap: 0.6rem;
   padding: 0.32rem 0.5rem; border-radius: 9px;
   background: rgba(20, 17, 14, 0.62); border: 1px solid rgba(122, 98, 62, 0.32);
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
 }
 .pile.empty { opacity: 0.42; }
+.pile.inspectable.empty { opacity: 0.78; }
+.pile.inspectable {
+  cursor: pointer;
+  border: 1.5px solid var(--accent-2);
+  background: rgba(217, 154, 36, 0.14);
+}
+.pile.inspectable:hover,
+.pile.inspectable:focus-visible {
+  border-color: #f0c45a;
+  background: rgba(217, 154, 36, 0.24);
+  transform: translateY(-1px);
+  outline: none;
+}
+.pile.inspectable .deck-ico {
+  box-shadow: 0 0 0 2px rgba(217, 154, 36, 0.95), 1.5px 1.5px 0 var(--d2), 3px 3px 0 var(--d3);
+}
+.pile.facedown {
+  cursor: help;
+  border-style: dashed;
+  border-color: rgba(154, 143, 125, 0.55);
+  background: rgba(20, 17, 14, 0.32);
+}
+.pile.facedown:hover,
+.pile.facedown:focus-visible {
+  border-color: rgba(196, 178, 148, 0.85);
+  background: rgba(40, 34, 28, 0.5);
+  outline: none;
+}
+.pile.facedown .deck-ico {
+  box-shadow: none;
+  filter: grayscale(0.4) saturate(0.4) brightness(0.72);
+}
+.pile.inspectable .pile-label { color: var(--ink); }
 .pile.flight-land { animation: pile-catch 0.85s ease-out; }
 @keyframes pile-catch {
   0%   { box-shadow: 0 0 0 0 rgba(217, 154, 36, 0); }
@@ -1698,9 +1794,11 @@ body.sliding-card .card.slidable { cursor: grabbing; }
   color: var(--ink); background: rgba(20, 16, 12, 0.92); border: 1px solid rgba(217, 154, 36, 0.45);
   border-radius: 999px; padding: 5px 16px 5px 12px;
   display: inline-flex; align-items: center; gap: 8px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); max-width: min(520px, 90vw);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); max-width: min(720px, 94vw);
   animation: toast-in 0.22s ease-out;
+}
+.toast.pile-notice {
+  white-space: normal; line-height: 1.3; border-radius: 10px;
 }
 .toast::before {
   content: ''; flex: none; width: 7px; height: 7px; border-radius: 999px; background: var(--accent-2);
@@ -1714,13 +1812,18 @@ body.sliding-card .card.slidable { cursor: grabbing; }
 }
 
 /* --- Decision modal: off-board card choices (Revealed pile, deck peeks, reorder, options) --- */
-.dm-overlay {
+.dm-overlay,
+.pile-inspect-overlay {
   position: fixed; inset: 0; z-index: 96;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;
   background: radial-gradient(ellipse at center, rgba(20, 15, 10, 0.74), rgba(6, 4, 3, 0.92));
   backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   animation: whatsnew-fade 0.25s ease both;
 }
+/* Sit above a pending decision (96) so you can spread a face-up pile while Domingo's top 3 are
+ *  still in hand — same as holding cards in the physical game. Zoom stays at 100. */
+.pile-inspect-overlay { z-index: 98; }
+.dm-empty { margin: 0.4rem 0 0.2rem; color: var(--muted); font-size: 0.95rem; }
 /* Flex column with a pinned header + footer and a scrolling card area, so a large pile (a whole
  * deck's worth of candidates) scrolls the cards while the prompt and Confirm bar stay in view. */
 .dm {
@@ -1759,6 +1862,7 @@ body.sliding-card .card.slidable { cursor: grabbing; }
   transition: transform 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .dm-card:hover { transform: translateY(-2px); border-color: rgba(122, 98, 62, 0.85); }
+.dm-card.inspect { cursor: zoom-in; }
 .dm-card.selected { border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2), 0 8px 20px rgba(0, 0, 0, 0.4); }
 .dm-card-name { font-weight: 700; font-size: 0.98rem; margin-bottom: 0.35rem; display: flex; justify-content: space-between; gap: 0.4rem; align-items: baseline; }
 .dm-def, .dm-stats { color: var(--accent-2); font-weight: 600; font-size: 0.82rem; }

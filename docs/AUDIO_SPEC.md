@@ -74,7 +74,8 @@ What's New notes. Prefer CC0 so we do not owe on-screen credits.
 - Format: **OGG Vorbis** (small, fine in Chromium/Electron). MP3 is the fallback.
 - Length: table SFX **< 0.4 s**; stingers **< 4 s**. No music loop in this pass.
 - Size: aim **< 40 KB** per table cue, **< 120 KB** per stinger. The `.exe` already carries ~12 MB of card art.
-- Peak: similar loudness across cues so mute/volume is one control, not six.
+- Peak: similar loudness across cues so mute/volume is one control, not six. A cue that still peaks
+  hot on disk (the gunshot) is scaled in `CUE_GAIN` rather than with a second slider.
 - Trim silence at the start so the sound hits with the animation, not 200 ms later.
 
 ## Cue list (this pass)
@@ -86,7 +87,7 @@ Table movement shares one card-flip; combat is gunshot / knife / explosion; end-
 | `play` | A Maquis is played or rearranged; coach Next / Skip / Start playing | File: `Card Flip.wav`. |
 | `choose` | A Mission is chosen ("Click to attack") | File: `Mission attack selection audio.wav`. |
 | `draw` / `discard` | A card flies into or out of the hand | Same flip, unless a Spy is leaving — then `slash`. |
-| `strike` | Spend Attack on an Enemy | File: `Gunshot.wav`. |
+| `strike` | Spend Attack on an Enemy | File: `Gunshot.wav`. Cue gain 0.35 so it sits with the table cues. |
 | `slash` | A Spy leaves the table (discarded from hand) | File: `Knife slash.mp3`. |
 | `reinforce` | An Enemy is added to a Mission | Same card flip (a card sliding onto the board). |
 | `civilian` | A Civilian is sent to the Graveyard (Villa, CG Headquarters, Franco HQ, Caves, …) | File: `Civilian Death.mp3`. Fires on Graveyard growth (`useCivilianDeaths`); an undo that shrinks the pile stays silent. |

@@ -7,6 +7,8 @@ import { useGame, useReinforcements, useCardFlights, useLogToasts, useCivilianDe
 import type { CardFlight, LogToast } from './ui/useGame'
 import { DecisionPanel } from './ui/DecisionPanel'
 import { DecisionModal } from './ui/DecisionModal'
+import { PileInspect } from './ui/PileInspect'
+import { facedownClickMessage, pileViews, PILE_GROUPS, type PileId, type PileView } from './ui/pileInspect'
 import { Card } from './ui/Card'
 import { Tip } from './ui/Tip'
 import { WhatsNew } from './ui/WhatsNew'
@@ -16,6 +18,7 @@ import { Coach } from './ui/Coach'
 import { useUiScale } from './ui/useUiScale'
 import { useCardSlide } from './ui/useCardSlide'
 import type { CardSlide } from './ui/useCardSlide'
+import { useHoverPeek } from './ui/hoverPeek'
 import { maquisArt, spyArt } from './ui/cardArt'
 import { maquisSideAction, maquisAttack } from './ui/format'
 import { APP_VERSION } from './ui/patchNotes'
@@ -166,6 +169,7 @@ export function App() {
       if (showDraftOffer) return
       if (showCoach) return
       if (typeof document !== 'undefined' && document.querySelector('.zoom-overlay')) return
+      if (typeof document !== 'undefined' && document.querySelector('.pile-inspect-overlay')) return
       if (typeof document !== 'undefined' && document.body.classList.contains('sliding-card')) return
       setShowSettings(true)
     }
@@ -241,38 +245,13 @@ export function App() {
   // on the app root and positioned via `position: fixed` from the hovered card's measured rect, the
   // same technique FloatingPickBar/SlidingCard use, so it isn't clipped by the scrolling zones/hand
   // (an ancestor `overflow` silently clips plain `position: absolute` popovers — see the phase-help
-  // popover fix).
-  const [peek, setPeek] = useState<{ dataId: string; x: number; y: number; width: number } | null>(null)
+  // popover fix). Glance-only: dismissed the moment the pointer leaves (right-click zoom is the
+  // sticky look).
   const appRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    const root = appRef.current
-    if (!root) return
-    const sel = '.card.hand-card.has-art[data-peek-id], .card.played.has-art[data-peek-id]'
-    let hideTimer: ReturnType<typeof setTimeout> | undefined
-    const onOver = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest(sel) as HTMLElement | null
-      if (!target) return
-      clearTimeout(hideTimer)
-      const dataId = target.getAttribute('data-peek-id')
-      if (!dataId) return
-      const r = target.getBoundingClientRect()
-      setPeek({ dataId, x: r.left + r.width / 2, y: r.top, width: r.width })
-    }
-    const onOut = (e: MouseEvent) => {
-      const from = (e.target as HTMLElement).closest(sel)
-      if (!from) return
-      const to = e.relatedTarget instanceof Node ? (e.relatedTarget as HTMLElement).closest(sel) : null
-      if (to === from) return
-      hideTimer = setTimeout(() => setPeek(null), 40)
-    }
-    root.addEventListener('mouseover', onOver)
-    root.addEventListener('mouseout', onOut)
-    return () => {
-      clearTimeout(hideTimer)
-      root.removeEventListener('mouseover', onOver)
-      root.removeEventListener('mouseout', onOut)
-    }
-  }, [])
+  const peek = useHoverPeek(appRef)
+  const [inspecting, setInspecting] = useState<PileId | null>(null)
+  const pileNoticeSeq = useRef(0)
+  const [pileNotice, setPileNotice] = useState<{ text: string; seq: number } | null>(null)
 
   // Cards moving in/out of the hand (discards, draws) — flown as tokens between hand and pile rail.
   const { flights, remove: removeFlight } = useCardFlights(state, gameId, step)
@@ -484,7 +463,15 @@ export function App() {
             </div>
           </Tip>
         </div>
-        <Piles state={state} landingPiles={flights.map((f) => f.pileKey)} />
+        <Piles
+          state={state}
+          landingPiles={flights.map((f) => f.pileKey)}
+          onInspect={setInspecting}
+          onFacedownClick={(text) => {
+            pileNoticeSeq.current += 1
+            setPileNotice({ text, seq: pileNoticeSeq.current })
+          }}
+        />
         <div className="controls" data-coach="controls">
           <Tip below text="Takes back the last move, including a targeting choice (so a used action resets). You cannot undo revealing Enemies (a scout or choosing a Mission) once they are face-up. During PLAN you can also click a played card's dimmed half to switch Hidden ↔ Revealed — until anyone uses an action.">
             <button className="undo-btn" onClick={undo} disabled={!canUndo}>
@@ -503,11 +490,15 @@ export function App() {
       <PhaseGuide state={state} actions={actions} />
 
       <div className="event-line" role="status" aria-live="polite">
-        {toasts.length > 0 &&
+        {pileNotice ? (
+          <PileNotice key={pileNotice.seq} text={pileNotice.text} onDone={() => setPileNotice(null)} />
+        ) : (
+          toasts.length > 0 &&
           (() => {
             const latest = toasts[toasts.length - 1]
             return <Toast key={latest.id} toast={latest} onDone={() => dismissToast(latest.id)} />
-          })()}
+          })()
+        )}
       </div>
 
       {sideContent && (
@@ -516,6 +507,8 @@ export function App() {
         </div>
       )}
       </div>
+
+      {inspecting && <PileInspect pileId={inspecting} state={state} onClose={() => setInspecting(null)} />}
 
       {modalDecision && <DecisionModal decision={modalDecision} state={state} onRespond={respond} />}
 
@@ -951,53 +944,64 @@ function decisionUsesModal(state: GameState, decision: Decision | null): boolean
   return candidates.every((uid) => !boardPickable(state, uid))
 }
 
-interface PileInfo {
-  label: string
-  n: number
-  tone: string
-  hint: string
-  /** Zone key matching useCardFlights' FLIGHT_ZONES, so cards can fly to/from this tile. */
-  flightKey?: string
-}
-
-/** Labels of the four piles a player checks constantly — these stay inline in the status bar.
- *  The rest (played less often, or purely informational) move behind the "All piles" disclosure. */
-const INLINE_PILE_LABELS = new Set(['Hidden deck', 'Enemy deck', 'Mission deck', 'Graveyard'])
-
-function Piles({ state, landingPiles = EMPTY }: { state: GameState; landingPiles?: string[] }) {
-  const piles: PileInfo[] = [
-    { label: 'Hidden deck', n: state.hidden.deck.length, tone: 'hidden', flightKey: 'hidden.deck', hint: 'Hidden Maquis (and shuffled Spies) you draw your hand from.' },
-    { label: 'Hidden discard', n: state.hidden.discard.length, tone: 'hidden', flightKey: 'hidden.discard', hint: 'Played hidden Maquis + discarded Spies; reshuffled into the Hidden deck when it runs out.' },
-    { label: 'Recruit deck', n: state.recruit.deck.length, tone: 'revealed', flightKey: 'recruit.deck', hint: 'Inactive Maquis — only recovered by specific effects.' },
-    { label: 'Revealed pile', n: state.recruit.revealed.length, tone: 'revealed', flightKey: 'recruit.revealed', hint: 'Maquis played revealed this game — set aside, out of the decks.' },
-    { label: 'Enemy deck', n: state.enemyDeck.length, tone: 'enemy', hint: 'Face-down Enemies dealt to refilled Missions by their Garrison.' },
-    { label: 'Enemy discard', n: state.enemyDiscard.length, tone: 'enemy', hint: 'Defeated/discarded Enemies; reshuffled into the Enemy deck when it runs out.' },
-    { label: 'Mission deck', n: state.missionDeck.length, tone: 'mission', hint: 'Era-2 then Era-3 Missions that refill the row as you defeat Missions.' },
-    { label: 'Defeated', n: state.defeatedMissions.length, tone: 'mission', hint: 'Missions you have defeated — these score their Victory Points.' },
-    { label: 'Graveyard', n: state.graveyard.length, tone: 'civ', hint: 'Lost Civilians. Reach 5 civilians here and the resistance is crushed.' },
-    { label: 'Spy supply', n: state.spiesAvailable, tone: 'spy', hint: 'Spies available to be added to your Hidden deck by enemy effects.' },
-    { label: 'Removed', n: state.removedFromGame.length, tone: 'removed', flightKey: 'removed', hint: 'Cards removed from the game entirely (back in the box).' },
-  ]
-  const inline = piles.filter((p) => INLINE_PILE_LABELS.has(p.label))
-  const rest = piles.filter((p) => !INLINE_PILE_LABELS.has(p.label))
+function Piles({
+  state,
+  landingPiles = EMPTY,
+  onInspect,
+  onFacedownClick,
+}: {
+  state: GameState
+  landingPiles?: string[]
+  onInspect: (id: PileId) => void
+  onFacedownClick: (msg: string) => void
+}) {
+  const piles = pileViews(state)
+  const inline = piles.filter((p) => p.inline)
   const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    // Capture + swallow: a leftover pointerup/click on a Mission would ChooseMission
+    // (and start ATTACK) after we close. The old fixed backdrop lived inside
+    // .board-chrome's backdrop-filter, so it never covered the table.
+    const swallow = (e: Event) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    const onDown = (e: PointerEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return
+      swallow(e)
+      setOpen(false)
+      document.addEventListener('pointerup', swallow, { capture: true, once: true })
+      document.addEventListener('click', swallow, { capture: true, once: true })
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true)
+      document.removeEventListener('pointerup', swallow, true)
+      document.removeEventListener('click', swallow, true)
+    }
+  }, [open])
+
+  const activate = (p: PileView) => {
+    setOpen(false)
+    if (p.inspect) onInspect(p.id)
+    else onFacedownClick(facedownClickMessage(p.label))
+  }
 
   return (
     <div className="status-piles">
       {inline.map((p) => (
-        <div
-          key={p.label}
-          data-pile-key={p.flightKey}
-          className={`status-pile ${p.n === 0 ? 'empty' : ''} ${p.flightKey && landingPiles.includes(p.flightKey) ? 'flight-land' : ''}`}
-          title={`${p.label} — ${p.hint}`}
-        >
-          <span className={`deck-ico-sm tone-${p.tone}`}>
-            <span className="status-pile-count">{p.n}</span>
-          </span>
-          <span className="status-pile-label">{p.label}</span>
-        </div>
+        <PileChip
+          key={p.id}
+          pile={p}
+          compact
+          landing={!!p.flightKey && landingPiles.includes(p.flightKey)}
+          onActivate={activate}
+        />
       ))}
-      <div className="piles-disclosure">
+      <div className="piles-disclosure" ref={menuRef}>
         <button
           type="button"
           className="ghost piles-toggle"
@@ -1007,27 +1011,70 @@ function Piles({ state, landingPiles = EMPTY }: { state: GameState; landingPiles
         >
           All piles
         </button>
-        {open && <div className="popover-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
         {/* Stays mounted (shown/hidden via CSS, not conditional rendering) even while closed, so
          *  useCardFlights can still measure these tiles as flight targets. See Phase 6. */}
         <div className={`piles-popover ${open ? 'open' : ''}`} role="dialog" aria-label="All piles">
-          <h3 className="piles-popover-head">Card Piles</h3>
-          {rest.map((p) => (
-            <div
-              key={p.label}
-              data-pile-key={p.flightKey}
-              className={`pile ${p.n === 0 ? 'empty' : ''} ${p.flightKey && landingPiles.includes(p.flightKey) ? 'flight-land' : ''}`}
-              title={`${p.label} — ${p.hint}`}
-            >
-              <span className={`deck-ico tone-${p.tone}`}>
-                <span className="deck-count">{p.n}</span>
-              </span>
-              <span className="pile-label">{p.label}</span>
+          {PILE_GROUPS.map((g) => (
+            <div key={g.id} className="piles-group">
+              <h3 className="piles-group-head">{g.label}</h3>
+              {piles
+                .filter((p) => p.group === g.id)
+                .map((p) => (
+                  <PileChip
+                    key={p.id}
+                    pile={p}
+                    compact={false}
+                    landing={!!p.flightKey && landingPiles.includes(p.flightKey)}
+                    onActivate={activate}
+                  />
+                ))}
             </div>
           ))}
         </div>
       </div>
     </div>
+  )
+}
+
+function PileChip({
+  pile,
+  compact,
+  landing,
+  onActivate,
+}: {
+  pile: PileView
+  compact: boolean
+  landing: boolean
+  onActivate: (p: PileView) => void
+}) {
+  const spies = pile.spyCount ?? 0
+  const kind = pile.inspect ? 'inspectable' : 'facedown'
+  const cls = compact
+    ? `status-pile ${kind} ${pile.n === 0 ? 'empty' : ''} ${landing ? 'flight-land' : ''}`
+    : `pile ${kind} ${pile.n === 0 ? 'empty' : ''} ${landing ? 'flight-land' : ''}`
+  const aria = pile.inspect
+    ? `Look through ${pile.label}${spies > 0 ? `, ${spies} ${spies === 1 ? 'Spy' : 'Spies'}` : ''}`
+    : `${pile.label} is face-down`
+  return (
+    <Tip below={compact} aside={!compact} text={pile.hint}>
+      <button
+        type="button"
+        data-pile-key={compact ? pile.flightKey : pile.inline ? undefined : pile.flightKey}
+        className={cls}
+        onClick={() => onActivate(pile)}
+        aria-label={aria}
+      >
+        <span className={`${compact ? 'deck-ico-sm' : 'deck-ico'} tone-${pile.tone}`}>
+          <span className={compact ? 'status-pile-count' : 'deck-count'}>{pile.n}</span>
+          {spies > 0 && (
+            <span className="pile-spybadge" aria-hidden="true">
+              {spies}
+            </span>
+          )}
+        </span>
+        <span className={compact ? 'status-pile-label' : 'pile-label'}>{pile.label}</span>
+      </button>
+    </Tip>
   )
 }
 
@@ -1100,6 +1147,19 @@ function FlyingCard({ flight, onDone }: { flight: CardFlight; onDone: () => void
   )
 }
 
+/** Event-line note when a face-down deck is clicked — so a missed look-through doesn't feel broken. */
+function PileNotice({ text, onDone }: { text: string; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3600)
+    return () => clearTimeout(t)
+  }, [onDone])
+  return (
+    <button type="button" className="toast pile-notice" onClick={onDone} title="Dismiss">
+      {text}
+    </button>
+  )
+}
+
 /** A single transient log toast: fades/slides in, sits for a few seconds, then dismisses itself.
  *  Click to dismiss early. Purely informational — mirrors a line the engine already logged. */
 function Toast({ toast, onDone }: { toast: LogToast; onDone: () => void }) {
@@ -1164,8 +1224,8 @@ function AttackStrengthToken({
  *  rules text as real HTML, lifted above the card the pointer is over. Answers "what does this do"
  *  without the click the right-click zoom still requires for a closer look at the art itself
  *  (Phase 6 — reading a card's rules text should never require a click). Positioned `fixed` from
- *  the hovered card's measured rect (see the delegated listener in App()) rather than a CSS-only
- *  `:hover` popover, since the committed lanes and hand both scroll/clip via `overflow` and a plain
+ *  the hovered card's measured rect (see `useHoverPeek`) rather than a CSS-only `:hover` popover,
+ *  since the committed lanes and hand both scroll/clip via `overflow` and a plain
  *  `position: absolute` child would be cut off (the same lesson as the phase-help popover fix). */
 function HoverPeek({ dataId, x, y, width }: { dataId: string; x: number; y: number; width: number }) {
   if (dataId === 'spy') return null

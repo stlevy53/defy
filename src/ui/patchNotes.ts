@@ -11,6 +11,17 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '0.2.4',
+    date: '2026-09-09',
+    title: 'Hover peek lets go, quieter gun, and look through discards',
+    changes: [
+      'Look through face-up piles — click Hidden discard, the Revealed pile, Enemy discard, Defeated Missions, the Graveyard, leftover Spies, or Removed to spread those cards (newest on top). The status bar keeps your Hidden cycle, the Enemy cycle, and the Graveyard; All piles lists every pile grouped Maquis / Enemies / Missions / Out of play. Empty piles still open and say so. You can look while a choice window is open. Click outside All piles to close it — that click does not also attack a Mission.',
+      'Face-down decks stay closed — Hidden, Recruit, Enemy, and Mission decks look flatter and dashed so they don’t read as look-through. Click one and the event line says they are face-down; no “click to look” prompt on those decks.',
+      'Fix — the hover preview on a hand or committed card now disappears as soon as you move the pointer away (or scroll, or right-click to zoom). It used to stick until you hovered that card again.',
+      'Sound — the gunshot on an Enemy is quieter, so it sits closer to the card flip and the other table cues. One Volume slider still covers everything.',
+    ],
+  },
+  {
     version: '0.2.3',
     date: '2026-09-06',
     title: 'Flipped Enemies show the right card',

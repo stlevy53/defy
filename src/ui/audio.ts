@@ -44,6 +44,13 @@ export const SOUND_MUTED_KEY = 'defy.soundMuted'
 export const SOUND_VOLUME_KEY = 'defy.soundVolume'
 export const DEFAULT_VOLUME = 0.55
 
+/** Per-cue amplitude vs the master volume slider. Gunshot.wav peaks at 0 dBFS and sits ~21 dB RMS
+ *  above the card flip, so one slider could not serve both; 0.35 brings the crack nearer the table
+ *  cues (and drops the mechanical clicks below notice) without a second control. */
+export const CUE_GAIN: Partial<Record<SfxName, number>> = {
+  strike: 0.35,
+}
+
 /** Logical cue → filename stem (no extension). Lets one Card Flip cover every table move. */
 const CUE_FILE: Record<SfxName, string> = {
   play: 'Card Flip',
@@ -256,7 +263,7 @@ export function playSfx(name: SfxName, opts?: { gain?: number; storage?: Storage
   if (isMuted(opts?.storage)) return
   const url = urls[CUE_FILE[name]] ?? urls[name]
   if (!url) return
-  const vol = clamp01(getVolume(opts?.storage) * (opts?.gain ?? 1))
+  const vol = clamp01(getVolume(opts?.storage) * (opts?.gain ?? CUE_GAIN[name] ?? 1))
   if (vol <= 0) return
   ;(playFn ?? defaultPlay)(url, vol)
 }
